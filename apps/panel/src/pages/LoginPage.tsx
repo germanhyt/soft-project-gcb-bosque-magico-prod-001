@@ -42,31 +42,63 @@ export function LoginPage() {
   return (
     <div className="relative flex min-h-screen">
       <div
-        className="relative hidden flex-1 flex-col justify-between overflow-hidden bg-primary p-10 text-on-primary lg:flex"
+        className="relative hidden flex-1 overflow-hidden bg-[#0D2F4E] p-10 text-white lg:flex"
         aria-hidden
       >
-        <div className="pointer-events-none absolute -right-20 -top-20 h-80 w-80 rounded-full bg-primary-fixed/20 blur-3xl" />
-        <div className="pointer-events-none absolute -bottom-16 left-10 h-64 w-64 rounded-full bg-secondary/30 blur-3xl" />
-        <div className="relative flex items-center gap-4">
-          <img
-            src="/logo-bm.png"
-            alt=""
-            className="h-14 w-14 rounded-2xl border border-white/20 bg-white/10 p-1"
-          />
-          <div>
-            <p className="text-label-caps text-primary-fixed">Bosque Mágico</p>
-            <p className="text-headline-lg tracking-tight">CRM Premium</p>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_48%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.06),transparent_55%)]" />
+        <div className="relative flex w-full flex-col">
+          <div className="flex items-center gap-4">
+            <img
+              src="/logo-bm.png"
+              alt=""
+              className="h-12 w-12 rounded-xl border border-white/25 bg-white/10 p-1"
+            />
+            <div>
+              <p className="text-label-caps text-white/80">Bosque Mágico</p>
+              <p className="text-title-lg font-semibold tracking-tight">Panel comercial</p>
+            </div>
+          </div>
+
+          <div className="mt-14 max-w-xl">
+            <h2 className="text-display-md leading-tight text-white">
+              Control operativo para ventas y eventos en un solo flujo.
+            </h2>
+            <p className="mt-4 text-body-md text-white/80">
+              Gestiona solicitudes, cotizaciones y agenda con visibilidad clara para todo el equipo.
+            </p>
+          </div>
+
+          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wide text-white/70">Pipeline</p>
+              <p className="mt-1 text-title-md font-semibold">Solicitudes</p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wide text-white/70">Conversión</p>
+              <p className="mt-1 text-title-md font-semibold">Cotizaciones</p>
+            </div>
+            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
+              <p className="text-xs uppercase tracking-wide text-white/70">Operación</p>
+              <p className="mt-1 text-title-md font-semibold">Agenda</p>
+            </div>
+          </div>
+
+          <div className="mt-10 space-y-3 text-body-sm text-white/85">
+            <p className="flex items-center gap-2">
+              <Icon name="check_circle" size={18} />
+              Seguimiento centralizado por estado y prioridad.
+            </p>
+            <p className="flex items-center gap-2">
+              <Icon name="check_circle" size={18} />
+              Historial comercial por cliente y oportunidad.
+            </p>
+            <p className="flex items-center gap-2">
+              <Icon name="check_circle" size={18} />
+              Coordinación entre ventas y operación en tiempo real.
+            </p>
           </div>
         </div>
-        <div className="relative max-w-md">
-          <h2 className="text-display-lg leading-tight text-primary-fixed">
-            Gestión mágica de eventos
-          </h2>
-          <p className="mt-4 text-body-lg text-on-primary/85">
-            Solicitudes, cotizaciones y agenda en un solo lugar para tu equipo comercial.
-          </p>
-        </div>
-        <p className="relative text-body-sm text-on-primary/60">© Bosque Mágico</p>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-12">
@@ -147,11 +179,6 @@ export function LoginPage() {
             {pending ? 'Entrando…' : 'Entrar al panel'}
           </Button>
 
-          <p className="mt-6 rounded-lg bg-surface-container-low px-3 py-2 text-center text-xs text-outline">
-            Desarrollo: credenciales en{' '}
-            <code className="font-medium text-on-surface">ADMIN_EMAIL</code> /{' '}
-            <code className="font-medium text-on-surface">ADMIN_PASSWORD</code> del API.
-          </p>
         </form>
       </div>
     </div>
