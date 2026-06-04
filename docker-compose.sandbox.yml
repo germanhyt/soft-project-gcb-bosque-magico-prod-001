@@ -28,7 +28,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bosque_magico?schema=public
       JWT_SECRET: sandbox-secret-change-me
-      CORS_ORIGIN: http://sandbox-landing-bosque.gcbprojects.site,http://sandbox-panel-bosque.gcbprojects.site
+      API_CORS_ORIGINS: https://sandbox-landing-bosque.gcbprojects.site,https://sandbox-panel-bosque.gcbprojects.site
     depends_on:
       postgres:
         condition: service_healthy
