@@ -12,4 +12,4 @@ RUN npm run build --workspace=@bosque/api
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm exec --workspace=@bosque/api prisma migrate deploy --schema apps/api/prisma/schema.prisma && npm run start:prod --workspace=@bosque/api"]
+CMD ["sh", "-c", "npm exec --workspace=@bosque/api prisma migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]
