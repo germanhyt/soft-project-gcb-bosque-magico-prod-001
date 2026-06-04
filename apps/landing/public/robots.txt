@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+Disallow: /cotizacion/
+
+Sitemap: https://bosquemagico.refugio.pe/sitemap.xml

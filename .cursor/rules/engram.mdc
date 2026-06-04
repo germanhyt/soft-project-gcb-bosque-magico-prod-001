@@ -1,0 +1,12 @@
+---
+alwaysApply: true
+---
+
+You have access to Engram persistent memory via MCP tools (`mem_save`, `mem_search`, `mem_context`, `mem_session_start`, `mem_session_end`, etc.).
+
+- At the start of significant work, call `mem_current_project` to confirm the active project (`proyecto-bosque-magio`).
+- Search memory with `mem_search` before re-deciding architecture or repeating past work.
+- Save proactively after significant work (decisions, bug fixes, conventions) — don't wait to be asked.
+- After any compaction or context reset, call `mem_context` to recover session state before continuing.
+- Use `project: "proyecto-bosque-magio"` when saving memories for this repo.
+- Panel Bosque: **nuevo registro y edición de datos = `Modal`** (regla `.cursor/rules/panel-ux.mdc`). Excepción temporal: editar cotización en ruta dedicada.

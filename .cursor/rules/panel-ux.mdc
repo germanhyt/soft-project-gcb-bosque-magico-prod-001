@@ -1,0 +1,31 @@
+---
+description: Convenciones UX del panel Bosque Mágico (modales, estados, tablas)
+globs:
+  - apps/panel/**
+alwaysApply: true
+---
+
+# Panel Bosque Mágico — UX
+
+## Modales para alta y edición (obligatorio)
+
+- **Todo nuevo registro o edición de datos** en el panel → componente **`Modal`** compartido (`components/ui/Modal.tsx`).
+- **Ver detalle + acciones** → **`DetalleModal`** (mantener contexto del listado; `?detalle=id` opcional).
+- **No** crear rutas/páginas solo para formularios CRUD (`*Page.tsx` con formulario completo).
+- **No** usar SweetAlert2 para formularios largos (solo confirmar, cancelar, toasts).
+
+Patrones actuales:
+- `NuevaSolicitudModal`, `CerrarSolicitudModal`, `ProductoFormModal`, `UsuarioFormModal`, `NuevoProductoModal` → `ProductoFormModal`, `CancelarEventoModal`.
+
+Cotizaciones:
+- `CotizacionFormModal` — crear manual, desde solicitud y editar borrador.
+- Rutas legacy `/cotizaciones/nueva` y `/cotizaciones/:id/editar` redirigen a query `?form=nueva` / `?editar=id`.
+
+## Estado (no “etapa” en UI)
+
+- En etiquetas, columnas y filtros del panel usar **Estado**.
+- En API/Prisma el campo sigue siendo `etapa` hasta migración explícita a `estado`.
+
+## Solicitudes = leads
+
+- El módulo **Solicitudes** es el módulo operativo de **leads**; **Clientes** es vista por identidad/historial.

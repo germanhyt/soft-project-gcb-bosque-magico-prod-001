@@ -1,0 +1,69 @@
+# --- Herramientas locales / memoria de agente ---
+.engram/
+.cursor/*
+!.cursor/rules/
+!.cursor/rules/**
+
+# --- fiestas-infatntiles-project ---
+# Carpeta con repos git anidados (.git en raíz y en landing-bosque-magico/).
+# Se ignora aquí para evitar conflictos de submódulo en este repo.
+# Para versionarla en monorepo: eliminar los .git anidados y quitar la línea siguiente.
+fiestas-infatntiles-project/
+
+# Dependencias y salida de build (landing Astro y futuros frontends)
+**/node_modules/
+**/dist/
+**/.astro/
+**/.vercel/
+
+# Subidas locales API
+apps/api/uploads/
+
+# Secretos y entorno
+.env
+.env.*
+!.env.example
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+logs/
+*.pid
+
+# SO / IDE
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*.tmp
+*.bak
+
+# Python (backend futuro)
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+
+# Node/JS cache and reports
+.pnpm-store/
+.npm/
+.yarn/cache/
+.turbo/
+coverage/
+*.tsbuildinfo
+
+# Security / deploy artifacts
+*.pem
+*.key
+id_rsa
+id_ed25519

@@ -1,0 +1,638 @@
+generator client {
+
+  provider = "prisma-client-js"
+
+}
+
+
+
+datasource db {
+
+  provider = "postgresql"
+
+  url      = env("DATABASE_URL")
+
+}
+
+
+
+enum CanalSolicitud {
+
+  landing
+
+  whatsapp
+
+  meta
+
+  referido
+
+  manual
+
+  otro
+
+}
+
+
+
+enum EtapaSolicitud {
+
+  nueva
+
+  en_atencion
+
+  cotizada
+
+  cerrada
+
+}
+
+
+
+enum MotivoCierreSolicitud {
+
+  ganada
+
+  perdida
+
+  duplicada
+
+  sin_respuesta
+
+  otro
+
+}
+
+
+
+enum TurnoInteres {
+
+  turno_1
+
+  turno_2
+
+  turno_3
+
+}
+
+
+
+enum TipoDocumento {
+
+  dni
+
+  ruc
+
+  otro
+
+}
+
+
+
+enum EtapaCotizacion {
+
+  borrador
+
+  enviada
+
+  aceptada
+
+  cerrada
+
+}
+
+
+
+enum MotivoCierreCotizacion {
+
+  rechazada
+
+  vencida
+
+  reemplazada
+
+  otro
+
+}
+
+
+
+enum CanalEnvio {
+
+  whatsapp
+
+  email
+
+}
+
+
+
+enum TipoItemCotizacion {
+
+  show
+
+  catering
+
+  extra
+
+  manual
+
+}
+
+
+
+enum CategoriaProducto {
+
+  show
+
+  catering
+
+  extra
+
+  paquete
+
+  espacio
+
+}
+
+
+
+enum EtapaProducto {
+
+  activo
+
+  inactivo
+
+}
+
+
+
+enum EtapaEvento {
+
+  por_confirmar
+
+  confirmado
+
+  realizado
+
+  cancelado
+
+}
+
+
+
+model BosqueMagicoConfiguracion {
+
+  id            String   @id @default(uuid())
+
+  clave         String   @unique
+
+  valor         Json
+
+  descripcion   String?
+
+  esPublico     Boolean  @default(false) @map("es_publico")
+
+  creadoEn      DateTime @default(now()) @map("creado_en")
+
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+
+
+  @@map("configuraciones")
+
+}
+
+
+
+model BosqueMagicoSolicitud {
+
+  id                    String                 @id @default(uuid())
+
+  fechaIngreso          DateTime               @default(now()) @map("fecha_ingreso") @db.Date
+
+  nombreContacto        String                 @map("nombre_contacto")
+
+  celular               String
+
+  correo                String?
+
+  canal                 CanalSolicitud
+
+  detalleOrigen         String?                @map("detalle_origen")
+
+  fechaTentativa        DateTime?              @map("fecha_tentativa") @db.Date
+
+  turnoInteres          TurnoInteres?          @map("turno_interes")
+
+  cantidadNinosEstimada Int?                   @map("cantidad_ninos_estimada")
+
+  etapa                 EtapaSolicitud         @default(nueva)
+
+  motivoCierre          MotivoCierreSolicitud? @map("motivo_cierre")
+
+  usuarioAsignadoId     String?                @map("usuario_asignado_id")
+
+  ultimoContactoEn      DateTime?              @map("ultimo_contacto_en")
+
+  proximoSeguimientoEn  DateTime?              @map("proximo_seguimiento_en")
+
+  notas                 String?                @db.Text
+
+  payloadOrigen         Json?                  @map("payload_origen")
+
+  creadoEn              DateTime               @default(now()) @map("creado_en")
+
+  actualizadoEn         DateTime               @updatedAt @map("actualizado_en")
+
+
+
+  cotizaciones BosqueMagicoCotizacion[]
+
+
+
+  @@index([etapa])
+
+  @@index([canal])
+
+  @@index([celular])
+
+  @@map("solicitudes")
+
+}
+
+
+
+model BosqueMagicoCliente {
+
+  id              String         @id @default(uuid())
+
+  nombreCompleto  String         @map("nombre_completo")
+
+  tipoDocumento   TipoDocumento? @map("tipo_documento")
+
+  numeroDocumento String?        @map("numero_documento")
+
+  celular         String
+
+  correo          String?
+
+  direccion       String?
+
+  distrito        String?
+
+  notas           String?        @db.Text
+
+  creadoEn        DateTime       @default(now()) @map("creado_en")
+
+  actualizadoEn   DateTime       @updatedAt @map("actualizado_en")
+
+
+
+  cumpleaneros  BosqueMagicoCumpleanero[]
+
+  cotizaciones  BosqueMagicoCotizacion[]
+
+  eventos       BosqueMagicoEvento[]
+
+
+
+  @@index([celular])
+
+  @@map("clientes")
+
+}
+
+
+
+model BosqueMagicoCumpleanero {
+
+  id               String    @id @default(uuid())
+
+  clienteId        String    @map("cliente_id")
+
+  nombre           String
+
+  edad             Int?
+
+  fechaCumpleanos  DateTime? @map("fecha_cumpleanos") @db.Date
+
+  tematicaFavorita String?   @map("tematica_favorita")
+
+  notas            String?   @db.Text
+
+  creadoEn         DateTime  @default(now()) @map("creado_en")
+
+  actualizadoEn    DateTime  @updatedAt @map("actualizado_en")
+
+
+
+  cliente      BosqueMagicoCliente      @relation(fields: [clienteId], references: [id])
+
+  cotizaciones BosqueMagicoCotizacion[]
+
+  eventos      BosqueMagicoEvento[]
+
+
+
+  @@index([clienteId])
+
+  @@map("cumpleaneros")
+
+}
+
+
+
+model BosqueMagicoProducto {
+
+  id                 String            @id @default(uuid())
+
+  codigo             String            @unique
+
+  nombre             String
+
+  categoria          CategoriaProducto
+
+  precioLunesViernes Decimal           @map("precio_lunes_viernes") @db.Decimal(10, 2)
+
+  precioFinSemana    Decimal           @map("precio_fin_semana") @db.Decimal(10, 2)
+
+  unidad             String            @default("servicio")
+
+  cantidadMinima     Int               @default(1) @map("cantidad_minima")
+
+  descripcion        String?           @db.Text
+
+  imagenUrl          String?           @map("imagen_url")
+
+  etapa              EtapaProducto     @default(activo)
+
+  creadoEn           DateTime          @default(now()) @map("creado_en")
+
+  actualizadoEn      DateTime          @updatedAt @map("actualizado_en")
+
+
+
+  items BosqueMagicoItemCotizacion[]
+
+
+
+  @@map("productos")
+
+}
+
+
+
+model BosqueMagicoCotizacion {
+
+  id              String                  @id @default(uuid())
+
+  codigo          String                  @unique
+
+  solicitudId     String?                 @map("solicitud_id")
+
+  clienteId       String                  @map("cliente_id")
+
+  cumpleaneroId   String                  @map("cumpleanero_id")
+
+  tokenPublico    String                  @unique @map("token_publico")
+
+  fechaEvento     DateTime                @map("fecha_evento") @db.Date
+
+  turno           TurnoInteres
+
+  cantidadNinos   Int                     @map("cantidad_ninos")
+
+  tematica        String?
+
+  paquete         String?
+
+  montoBase       Decimal                 @map("monto_base") @db.Decimal(10, 2)
+
+  montoNinosExtra Decimal                 @map("monto_ninos_extra") @db.Decimal(10, 2)
+
+  montoItems      Decimal                 @map("monto_items") @db.Decimal(10, 2)
+
+  montoTotal      Decimal                 @map("monto_total") @db.Decimal(10, 2)
+
+  etapa           EtapaCotizacion         @default(borrador)
+
+  motivoCierre    MotivoCierreCotizacion? @map("motivo_cierre")
+
+  canalEnvio      CanalEnvio?             @map("canal_envio")
+
+  enviadaEn       DateTime?               @map("enviada_en")
+
+  aceptadaEn      DateTime?               @map("aceptada_en")
+
+  cerradaEn       DateTime?               @map("cerrada_en")
+
+  notas           String?                 @db.Text
+
+  creadoEn        DateTime                @default(now()) @map("creado_en")
+
+  actualizadoEn   DateTime                @updatedAt @map("actualizado_en")
+
+
+
+  solicitud   BosqueMagicoSolicitud?      @relation(fields: [solicitudId], references: [id])
+
+  cliente     BosqueMagicoCliente         @relation(fields: [clienteId], references: [id])
+
+  cumpleanero BosqueMagicoCumpleanero     @relation(fields: [cumpleaneroId], references: [id])
+
+  items       BosqueMagicoItemCotizacion[]
+
+  eventos     BosqueMagicoEvento[]
+
+  logsMensaje BosqueMagicoLogMensaje[]
+
+
+
+  @@index([etapa])
+
+  @@index([solicitudId])
+
+  @@map("cotizaciones")
+
+}
+
+
+
+model BosqueMagicoItemCotizacion {
+
+  id              String             @id @default(uuid())
+
+  cotizacionId    String             @map("cotizacion_id")
+
+  productoId      String?            @map("producto_id")
+
+  tipo            TipoItemCotizacion
+
+  nombre          String
+
+  cantidad        Int
+
+  precioUnitario  Decimal            @map("precio_unitario") @db.Decimal(10, 2)
+
+  subtotal        Decimal            @db.Decimal(10, 2)
+
+  notas           String?
+
+
+
+  cotizacion BosqueMagicoCotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+  producto   BosqueMagicoProducto?  @relation(fields: [productoId], references: [id])
+
+
+
+  @@index([cotizacionId])
+
+  @@map("items_cotizacion")
+
+}
+
+
+
+model BosqueMagicoEvento {
+
+  id           String        @id @default(uuid())
+
+  cotizacionId String        @map("cotizacion_id")
+
+  clienteId    String        @map("cliente_id")
+
+  cumpleaneroId String       @map("cumpleanero_id")
+
+  fechaEvento  DateTime      @map("fecha_evento") @db.Date
+
+  turno        TurnoInteres
+
+  zona         String        @default("Bosque Mágico")
+
+  tematica     String?
+
+  cantidadNinos Int          @map("cantidad_ninos")
+
+  montoTotal   Decimal       @map("monto_total") @db.Decimal(10, 2)
+
+  etapa        EtapaEvento   @default(por_confirmar)
+
+  confirmadoEn DateTime?     @map("confirmado_en")
+
+  realizadoEn  DateTime?     @map("realizado_en")
+
+  canceladoEn  DateTime?     @map("cancelado_en")
+
+  notas        String?       @db.Text
+
+  creadoEn     DateTime      @default(now()) @map("creado_en")
+
+  actualizadoEn DateTime     @updatedAt @map("actualizado_en")
+
+
+
+  cotizacion  BosqueMagicoCotizacion  @relation(fields: [cotizacionId], references: [id])
+
+  cliente     BosqueMagicoCliente     @relation(fields: [clienteId], references: [id])
+
+  cumpleanero BosqueMagicoCumpleanero @relation(fields: [cumpleaneroId], references: [id])
+
+
+
+  @@index([fechaEvento, turno, zona])
+
+  @@index([etapa])
+
+  @@map("eventos")
+
+}
+
+
+
+model BosqueMagicoLogMensaje {
+
+  id           String     @id @default(uuid())
+
+  cotizacionId String     @map("cotizacion_id")
+
+  canal        CanalEnvio
+
+  destino      String
+
+  exito        Boolean    @default(true)
+
+  detalle      String?
+
+  creadoEn     DateTime   @default(now()) @map("creado_en")
+
+
+
+  cotizacion BosqueMagicoCotizacion @relation(fields: [cotizacionId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([cotizacionId])
+
+  @@map("logs_mensajes")
+
+}
+
+
+
+model BosqueMagicoUsuario {
+
+  id           String   @id @default(uuid())
+
+  email        String   @unique
+
+  nombre       String
+
+  passwordHash String   @map("password_hash")
+
+  permisos     String[] @default([])
+
+  activo       Boolean  @default(true)
+
+  creadoEn     DateTime @default(now()) @map("creado_en")
+
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+
+
+  @@map("usuarios")
+
+}
+
+
+
+model BosqueMagicoAuditoria {
+
+  id          String   @id @default(uuid())
+
+  tipoEntidad String   @map("tipo_entidad")
+
+  entidadId   String   @map("entidad_id")
+
+  accion      String
+
+  actorTipo   String   @map("actor_tipo")
+
+  actorId     String?  @map("actor_id")
+
+  antes       Json?
+
+  despues     Json?
+
+  metadata    Json?
+
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+
+
+  @@index([tipoEntidad, entidadId])
+
+  @@map("auditorias")
+
+}
+

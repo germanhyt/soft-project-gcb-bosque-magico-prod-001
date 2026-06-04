@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+
+<html lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nueva Cotización - Bosque Mágico CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary": "#ffffff",
+                      "surface-container": "#f1eee5",
+                      "secondary": "#805533",
+                      "primary-fixed-dim": "#acd19a",
+                      "on-error-container": "#93000a",
+                      "on-secondary-fixed-variant": "#653d1e",
+                      "primary-fixed": "#c7edb4",
+                      "on-surface": "#1c1c17",
+                      "surface-container-highest": "#e6e2d9",
+                      "error": "#ba1a1a",
+                      "tertiary-fixed-dim": "#e9c349",
+                      "on-tertiary-container": "#4f3e00",
+                      "on-error": "#ffffff",
+                      "surface-dim": "#dddad1",
+                      "surface-bright": "#fdf9f0",
+                      "surface": "#fdf9f0",
+                      "on-secondary": "#ffffff",
+                      "background": "#fdf9f0",
+                      "surface-tint": "#46673a",
+                      "surface-container-lowest": "#ffffff",
+                      "on-primary": "#ffffff",
+                      "surface-container-high": "#ece8df",
+                      "primary": "#17350e",
+                      "primary-container": "#2d4c22",
+                      "on-secondary-fixed": "#301400",
+                      "inverse-surface": "#31312b",
+                      "on-surface-variant": "#43483f",
+                      "surface-container-low": "#f7f3ea",
+                      "error-container": "#ffdad6",
+                      "secondary-container": "#fdc39a",
+                      "on-tertiary-fixed": "#241a00",
+                      "secondary-fixed-dim": "#f4bb92",
+                      "on-primary-fixed": "#042100",
+                      "inverse-on-surface": "#f4f0e7",
+                      "surface-variant": "#e6e2d9",
+                      "outline": "#73796e",
+                      "outline-variant": "#c3c8bc",
+                      "on-background": "#1c1c17",
+                      "inverse-primary": "#acd19a",
+                      "tertiary-fixed": "#ffe088",
+                      "on-primary-container": "#98bc87",
+                      "on-tertiary-fixed-variant": "#574500",
+                      "tertiary-container": "#cca730",
+                      "secondary-fixed": "#ffdcc5",
+                      "tertiary": "#735c00",
+                      "on-primary-fixed-variant": "#2f4e24",
+                      "on-secondary-container": "#794e2e"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "margin-desktop": "32px",
+                      "card-padding": "24px",
+                      "base": "8px",
+                      "margin-mobile": "16px",
+                      "gutter": "24px",
+                      "input-padding": "12px 16px"
+              },
+              "fontFamily": {
+                      "body-sm": ["Plus Jakarta Sans"],
+                      "label-caps": ["Plus Jakarta Sans"],
+                      "body-lg": ["Plus Jakarta Sans"],
+                      "headline-lg": ["Plus Jakarta Sans"],
+                      "title-md": ["Plus Jakarta Sans"],
+                      "headline-lg-mobile": ["Plus Jakarta Sans"],
+                      "display-lg": ["Plus Jakarta Sans"]
+              },
+              "fontSize": {
+                      "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                      "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700" }],
+                      "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                      "headline-lg": ["32px", { "lineHeight": "40px", "fontWeight": "700" }],
+                      "title-md": ["20px", { "lineHeight": "28px", "fontWeight": "600" }],
+                      "headline-lg-mobile": ["24px", { "lineHeight": "32px", "fontWeight": "700" }],
+                      "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }]
+              }
+      },
+          },
+        }
+    </script>
+<style>
+        /* Ambient shadow utility derived from style guidance */
+        .shadow-ambient {
+            box-shadow: 0 8px 20px -4px rgba(23, 53, 14, 0.10);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg antialiased">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[280px] bg-secondary dark:bg-on-secondary-fixed shadow-[20px_0_20px_-15px_rgba(23,53,14,0.15)] flex flex-col py-8 px-4 gap-4 z-20">
+<!-- Brand Header -->
+<div class="px-4 mb-8">
+<h1 class="font-display-lg text-headline-lg text-secondary-fixed tracking-tight">Bosque Mágico</h1>
+<p class="font-body-sm text-body-sm text-secondary-fixed-dim/80 mt-1">CRM Premium</p>
+</div>
+<!-- Navigation Tabs -->
+<div class="flex flex-col gap-2">
+<!-- Dashboard (Inactive) -->
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-title-md text-title-md">Dashboard</span>
+</a>
+<!-- Solicitudes (Inactive) -->
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">inbox</span>
+<span class="font-title-md text-title-md">Solicitudes</span>
+</a>
+<!-- Cotizaciones (Active Tab based on page intent) -->
+<a class="flex items-center gap-3 bg-white/10 text-secondary-fixed font-bold rounded-lg px-4 py-3 hover:bg-white/15 transition-colors duration-200 shadow-sm active:scale-95 transition-transform" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">receipt_long</span>
+<span class="font-title-md text-title-md">Cotizaciones</span>
+</a>
+<!-- Agenda (Inactive) -->
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 hover:bg-white/5 transition-colors duration-200 rounded-lg" href="#">
+<span class="material-symbols-outlined">calendar_month</span>
+<span class="font-title-md text-title-md">Agenda</span>
+</a>
+<!-- Configuración (Inactive) -->
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 hover:bg-white/5 transition-colors duration-200 rounded-lg mt-auto" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="font-title-md text-title-md">Configuración</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[280px] h-16 bg-surface dark:bg-surface-dim flex justify-between items-center px-margin-desktop z-10 border-b border-surface-variant/50">
+<div class="flex items-center">
+<!-- Placeholder for Search or Breadcrumbs if needed -->
+<span class="font-title-md text-title-md text-on-surface-variant">Nueva Cotización</span>
+</div>
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-pointer">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[280px] mt-16 p-margin-desktop min-h-[calc(100vh-64px)]">
+<div class="mb-8 flex justify-between items-end">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">Crear Cotización</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Configura los detalles del evento y calcula el presupuesto.</p>
+</div>
+<div class="flex gap-4">
+<button class="font-title-md text-title-md text-primary bg-transparent border-2 border-secondary rounded-lg px-6 py-2 hover:bg-surface-container-low transition-colors">
+                    Descartar
+                 </button>
+</div>
+</div>
+<!-- 2-Column Layout -->
+<div class="grid grid-cols-12 gap-gutter items-start">
+<!-- Left Column: Form Data (Spans 7 cols) -->
+<div class="col-span-12 xl:col-span-7 flex flex-col gap-6">
+<!-- Datos del Cliente Section -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-ambient border border-surface-variant/30 relative overflow-hidden">
+<div class="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary to-surface-tint opacity-80"></div>
+<h3 class="font-title-md text-title-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">person</span>
+                        Datos del Cliente
+                    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Nombre Completo</label>
+<input class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="Ej. María López" type="text"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Teléfono de Contacto</label>
+<input class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="Ej. +52 55 1234 5678" type="tel"/>
+</div>
+<div class="flex flex-col gap-1 md:col-span-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Correo Electrónico (Opcional)</label>
+<input class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="cliente@correo.com" type="email"/>
+</div>
+</div>
+</section>
+<!-- Detalles del Evento Section -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-ambient border border-surface-variant/30">
+<h3 class="font-title-md text-title-md text-primary mb-6 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">celebration</span>
+                        Detalles del Evento
+                    </h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="flex flex-col gap-1 md:col-span-2">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Nombre y Edad del Festejado</label>
+<div class="flex gap-2">
+<input class="w-2/3 bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" placeholder="Nombre" type="text"/>
+<input class="w-1/3 bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" min="1" placeholder="Edad" type="number"/>
+</div>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Fecha del Evento</label>
+<input class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow text-on-surface-variant" type="date"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Turno Preferido</label>
+<select class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow appearance-none">
+<option disabled="" selected="" value="">Selecciona un turno</option>
+<option value="manana">Mañana (10:00 - 14:00)</option>
+<option value="tarde">Tarde (15:00 - 19:00)</option>
+<option value="noche">Noche (20:00 - 24:00)</option>
+</select>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Cantidad de Niños (Aprox.)</label>
+<input class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow" min="10" placeholder="Ej. 30" step="5" type="number"/>
+</div>
+<div class="flex flex-col gap-1">
+<label class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider">Paquete Base</label>
+<select class="bg-surface-container-low border border-outline rounded-lg px-4 py-3 font-body-sm text-body-sm text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-shadow appearance-none">
+<option value="basico">Bosque Mágico Básico - $4,500</option>
+<option value="aventura">Aventura en el Bosque - $6,800</option>
+<option value="premium">Premium Encantado - $9,500</option>
+</select>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Extras & Pricing Summary (Spans 5 cols) -->
+<div class="col-span-12 xl:col-span-5 flex flex-col gap-6 relative">
+<!-- Shows y Extras Selection -->
+<section class="bg-surface-container-lowest rounded-xl p-card-padding shadow-ambient border border-surface-variant/30 max-h-[500px] overflow-y-auto">
+<h3 class="font-title-md text-title-md text-primary mb-4 flex items-center gap-2">
+<span class="material-symbols-outlined text-secondary">star</span>
+                        Shows y Extras
+                    </h3>
+<div class="flex flex-col gap-4">
+<!-- Extra Item -->
+<label class="flex items-center justify-between p-3 rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<div>
+<p class="font-title-md text-body-lg text-on-surface">Show de Magia</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">45 minutos de espectáculo</p>
+</div>
+</div>
+<span class="font-title-md text-title-md text-secondary">+$1,200</span>
+</label>
+<!-- Extra Item -->
+<label class="flex items-center justify-between p-3 rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<div>
+<p class="font-title-md text-body-lg text-on-surface">Pintacaritas</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">2 animadoras por 2 horas</p>
+</div>
+</div>
+<span class="font-title-md text-title-md text-secondary">+$800</span>
+</label>
+<!-- Extra Item -->
+<label class="flex items-center justify-between p-3 rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<div>
+<p class="font-title-md text-body-lg text-on-surface">Mesa de Dulces Premium</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Temática a elegir, 50 pers.</p>
+</div>
+</div>
+<span class="font-title-md text-title-md text-secondary">+$2,500</span>
+</label>
+<!-- Extra Item -->
+<label class="flex items-center justify-between p-3 rounded-lg border border-surface-variant hover:bg-surface-container-low cursor-pointer transition-colors">
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded border-outline text-primary focus:ring-primary" type="checkbox"/>
+<div>
+<p class="font-title-md text-body-lg text-on-surface">Hora Extra</p>
+<p class="font-body-sm text-body-sm text-on-surface-variant">Incluye personal de servicio</p>
+</div>
+</div>
+<span class="font-title-md text-title-md text-secondary">+$1,500</span>
+</label>
+</div>
+</section>
+<!-- Persistent Price Summary Panel -->
+<section class="bg-surface-container-low rounded-xl p-card-padding shadow-lg border-2 border-primary/10 sticky top-[88px]">
+<h3 class="font-label-caps text-label-caps text-on-surface-variant uppercase tracking-wider mb-4 border-b border-outline-variant pb-2">Resumen de Inversión</h3>
+<div class="flex flex-col gap-3 mb-6">
+<div class="flex justify-between font-body-lg text-body-lg text-on-surface">
+<span>Paquete Básico</span>
+<span>$4,500.00</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>Extras Seleccionados (0)</span>
+<span>$0.00</span>
+</div>
+<div class="flex justify-between font-body-sm text-body-sm text-on-surface-variant">
+<span>IVA (16%)</span>
+<span>$720.00</span>
+</div>
+</div>
+<div class="flex justify-between items-end border-t border-outline-variant pt-4 mb-6">
+<span class="font-title-md text-title-md text-on-surface">Total Estimado</span>
+<span class="font-display-lg text-[32px] font-bold text-primary leading-none tracking-tight">$5,220.00</span>
+</div>
+<!-- Action Buttons -->
+<div class="flex flex-col gap-3">
+<button class="w-full flex items-center justify-center gap-2 bg-primary text-on-primary font-title-md text-title-md rounded-lg py-3 hover:bg-primary-container transition-colors shadow-md transform active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]">send_to_mobile</span>
+                            Enviar por WhatsApp
+                        </button>
+<button class="w-full flex items-center justify-center gap-2 bg-transparent text-secondary border-2 border-secondary font-title-md text-title-md rounded-lg py-3 hover:bg-secondary hover:text-on-secondary transition-colors transform active:scale-[0.98]">
+<span class="material-symbols-outlined text-[20px]">mail</span>
+                            Enviar por Correo
+                        </button>
+<button class="w-full flex items-center justify-center gap-2 text-primary font-title-md text-title-md py-2 hover:underline hover:decoration-secondary/50 underline-offset-4 transition-all mt-2">
+<span class="material-symbols-outlined text-[18px]">save</span>
+                            Guardar Borrador
+                        </button>
+</div>
+</section>
+</div>
+</div>
+</main>
+</body></html>

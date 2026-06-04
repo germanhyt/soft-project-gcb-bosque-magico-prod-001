@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+
+<html class="light" lang="es"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Bosque Mágico CRM - Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+        /* Ambient depth shadow for cards */
+        .tactile-card {
+            box-shadow: 0 10px 30px -10px rgba(23, 53, 14, 0.08);
+            transition: all 0.2s ease-in-out;
+        }
+        .tactile-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 35px -10px rgba(23, 53, 14, 0.12);
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 1; /* Default to filled for solid tactile feel */
+        }
+        /* Custom scrollbar for table area */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #e6e2d9; /* surface-variant */
+            border-radius: 4px;
+        }
+    </style>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary": "#ffffff",
+                    "surface-container": "#f1eee5",
+                    "secondary": "#805533",
+                    "primary-fixed-dim": "#acd19a",
+                    "on-error-container": "#93000a",
+                    "on-secondary-fixed-variant": "#653d1e",
+                    "primary-fixed": "#c7edb4",
+                    "on-surface": "#1c1c17",
+                    "surface-container-highest": "#e6e2d9",
+                    "error": "#ba1a1a",
+                    "tertiary-fixed-dim": "#e9c349",
+                    "on-tertiary-container": "#4f3e00",
+                    "on-error": "#ffffff",
+                    "surface-dim": "#dddad1",
+                    "surface-bright": "#fdf9f0",
+                    "surface": "#fdf9f0",
+                    "on-secondary": "#ffffff",
+                    "background": "#fdf9f0",
+                    "surface-tint": "#46673a",
+                    "surface-container-lowest": "#ffffff",
+                    "on-primary": "#ffffff",
+                    "surface-container-high": "#ece8df",
+                    "primary": "#17350e",
+                    "primary-container": "#2d4c22",
+                    "on-secondary-fixed": "#301400",
+                    "inverse-surface": "#31312b",
+                    "on-surface-variant": "#43483f",
+                    "surface-container-low": "#f7f3ea",
+                    "error-container": "#ffdad6",
+                    "secondary-container": "#fdc39a",
+                    "on-tertiary-fixed": "#241a00",
+                    "secondary-fixed-dim": "#f4bb92",
+                    "on-primary-fixed": "#042100",
+                    "inverse-on-surface": "#f4f0e7",
+                    "surface-variant": "#e6e2d9",
+                    "outline": "#73796e",
+                    "outline-variant": "#c3c8bc",
+                    "on-background": "#1c1c17",
+                    "inverse-primary": "#acd19a",
+                    "tertiary-fixed": "#ffe088",
+                    "on-primary-container": "#98bc87",
+                    "on-tertiary-fixed-variant": "#574500",
+                    "tertiary-container": "#cca730",
+                    "secondary-fixed": "#ffdcc5",
+                    "tertiary": "#735c00",
+                    "on-primary-fixed-variant": "#2f4e24",
+                    "on-secondary-container": "#794e2e"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "margin-desktop": "32px",
+                    "card-padding": "24px",
+                    "base": "8px",
+                    "margin-mobile": "16px",
+                    "gutter": "24px",
+                    "input-padding": "12px 16px"
+            },
+            "fontFamily": {
+                    "body-sm": ["Plus Jakarta Sans"],
+                    "label-caps": ["Plus Jakarta Sans"],
+                    "body-lg": ["Plus Jakarta Sans"],
+                    "headline-lg": ["Plus Jakarta Sans"],
+                    "title-md": ["Plus Jakarta Sans"],
+                    "headline-lg-mobile": ["Plus Jakarta Sans"],
+                    "display-lg": ["Plus Jakarta Sans"]
+            },
+            "fontSize": {
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "fontWeight": "700"}],
+                    "title-md": ["20px", {"lineHeight": "28px", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          }
+        }
+      }
+    </script>
+</head>
+<body class="bg-background text-on-background antialiased min-h-screen">
+<!-- JSON Component: SideNavBar -->
+<nav class="hidden md:flex bg-secondary dark:bg-on-secondary-fixed fixed left-0 top-0 h-full w-[280px] shadow-[20px_0_20px_-15px_rgba(23,53,14,0.15)] shadow-xl flex-col py-8 px-4 gap-4 z-40">
+<!-- Brand Header -->
+<div class="mb-8 px-4">
+<h1 class="font-display-lg text-display-lg text-secondary-fixed leading-none tracking-tight">Bosque Mágico</h1>
+<p class="font-body-sm text-body-sm text-secondary-fixed-dim mt-1">CRM Premium</p>
+</div>
+<!-- Navigation Links -->
+<div class="flex flex-col gap-2 font-body-sm text-body-sm">
+<!-- Active Tab: Dashboard -->
+<a class="flex items-center gap-3 bg-white/10 text-secondary-fixed font-bold rounded-lg px-4 py-3 active:scale-95 transition-transform hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 active:scale-95 transition-transform hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">inbox</span>
+                Solicitudes
+            </a>
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 active:scale-95 transition-transform hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">receipt_long</span>
+                Cotizaciones
+            </a>
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 active:scale-95 transition-transform hover:bg-white/5 transition-colors duration-200" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">calendar_month</span>
+                Agenda
+            </a>
+<a class="flex items-center gap-3 text-secondary-fixed-dim/80 hover:text-secondary-fixed px-4 py-3 active:scale-95 transition-transform hover:bg-white/5 transition-colors duration-200 mt-auto" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 0;">settings</span>
+                Configuración
+            </a>
+</div>
+</nav>
+<!-- JSON Component: TopAppBar -->
+<header class="hidden md:flex bg-surface dark:bg-surface-dim fixed top-0 right-0 left-[280px] h-16 flex justify-between items-center px-margin-desktop w-auto z-30">
+<div class="flex items-center gap-4 text-on-surface-variant w-1/3">
+<span class="material-symbols-outlined cursor-pointer hover:text-primary transition-colors">search</span>
+<input class="bg-transparent border-none focus:ring-0 font-body-sm text-body-sm w-full placeholder:text-outline-variant text-primary outline-none" placeholder="Buscar..." type="text"/>
+</div>
+<div class="flex items-center gap-6">
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed cursor-pointer hover:text-primary transition-colors">notifications</span>
+<span class="material-symbols-outlined text-primary dark:text-primary-fixed cursor-pointer hover:text-primary transition-colors text-[28px]">account_circle</span>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="md:ml-[280px] pt-24 md:pt-24 px-margin-mobile md:px-margin-desktop pb-margin-desktop max-w-[1600px] mx-auto">
+<!-- Page Header -->
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-primary tracking-tight">Resumen de Gestión</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant mt-2">Buen día. Aquí está el pulso actual del bosque.</p>
+</div>
+<!-- Top Row: KPI Cards (Bento style grid) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-gutter mb-margin-desktop">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding tactile-card border-t-[4px] border-primary relative overflow-hidden group">
+<!-- Subtle texture hint -->
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-primary">eco</span>
+</div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant font-semibold">Solicitudes Nuevas</h3>
+<div class="bg-primary-fixed/30 p-2 rounded-lg text-primary">
+<span class="material-symbols-outlined">inbox</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="font-display-lg text-display-lg text-primary">12</span>
+<span class="font-body-sm text-body-sm text-outline font-medium">+3 hoy</span>
+</div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding tactile-card border-t-[4px] border-secondary relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-secondary">forum</span>
+</div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant font-semibold">En Atención</h3>
+<div class="bg-secondary-fixed/30 p-2 rounded-lg text-secondary">
+<span class="material-symbols-outlined">support_agent</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="font-display-lg text-display-lg text-primary">24</span>
+<span class="font-body-sm text-body-sm text-outline font-medium">Activas</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding tactile-card border-t-[4px] border-tertiary relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-tertiary">receipt_long</span>
+</div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant font-semibold">Cotiz. Enviadas</h3>
+<div class="bg-tertiary-fixed/30 p-2 rounded-lg text-tertiary">
+<span class="material-symbols-outlined">payments</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="font-display-lg text-display-lg text-primary">8</span>
+<span class="font-body-sm text-body-sm text-outline font-medium">Esta semana</span>
+</div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest rounded-xl p-card-padding tactile-card border-t-[4px] border-primary-container relative overflow-hidden group">
+<div class="absolute -right-4 -bottom-4 opacity-[0.03] group-hover:opacity-[0.05] transition-opacity">
+<span class="material-symbols-outlined text-[120px] text-primary-container">event</span>
+</div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<h3 class="font-body-lg text-body-lg text-on-surface-variant font-semibold">Eventos Próximos</h3>
+<div class="bg-primary-fixed-dim/30 p-2 rounded-lg text-primary-container">
+<span class="material-symbols-outlined">calendar_month</span>
+</div>
+</div>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="font-display-lg text-display-lg text-primary">5</span>
+<span class="font-body-sm text-body-sm text-outline font-medium">En 7 días</span>
+</div>
+</div>
+</div>
+<!-- Central Section: 2 Columns -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter mb-margin-desktop">
+<!-- Left Column: Próximos Eventos (Detailed List) -->
+<div class="bg-surface-container-lowest rounded-xl tactile-card flex flex-col h-full overflow-hidden">
+<div class="p-card-padding border-b border-surface-variant bg-surface flex justify-between items-center">
+<h3 class="font-title-md text-title-md text-primary">Próximos Eventos</h3>
+<button class="font-body-sm text-body-sm text-secondary hover:text-primary transition-colors flex items-center gap-1 font-medium">
+                        Ver calendario <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="p-2 flex-grow overflow-y-auto max-h-[400px]">
+<!-- List Item 1 -->
+<div class="flex items-center gap-4 p-4 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="flex flex-col items-center justify-center bg-primary-fixed/40 text-primary w-14 h-14 rounded-lg flex-shrink-0 border border-primary/10">
+<span class="font-label-caps text-label-caps opacity-80 leading-none">OCT</span>
+<span class="font-title-md text-title-md leading-none mt-1">24</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-title-md text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors">Boda Familia Garza</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">park</span> Salón Los Fresnos
+                            </p>
+</div>
+<div class="text-right flex-shrink-0">
+<p class="font-body-sm text-body-sm text-primary font-medium">18:00 hrs</p>
+<span class="inline-block mt-1 bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Confirmado</span>
+</div>
+</div>
+<!-- List Item 2 -->
+<div class="flex items-center gap-4 p-4 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="flex flex-col items-center justify-center bg-tertiary-fixed/40 text-tertiary w-14 h-14 rounded-lg flex-shrink-0 border border-tertiary/10">
+<span class="font-label-caps text-label-caps opacity-80 leading-none">OCT</span>
+<span class="font-title-md text-title-md leading-none mt-1">26</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-title-md text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors">Retiro Corporativo TechCorp</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">deck</span> Zona Cabañas
+                            </p>
+</div>
+<div class="text-right flex-shrink-0">
+<p class="font-body-sm text-body-sm text-primary font-medium">09:00 hrs</p>
+<span class="inline-block mt-1 bg-tertiary-fixed text-tertiary px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Preparativos</span>
+</div>
+</div>
+<!-- List Item 3 -->
+<div class="flex items-center gap-4 p-4 hover:bg-surface-container-low rounded-lg transition-colors cursor-pointer group">
+<div class="flex flex-col items-center justify-center bg-secondary-fixed/40 text-secondary w-14 h-14 rounded-lg flex-shrink-0 border border-secondary/10">
+<span class="font-label-caps text-label-caps opacity-80 leading-none">NOV</span>
+<span class="font-title-md text-title-md leading-none mt-1">02</span>
+</div>
+<div class="flex-grow">
+<h4 class="font-title-md text-body-lg text-on-surface font-semibold group-hover:text-primary transition-colors">Sesión Fotográfica</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant flex items-center gap-1 mt-0.5">
+<span class="material-symbols-outlined text-[14px]">photo_camera</span> Jardín Principal
+                            </p>
+</div>
+<div class="text-right flex-shrink-0">
+<p class="font-body-sm text-body-sm text-primary font-medium">16:30 hrs</p>
+<span class="inline-block mt-1 bg-surface-variant text-on-surface-variant px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider">Tentativo</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Right Column: Solicitudes Recientes (Compact Table) -->
+<div class="bg-surface-container-lowest rounded-xl tactile-card flex flex-col h-full overflow-hidden">
+<div class="p-card-padding border-b border-surface-variant bg-surface flex justify-between items-center">
+<h3 class="font-title-md text-title-md text-primary">Solicitudes Recientes</h3>
+<button class="font-body-sm text-body-sm text-secondary hover:text-primary transition-colors flex items-center gap-1 font-medium">
+                        Ver todas <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+</div>
+<div class="overflow-x-auto">
+<table class="w-full text-left border-collapse">
+<thead>
+<tr class="bg-surface/50 border-b border-surface-variant font-label-caps text-label-caps text-outline">
+<th class="p-4 font-semibold uppercase tracking-wider">Cliente / Asunto</th>
+<th class="p-4 font-semibold uppercase tracking-wider">Canal</th>
+<th class="p-4 font-semibold uppercase tracking-wider">Estado</th>
+</tr>
+</thead>
+<tbody class="font-body-sm text-body-sm text-on-surface">
+<tr class="border-b border-surface-variant/50 hover:bg-surface-container-low transition-colors">
+<td class="p-4">
+<p class="font-semibold text-primary">Mariana Ríos</p>
+<p class="text-on-surface-variant text-[12px] mt-0.5">Información Bodas 2025</p>
+</td>
+<td class="p-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">language</span> Web
+                                    </div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-caps text-label-caps bg-primary-fixed text-primary border border-primary/10">
+                                        Nueva
+                                    </span>
+</td>
+</tr>
+<tr class="border-b border-surface-variant/50 hover:bg-surface-container-low transition-colors">
+<td class="p-4">
+<p class="font-semibold text-primary">Empresa Lórum</p>
+<p class="text-on-surface-variant text-[12px] mt-0.5">Cotización Fin de Año</p>
+</td>
+<td class="p-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">mail</span> Email
+                                    </div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-caps text-label-caps bg-secondary-fixed text-secondary border border-secondary/10">
+                                        En Atención
+                                    </span>
+</td>
+</tr>
+<tr class="border-b border-surface-variant/50 hover:bg-surface-container-low transition-colors">
+<td class="p-4">
+<p class="font-semibold text-primary">Carlos V.</p>
+<p class="text-on-surface-variant text-[12px] mt-0.5">Duda sobre cabañas</p>
+</td>
+<td class="p-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">chat</span> WhatsApp
+                                    </div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-caps text-label-caps bg-tertiary-fixed text-tertiary border border-tertiary/10">
+                                        Enviada
+                                    </span>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-low transition-colors">
+<td class="p-4">
+<p class="font-semibold text-primary">Familia Soto</p>
+<p class="text-on-surface-variant text-[12px] mt-0.5">Visita de reconocimiento</p>
+</td>
+<td class="p-4 text-on-surface-variant">
+<div class="flex items-center gap-1.5">
+<span class="material-symbols-outlined text-[16px]">call</span> Teléfono
+                                    </div>
+</td>
+<td class="p-4">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full font-label-caps text-label-caps bg-surface-variant text-on-surface-variant border border-outline-variant">
+                                        Cerrada
+                                    </span>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Bottom Section: Acciones Rápidas -->
+<div class="bg-surface-container p-card-padding rounded-xl border border-surface-variant border-dashed">
+<h3 class="font-title-md text-title-md text-primary mb-4">Acciones Rápidas</h3>
+<div class="flex flex-wrap gap-4">
+<button class="flex items-center gap-2 bg-primary text-white font-title-md text-body-lg px-6 py-3 rounded-lg tactile-card hover:bg-primary-container transition-colors focus:ring-4 focus:ring-primary-fixed outline-none">
+<span class="material-symbols-outlined">add_circle</span>
+                    Nueva Solicitud
+                </button>
+<button class="flex items-center gap-2 bg-transparent text-secondary border-2 border-secondary font-title-md text-body-lg px-6 py-3 rounded-lg hover:bg-secondary/5 transition-colors focus:ring-4 focus:ring-secondary-fixed outline-none">
+<span class="material-symbols-outlined">description</span>
+                    Nueva Cotización
+                </button>
+<button class="flex items-center gap-2 text-primary font-title-md text-body-lg px-6 py-3 rounded-lg hover:bg-primary/5 hover:underline decoration-tertiary-fixed decoration-2 underline-offset-4 transition-all outline-none">
+<span class="material-symbols-outlined">today</span>
+                    Ver Agenda
+                </button>
+</div>
+</div>
+</main>
+</body></html>

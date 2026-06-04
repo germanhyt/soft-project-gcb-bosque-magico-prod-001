@@ -1,0 +1,23 @@
+{
+  "name": "proyecto-bosque-magio",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev:api": "npm run start:dev -w @bosque/api",
+    "dev:landing": "npm run dev -w @bosque/landing",
+    "dev:panel": "npm run dev -w @bosque/panel",
+    "build": "npm run build --workspaces --if-present",
+    "lint": "npm run lint --workspaces --if-present",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md,css}\"",
+    "db:up": "docker compose up -d --wait",
+    "db:down": "docker compose down",
+    "db:migrate": "npm run prisma:migrate -w @bosque/api",
+    "db:seed": "npm run prisma:seed -w @bosque/api",
+    "db:seed:demo": "npm run prisma:seed:demo -w @bosque/api"
+  },
+  "devDependencies": {
+    "prettier": "^3.4.2"
+  }
+}

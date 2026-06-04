@@ -1,0 +1,52 @@
+name: Deploy Sandbox VPS
+
+on:
+  push:
+    branches: [sandbox]
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-sandbox
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    name: Build and deploy to VPS sandbox
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          port: ${{ secrets.VPS_PORT }}
+          script: |
+            set -e
+            cd "${{ secrets.SANDBOX_REPO_PATH }}"
+            git fetch --all
+            git checkout sandbox
+            git pull origin sandbox
+
+            npm ci
+            npm run build --workspace=@bosque/api
+            npm run build --workspace=@bosque/panel
+            npm run build --workspace=@bosque/landing
+
+            if pm2 describe sandbox-api-bosque >/dev/null 2>&1; then
+              pm2 restart sandbox-api-bosque
+            else
+              echo "PM2 app sandbox-api-bosque not found. Create it once in VPS."
+            fi
+
+            if pm2 describe sandbox-panel-bosque >/dev/null 2>&1; then
+              pm2 restart sandbox-panel-bosque
+            else
+              echo "PM2 app sandbox-panel-bosque not found. Create it once in VPS."
+            fi
+
+            if pm2 describe sandbox-landing-bosque >/dev/null 2>&1; then
+              pm2 restart sandbox-landing-bosque
+            else
+              echo "PM2 app sandbox-landing-bosque not found. Create it once in VPS."
+            fi

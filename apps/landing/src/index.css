@@ -1,0 +1,169 @@
+@import 'tailwindcss';
+
+/* Bosque Mágico Landing — mockups/bosque_m_gico_design_system/DESIGN.md */
+@theme {
+  --color-primary: #17350e;
+  --color-on-primary: #ffffff;
+  --color-primary-container: #2d4c22;
+  --color-on-primary-container: #98bc87;
+  --color-primary-fixed: #c7edb4;
+  --color-primary-fixed-dim: #acd19a;
+
+  --color-secondary: #735c00;
+  --color-on-secondary: #ffffff;
+  --color-secondary-container: #fed65b;
+  --color-on-secondary-container: #745c00;
+
+  --color-tertiary: #3e2c00;
+  --color-tertiary-fixed: #ffe088;
+  --color-tertiary-fixed-dim: #fbbc00;
+  --color-on-tertiary-fixed: #042100;
+
+  --color-surface: #fcf9f2;
+  --color-surface-container-low: #f6f3ec;
+  --color-surface-container: #f0eee7;
+  --color-surface-container-lowest: #ffffff;
+  --color-surface-variant: #e5e2db;
+
+  --color-background: #fcf9f2;
+  --color-on-background: #1c1c18;
+  --color-on-surface: #1c1c18;
+  --color-on-surface-variant: #43483f;
+  --color-outline: #73796e;
+  --color-outline-variant: #c3c8bc;
+
+  --color-error: #ba1a1a;
+
+  --font-display: 'Fredoka', 'Nunito Sans', system-ui, sans-serif;
+  --font-body: 'Nunito Sans', 'Nunito', system-ui, sans-serif;
+
+  --text-display-lg: 3rem;
+  --text-display-lg--line-height: 3.5rem;
+  --text-display-lg--letter-spacing: -0.02em;
+  --text-display-lg--font-weight: 700;
+
+  --text-headline-lg: 2rem;
+  --text-headline-lg--line-height: 2.5rem;
+  --text-headline-lg--font-weight: 700;
+
+  --text-headline-md: 1.5rem;
+  --text-headline-md--line-height: 2rem;
+  --text-headline-md--font-weight: 600;
+
+  --text-body-lg: 1.125rem;
+  --text-body-lg--line-height: 1.75rem;
+
+  --text-body-md: 1rem;
+  --text-body-md--line-height: 1.5rem;
+
+  --text-label-md: 0.875rem;
+  --text-label-md--line-height: 1.25rem;
+  --text-label-md--font-weight: 700;
+
+  --text-price-tag: 1.25rem;
+  --text-price-tag--line-height: 1.5rem;
+  --text-price-tag--font-weight: 700;
+
+  --width-container: 1200px;
+}
+
+@utility font-display {
+  font-family: var(--font-display);
+}
+
+@utility text-display-lg {
+  font-family: var(--font-display);
+  font-size: var(--text-display-lg);
+  line-height: var(--text-display-lg--line-height);
+  letter-spacing: var(--text-display-lg--letter-spacing);
+  font-weight: var(--text-display-lg--font-weight);
+}
+
+@utility text-headline-lg {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-lg);
+  line-height: var(--text-headline-lg--line-height);
+  font-weight: var(--text-headline-lg--font-weight);
+}
+
+@utility text-headline-md {
+  font-family: var(--font-display);
+  font-size: var(--text-headline-md);
+  line-height: var(--text-headline-md--line-height);
+  font-weight: var(--text-headline-md--font-weight);
+}
+
+@utility text-body-lg {
+  font-size: var(--text-body-lg);
+  line-height: var(--text-body-lg--line-height);
+}
+
+@utility text-price-tag {
+  font-family: var(--font-display);
+  font-size: var(--text-price-tag);
+  line-height: var(--text-price-tag--line-height);
+  font-weight: var(--text-price-tag--font-weight);
+}
+
+@utility shadow-ambient {
+  box-shadow: 0 8px 20px -4px rgba(27, 48, 20, 0.08);
+}
+
+@utility tactile-card {
+  box-shadow:
+    0 12px 32px -14px rgba(27, 48, 20, 0.16),
+    0 1px 0 rgba(255, 255, 255, 0.85) inset;
+  transition:
+    transform 0.24s ease,
+    box-shadow 0.24s ease,
+    border-color 0.24s ease;
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: color-mix(in srgb, var(--color-primary-container) 24%, transparent);
+    box-shadow: 0 20px 44px -18px rgba(27, 48, 20, 0.22);
+  }
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font-body);
+  line-height: 1.5;
+  background: var(--color-background);
+  color: var(--color-on-background);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+main > section + section {
+  position: relative;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-tertiary-fixed) 56%, white);
+  color: var(--color-tertiary);
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-display);
+  letter-spacing: -0.012em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

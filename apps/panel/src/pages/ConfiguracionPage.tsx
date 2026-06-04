@@ -1,0 +1,692 @@
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import Swal from 'sweetalert2';
+import {
+  actualizarProducto,
+  crearProducto,
+  fetchConfiguracionPanel,
+  fetchProductosCatalogo,
+  guardarConfiguracion,
+  eliminarImagenProducto,
+  subirImagenProducto,
+  type ConfigItem,
+  type SelectionMode,
+  type TurnoConfigValor,
+} from '../lib/configuracion';
+import { horarioDesdeRango, parseTurnoConfig, turnoParaGuardar } from '../lib/turno-config';
+import type { Producto } from '../lib/cotizaciones';
+import { CatalogoProductoRowActions } from '../components/catalogo/CatalogoProductoRowActions';
+import { ProductoFormModal } from '../components/catalogo/ProductoFormModal';
+import { ProductImageDropzone } from '../components/catalogo/ProductImageDropzone';
+import { useAuth } from '../contexts/AuthContext';
+import { PageHeader } from '../components/ui/PageHeader';
+import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
+import { Button } from '../components/ui/Button';
+import { DataTableCard } from '../components/ui/DataTableCard';
+import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
+import {
+  CARD_CLASS,
+  INPUT_CLASS,
+  TABLE_HEAD_CLASS,
+  TABLE_ROW_CLASS,
+} from '../constants/design';
+
+type Tab = 'tarifas' | 'catalogo';
+type CategoriaFiltro = 'todas' | 'paquete' | 'show' | 'catering' | 'extra' | 'espacio';
+
+const LABELS: Record<string, string> = {
+  'tarifas.base_lunes_viernes': 'Base lunes–viernes (S/)',
+  'tarifas.base_fin_semana': 'Base fin de semana (S/)',
+  'tarifas.precio_nino_extra': 'Precio niño extra 26–35 (S/)',
+  'ninos.minimo': 'Mínimo de niños',
+  'ninos.maximo_base': 'Capacidad base (sin extra)',
+  'ninos.maximo_permitido': 'Máximo permitido',
+  'contrato.adelanto_referencial': 'Adelanto referencial (S/)',
+  'contrato.garantia_referencial': 'Garantía referencial (S/)',
+  'catering.minimo_unidades': 'Mínimo catering (unidades)',
+};
+
+const TURNO_KEY_LABEL: Record<string, string> = {
+  'turnos.turno_1': 'Turno 1',
+  'turnos.turno_2': 'Turno 2',
+  'turnos.turno_3': 'Turno 3',
+};
+
+const COTIZADOR_MODE_LABEL: Record<string, string> = {
+  'cotizador.shows.selection_mode': 'Shows (landing)',
+  'cotizador.catering.selection_mode': 'Catering (landing)',
+  'cotizador.extras.selection_mode': 'Extras (landing)',
+};
+
+const SMTP_LABELS: Record<string, string> = {
+  'smtp.host': 'Servidor SMTP (host)',
+  'smtp.port': 'Puerto SMTP',
+  'smtp.user': 'Usuario SMTP',
+  'smtp.password': 'Contraseña SMTP',
+  'smtp.from_email': 'Correo remitente',
+  'smtp.from_name': 'Nombre remitente',
+  'smtp.secure': 'Conexión segura (TLS/SSL)',
+};
+
+const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
+  todas: 'Todas',
+  paquete: 'Paquetes',
+  show: 'Shows',
+  catering: 'Catering',
+  extra: 'Extras',
+  espacio: 'Espacios',
+};
+
+function configLabel(item: ConfigItem) {
+  const titulo = LABELS[item.clave] ?? item.clave;
+  const ayuda = item.descripcion?.trim();
+  const redundante =
+    ayuda &&
+    (ayuda.toLowerCase() === titulo.toLowerCase() ||
+      titulo.toLowerCase().includes(ayuda.toLowerCase().slice(0, 12)));
+  return { titulo, ayuda: redundante ? undefined : ayuda };
+}
+
+function tienePermiso(permisos: string[] | undefined, clave: string) {
+  return permisos?.includes(clave) ?? false;
+}
+
+export function ConfiguracionPage() {
+  const { user, authRequired } = useAuth();
+  const permisos = user?.permisos;
+  const puedeEditarTarifas =
+    !authRequired || tienePermiso(permisos, 'bosque_magico:admin');
+  const puedeGestionarCatalogo =
+    !authRequired ||
+    tienePermiso(permisos, 'bosque_magico:admin') ||
+    tienePermiso(permisos, 'bosque_magico:manage');
+  const [tab, setTab] = useState<Tab>(puedeEditarTarifas ? 'tarifas' : 'catalogo');
+  const [valores, setValores] = useState<Record<string, string>>({});
+  const [turnos, setTurnos] = useState<Record<string, TurnoConfigValor>>({});
+  const [cotizadorModos, setCotizadorModos] = useState<Record<string, SelectionMode>>({});
+  const [smtpValores, setSmtpValores] = useState<Record<string, string>>({});
+  const [showInactivos, setShowInactivos] = useState(true);
+  const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
+  const [productoModalOpen, setProductoModalOpen] = useState(false);
+  const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
+  const qc = useQueryClient();
+
+  const { data: config, isLoading: loadingConfig } = useQuery({
+    queryKey: ['config-panel'],
+    queryFn: fetchConfiguracionPanel,
+  });
+
+  const { data: productos = [], isLoading: loadingProd } = useQuery({
+    queryKey: ['productos-catalogo', showInactivos],
+    queryFn: () => fetchProductosCatalogo(showInactivos ? undefined : false),
+  });
+
+  const valoresIniciales = useMemo(() => {
+    const map: Record<string, string> = {};
+    config?.numericas.forEach((c) => {
+      map[c.clave] = String(c.valor);
+    });
+    return map;
+  }, [config]);
+
+  const turnosIniciales = useMemo(() => {
+    const map: Record<string, TurnoConfigValor> = {};
+    config?.turnos?.forEach((t) => {
+      map[t.clave] = parseTurnoConfig(t.clave, t.valor);
+    });
+    return map;
+  }, [config]);
+
+  const cotizadorModosIniciales = useMemo(() => {
+    const map: Record<string, SelectionMode> = {};
+    config?.cotizador?.forEach((item) => {
+      const v = item.valor;
+      map[item.clave] = v === 'multiple' ? 'multiple' : 'single';
+    });
+    return map;
+  }, [config]);
+
+  const smtpIniciales = useMemo(() => {
+    const map: Record<string, string> = {};
+    config?.smtp?.forEach((item) => {
+      if (typeof item.valor === 'boolean') {
+        map[item.clave] = item.valor ? 'true' : 'false';
+        return;
+      }
+      map[item.clave] = String(item.valor ?? '');
+    });
+    return map;
+  }, [config]);
+
+  const valoresActuales = Object.keys(valores).length ? valores : valoresIniciales;
+  const turnosActuales = Object.keys(turnos).length ? turnos : turnosIniciales;
+  const cotizadorModosActuales = Object.keys(cotizadorModos).length
+    ? cotizadorModos
+    : cotizadorModosIniciales;
+  const smtpActuales = Object.keys(smtpValores).length ? smtpValores : smtpIniciales;
+
+  const hayCambios =
+    JSON.stringify(valoresActuales) !== JSON.stringify(valoresIniciales) ||
+    JSON.stringify(turnosActuales) !== JSON.stringify(turnosIniciales) ||
+    JSON.stringify(cotizadorModosActuales) !== JSON.stringify(cotizadorModosIniciales) ||
+    JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales);
+
+  const productosFiltrados = useMemo(() => {
+    if (categoriaFiltro === 'todas') return productos;
+    return productos.filter((p) => p.categoria === categoriaFiltro);
+  }, [productos, categoriaFiltro]);
+
+  const guardarConfigMut = useMutation({
+    mutationFn: () => {
+      const actualizaciones = [
+        ...Object.entries(valoresActuales).map(([clave, v]) => ({
+          clave,
+          valor: Number(v),
+        })),
+        ...Object.entries(turnosActuales).map(([clave, v]) => ({
+          clave,
+          valor: turnoParaGuardar(v),
+        })),
+        ...Object.entries(cotizadorModosActuales).map(([clave, v]) => ({
+          clave,
+          valor: v,
+        })),
+        ...Object.entries(smtpActuales).map(([clave, v]) => ({
+          clave,
+          valor: clave === 'smtp.secure' ? v === 'true' : clave === 'smtp.port' ? Number(v) : v,
+        })),
+      ];
+      return guardarConfiguracion(actualizaciones);
+    },
+    onSuccess: async () => {
+      setValores({});
+      setTurnos({});
+      setCotizadorModos({});
+      setSmtpValores({});
+      await qc.invalidateQueries({ queryKey: ['config-panel'] });
+      await qc.invalidateQueries({ queryKey: ['configuracion-publica'] });
+      await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Configuración guardada',
+        timer: 1500,
+        showConfirmButton: false,
+      });
+    },
+  });
+
+  const toggleProductoMut = useMutation({
+    mutationFn: (p: Producto) =>
+      actualizarProducto(p.id, {
+        etapa: p.etapa === 'activo' ? 'inactivo' : 'activo',
+      }),
+    onSuccess: () => qc.invalidateQueries({ queryKey: ['productos-catalogo'] }),
+  });
+
+  const invalidarCatalogo = async () => {
+    await qc.invalidateQueries({ queryKey: ['productos-catalogo'] });
+    await qc.invalidateQueries({ queryKey: ['productos'] });
+    await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
+  };
+
+  const imagenMut = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => subirImagenProducto(id, file),
+    onSuccess: invalidarCatalogo,
+  });
+
+  const quitarImagenMut = useMutation({
+    mutationFn: (id: string) => eliminarImagenProducto(id),
+    onSuccess: invalidarCatalogo,
+  });
+
+  const crearProdMut = useMutation({
+    mutationFn: crearProducto,
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['productos-catalogo'] });
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
+      await Swal.fire({ icon: 'success', title: 'Producto creado', timer: 1500, showConfirmButton: false });
+    },
+  });
+
+  const editarProdMut = useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Parameters<typeof actualizarProducto>[1] }) =>
+      actualizarProducto(id, payload),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['productos-catalogo'] });
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
+      await Swal.fire({ icon: 'success', title: 'Producto actualizado', timer: 1500, showConfirmButton: false });
+    },
+  });
+
+  const abrirNuevoProducto = () => {
+    setProductoEditando(null);
+    setProductoModalOpen(true);
+  };
+
+  const abrirEditarProducto = (p: Producto) => {
+    setProductoEditando(p);
+    setProductoModalOpen(true);
+  };
+
+  return (
+    <div className="relative w-full pb-28">
+      <PageHeader breadcrumbs={[CRUMB_INICIO, crumb('Configuración')]} />
+
+      <div className="mt-6 flex gap-2 border-b border-surface-variant">
+        {puedeEditarTarifas && (
+          <button
+            type="button"
+            onClick={() => setTab('tarifas')}
+            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
+              tab === 'tarifas'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-outline hover:text-on-surface'
+            }`}
+          >
+            Tarifas y turnos
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => setTab('catalogo')}
+          className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
+            tab === 'catalogo'
+              ? 'border-primary text-primary'
+              : 'border-transparent text-outline hover:text-on-surface'
+          }`}
+        >
+          Catálogo
+        </button>
+      </div>
+
+      {tab === 'tarifas' && puedeEditarTarifas && (
+        <div className="mt-6 w-full">
+          {loadingConfig && <p className="text-outline">Cargando…</p>}
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              guardarConfigMut.mutate();
+            }}
+            className="w-full space-y-8"
+          >
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Tarifas y límites</h3>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {config?.numericas.map((item: ConfigItem) => {
+                  const { titulo, ayuda } = configLabel(item);
+                  return (
+                    <label key={item.clave} className="block">
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {ayuda && <span className="block text-body-sm text-outline">{ayuda}</span>}
+                      <input
+                        type="number"
+                        step="0.01"
+                        className={`mt-1 w-full ${INPUT_CLASS}`}
+                        value={valoresActuales[item.clave] ?? ''}
+                        onChange={(e) =>
+                          setValores((prev) => ({
+                            ...Object.keys(prev).length ? prev : valoresIniciales,
+                            [item.clave]: e.target.value,
+                          }))
+                        }
+                      />
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Cotizador landing</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Modo de selección por sección (paquete siempre es uno solo). Single = una opción; multiple =
+                varias.
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                {(config?.cotizador ?? []).map((item) => (
+                  <label key={item.clave} className="block">
+                    <span className="text-body-sm font-medium text-on-surface">
+                      {COTIZADOR_MODE_LABEL[item.clave] ?? item.clave}
+                    </span>
+                    {item.descripcion && (
+                      <span className="block text-body-sm text-outline">{item.descripcion}</span>
+                    )}
+                    <select
+                      className={`mt-1 w-full ${INPUT_CLASS}`}
+                      value={cotizadorModosActuales[item.clave] ?? 'single'}
+                      onChange={(e) =>
+                        setCotizadorModos((prev) => ({
+                          ...Object.keys(prev).length ? prev : cotizadorModosIniciales,
+                          [item.clave]: e.target.value as SelectionMode,
+                        }))
+                      }
+                    >
+                      <option value="single">Una opción (single)</option>
+                      <option value="multiple">Varias opciones (multiple)</option>
+                    </select>
+                  </label>
+                ))}
+              </div>
+              {!config?.cotizador?.length && (
+                <p className="mt-4 text-body-sm text-outline">
+                  Ejecuta el seed de la API para crear las claves del cotizador (`cotizador.*.selection_mode`).
+                </p>
+              )}
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Turnos del día</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Nombre del turno y rango horario (inicio–fin). Se guarda también como texto para la landing.
+              </p>
+              <div className="mt-6 grid gap-6 lg:grid-cols-3">
+                {(config?.turnos ?? []).map((item) => {
+                  const t = turnosActuales[item.clave] ?? parseTurnoConfig(item.clave, item.valor);
+                  return (
+                    <div
+                      key={item.clave}
+                      className="rounded-xl border border-surface-variant/80 bg-surface-container-low/50 p-4"
+                    >
+                      <p className="font-semibold text-secondary">
+                        {TURNO_KEY_LABEL[item.clave] ?? item.clave}
+                      </p>
+                      <label className="mt-3 block">
+                        <span className="text-label-caps text-outline">Nombre</span>
+                        <input
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={t.etiqueta}
+                          onChange={(e) =>
+                            setTurnos((prev) => ({
+                              ...Object.keys(prev).length ? prev : turnosIniciales,
+                              [item.clave]: { ...t, etiqueta: e.target.value },
+                            }))
+                          }
+                        />
+                      </label>
+                      <div className="mt-3 grid grid-cols-2 gap-3">
+                        <label className="block">
+                          <span className="text-label-caps text-outline">Hora inicio</span>
+                          <input
+                            type="time"
+                            className={`mt-1 w-full ${INPUT_CLASS}`}
+                            value={t.horaInicio}
+                            onChange={(e) =>
+                              setTurnos((prev) => ({
+                                ...Object.keys(prev).length ? prev : turnosIniciales,
+                                [item.clave]: { ...t, horaInicio: e.target.value },
+                              }))
+                            }
+                          />
+                        </label>
+                        <label className="block">
+                          <span className="text-label-caps text-outline">Hora fin</span>
+                          <input
+                            type="time"
+                            className={`mt-1 w-full ${INPUT_CLASS}`}
+                            value={t.horaFin}
+                            onChange={(e) =>
+                              setTurnos((prev) => ({
+                                ...Object.keys(prev).length ? prev : turnosIniciales,
+                                [item.clave]: { ...t, horaFin: e.target.value },
+                              }))
+                            }
+                          />
+                        </label>
+                      </div>
+                      <p className="mt-2 text-xs text-outline">
+                        Vista previa: {horarioDesdeRango(t.horaInicio, t.horaFin)}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Correo SMTP</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Configuración para habilitar el envío por correo desde el sistema.
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                {(config?.smtp ?? []).map((item) => {
+                  const value = smtpActuales[item.clave] ?? '';
+                  const titulo = SMTP_LABELS[item.clave] ?? item.clave;
+                  const isPassword = item.clave === 'smtp.password';
+                  const isSecure = item.clave === 'smtp.secure';
+                  const isPort = item.clave === 'smtp.port';
+                  return (
+                    <label key={item.clave} className="block">
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="block text-body-sm text-outline">{item.descripcion}</span>
+                      )}
+                      {isSecure ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'false'}
+                          onChange={(e) =>
+                            setSmtpValores((prev) => ({
+                              ...Object.keys(prev).length ? prev : smtpIniciales,
+                              [item.clave]: e.target.value,
+                            }))
+                          }
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : (
+                        <input
+                          type={isPort ? 'number' : isPassword ? 'password' : 'text'}
+                          step={isPort ? '1' : undefined}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) =>
+                            setSmtpValores((prev) => ({
+                              ...Object.keys(prev).length ? prev : smtpIniciales,
+                              [item.clave]: e.target.value,
+                            }))
+                          }
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+          </form>
+
+          {puedeEditarTarifas && (
+            <FloatingSaveBar
+              disabled={!hayCambios}
+              saving={guardarConfigMut.isPending}
+              onSave={() => guardarConfigMut.mutate()}
+            />
+          )}
+        </div>
+      )}
+
+      {tab === 'catalogo' && (
+        <div className="mt-6 w-full">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <label className="flex items-center gap-2 text-body-sm text-on-surface">
+              <input
+                type="checkbox"
+                checked={showInactivos}
+                onChange={(e) => setShowInactivos(e.target.checked)}
+              />
+              Mostrar inactivos
+            </label>
+            {puedeGestionarCatalogo && (
+              <Button onClick={abrirNuevoProducto}>+ Nuevo producto</Button>
+            )}
+          </div>
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            {(Object.keys(CATEGORIA_LABEL) as CategoriaFiltro[]).map((categoria) => {
+              const active = categoriaFiltro === categoria;
+              const count =
+                categoria === 'todas'
+                  ? productos.length
+                  : productos.filter((p) => p.categoria === categoria).length;
+              return (
+                <button
+                  key={categoria}
+                  type="button"
+                  onClick={() => setCategoriaFiltro(categoria)}
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
+                    active
+                      ? 'border-primary bg-primary text-on-primary'
+                      : 'border-surface-variant bg-surface text-on-surface-variant hover:border-outline'
+                  }`}
+                >
+                  {CATEGORIA_LABEL[categoria]} ({count})
+                </button>
+              );
+            })}
+          </div>
+
+          {!puedeGestionarCatalogo && (
+            <p className="mb-4 text-body-sm text-outline">
+              Solo usuarios con permiso <strong>Gestionar</strong> o <strong>Administrar</strong> pueden
+              editar el catálogo.
+            </p>
+          )}
+
+          <ProductoFormModal
+            open={productoModalOpen}
+            onClose={() => {
+              setProductoModalOpen(false);
+              setProductoEditando(null);
+            }}
+            producto={productoEditando}
+            puedeGestionarImagen={puedeGestionarCatalogo}
+            onUploadImagen={
+              productoEditando
+                ? async (file) => {
+                    const actualizado = await imagenMut.mutateAsync({
+                      id: productoEditando.id,
+                      file,
+                    });
+                    setProductoEditando(actualizado);
+                  }
+                : undefined
+            }
+            onQuitarImagen={
+              productoEditando
+                ? async () => {
+                    const actualizado = await quitarImagenMut.mutateAsync(productoEditando.id);
+                    setProductoEditando(actualizado);
+                  }
+                : undefined
+            }
+            onSubmit={async (payload) => {
+              if (productoEditando) {
+                await editarProdMut.mutateAsync({
+                  id: productoEditando.id,
+                  payload: {
+                    nombre: payload.nombre,
+                    categoria: payload.categoria,
+                    precioLunesViernes: payload.precioLunesViernes,
+                    precioFinSemana: payload.precioFinSemana,
+                    cantidadMinima: payload.cantidadMinima,
+                    descripcion: payload.descripcion,
+                  },
+                });
+              } else {
+                await crearProdMut.mutateAsync(payload);
+              }
+            }}
+          />
+
+          <DataTableCard>
+            <table className="w-full text-left text-body-sm">
+              <thead className={TABLE_HEAD_CLASS}>
+                <tr>
+                  <th className="px-4 py-3">Producto</th>
+                  <th className="px-4 py-3">Imagen</th>
+                  <th className="px-4 py-3">Categoría</th>
+                  <th className="px-4 py-3">L-V / FDS</th>
+                  <th className="px-4 py-3">Estado</th>
+                  <th className="px-4 py-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loadingProd ? (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center">
+                      Cargando…
+                    </td>
+                  </tr>
+                ) : (
+                  productosFiltrados.map((p) => (
+                    <tr key={p.id} className={TABLE_ROW_CLASS}>
+                      <td className="px-4 py-3">
+                        <p className="font-medium">{p.nombre}</p>
+                        <p className="font-mono text-xs text-outline">{p.codigo}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <ProductImageDropzone
+                          imagenUrl={p.imagenUrl}
+                          disabled={
+                            !puedeGestionarCatalogo ||
+                            imagenMut.isPending ||
+                            quitarImagenMut.isPending
+                          }
+                          onUpload={async (file) => {
+                            await imagenMut.mutateAsync({ id: p.id, file });
+                          }}
+                          onRemove={
+                            p.imagenUrl && puedeGestionarCatalogo
+                              ? async () => {
+                                  await quitarImagenMut.mutateAsync(p.id);
+                                }
+                              : undefined
+                          }
+                        />
+                      </td>
+                      <td className="px-4 py-3 capitalize">
+                        {CATEGORIA_LABEL[p.categoria as CategoriaFiltro] ?? p.categoria}
+                      </td>
+                      <td className="px-4 py-3">
+                        S/ {p.precioLunesViernes} · S/ {p.precioFinSemana}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
+                            p.etapa === 'activo'
+                              ? 'bg-primary-fixed/50 text-primary'
+                              : 'bg-surface-variant text-outline'
+                          }`}
+                        >
+                          {p.etapa === 'activo' ? 'Activo' : 'Inactivo'}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex justify-end">
+                          <CatalogoProductoRowActions
+                            producto={p}
+                            puedeGestionar={puedeGestionarCatalogo}
+                            onEditar={abrirEditarProducto}
+                            onToggleEstado={(prod) => toggleProductoMut.mutate(prod)}
+                          />
+                        </div>
+                      </td>
+                    </tr>
+                  ))
+                )}
+                {!loadingProd && productosFiltrados.length === 0 && (
+                  <tr>
+                    <td colSpan={6} className="px-4 py-8 text-center text-outline">
+                      No hay productos para el filtro seleccionado.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </DataTableCard>
+        </div>
+      )}
+    </div>
+  );
+}
