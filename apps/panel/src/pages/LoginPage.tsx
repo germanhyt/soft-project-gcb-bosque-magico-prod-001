@@ -42,63 +42,19 @@ export function LoginPage() {
   return (
     <div className="relative flex min-h-screen">
       <div
-        className="relative hidden flex-1 overflow-hidden bg-[#0D2F4E] p-10 text-white lg:flex"
+        className="relative hidden flex-1 overflow-hidden bg-primary p-10 text-white lg:flex"
         aria-hidden
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.16),transparent_48%)]" />
-        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(130deg,rgba(255,255,255,0.06),transparent_55%)]" />
-        <div className="relative flex w-full flex-col">
-          <div className="flex items-center gap-4">
-            <img
-              src="/logo-bm.png"
-              alt=""
-              className="h-12 w-12 rounded-xl border border-white/25 bg-white/10 p-1"
-            />
-            <div>
-              <p className="text-label-caps text-white/80">Bosque Mágico</p>
-              <p className="text-title-lg font-semibold tracking-tight">Panel comercial</p>
-            </div>
-          </div>
-
-          <div className="mt-14 max-w-xl">
-            <h2 className="text-display-md leading-tight text-white">
-              Control operativo para ventas y eventos en un solo flujo.
-            </h2>
-            <p className="mt-4 text-body-md text-white/80">
-              Gestiona solicitudes, cotizaciones y agenda con visibilidad clara para todo el equipo.
-            </p>
-          </div>
-
-          <div className="mt-10 grid max-w-2xl grid-cols-3 gap-3">
-            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Pipeline</p>
-              <p className="mt-1 text-title-md font-semibold">Solicitudes</p>
-            </div>
-            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Conversión</p>
-              <p className="mt-1 text-title-md font-semibold">Cotizaciones</p>
-            </div>
-            <div className="rounded-xl border border-white/20 bg-white/10 px-4 py-3 backdrop-blur-sm">
-              <p className="text-xs uppercase tracking-wide text-white/70">Operación</p>
-              <p className="mt-1 text-title-md font-semibold">Agenda</p>
-            </div>
-          </div>
-
-          <div className="mt-10 space-y-3 text-body-sm text-white/85">
-            <p className="flex items-center gap-2">
-              <Icon name="check_circle" size={18} />
-              Seguimiento centralizado por estado y prioridad.
-            </p>
-            <p className="flex items-center gap-2">
-              <Icon name="check_circle" size={18} />
-              Historial comercial por cliente y oportunidad.
-            </p>
-            <p className="flex items-center gap-2">
-              <Icon name="check_circle" size={18} />
-              Coordinación entre ventas y operación en tiempo real.
-            </p>
-          </div>
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,rgba(255,255,255,0.18),transparent_52%)]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_bottom_left,rgba(255,255,255,0.12),transparent_48%)]" />
+        <div className="pointer-events-none absolute -right-10 -top-10 h-56 w-56 rounded-full border border-white/20" />
+        <div className="pointer-events-none absolute -left-14 bottom-20 h-44 w-44 rounded-full border border-primary-fixed/35" />
+        <div className="relative flex w-full items-center justify-center">
+          <img src="/logo-bm.png" alt="" className="h-100 w-100 opacity-95 drop-shadow-[0_12px_28px_rgba(0,0,0,0.25)]" />
         </div>
+        <p className="absolute bottom-8 left-10 text-[1.5rem] font-medium tracking-wide text-white/85">
+          Sistema Bosque Mágico
+        </p>
       </div>
 
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-12">
