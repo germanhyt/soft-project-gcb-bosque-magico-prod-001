@@ -41,6 +41,8 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.panel
+      args:
+        VITE_API_URL: https://sandbox-api-bosque.gcbprojects.site/api
     container_name: sandbox-panel-bosque
     restart: unless-stopped
     depends_on:
@@ -52,6 +54,8 @@ services:
     build:
       context: .
       dockerfile: deploy/Dockerfile.landing
+      args:
+        VITE_API_URL: https://sandbox-api-bosque.gcbprojects.site/api
     container_name: sandbox-landing-bosque
     restart: unless-stopped
     depends_on:
