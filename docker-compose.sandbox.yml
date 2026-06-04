@@ -1,0 +1,64 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: sandbox-postgres-bosque
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: bosque_magico
+    volumes:
+      - sandbox_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bosque_magico"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "5433:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: sandbox-api-bosque
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bosque_magico?schema=public
+      JWT_SECRET: sandbox-secret-change-me
+      CORS_ORIGIN: http://sandbox-landing-bosque.gcbprojects.site,http://sandbox-panel-bosque.gcbprojects.site
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3001:3000"
+    volumes:
+      - sandbox_api_uploads:/app/apps/api/uploads
+
+  panel:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.panel
+    container_name: sandbox-panel-bosque
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "4173:80"
+
+  landing:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.landing
+    container_name: sandbox-landing-bosque
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "4174:80"
+
+volumes:
+  sandbox_pg_data:
+  sandbox_api_uploads:
