@@ -1,9 +1,10 @@
 import type { Solicitud, TurnoInteres } from './api';
+import type { EtapaCotizacion } from './cotizaciones';
 
 export type CotizacionResumen = {
   id: string;
   codigo: string;
-  etapa: string;
+  etapa: EtapaCotizacion;
 };
 
 /** Cotización más reciente vinculada a la solicitud (p. ej. borrador desde landing). */
