@@ -41,7 +41,7 @@ export function SolicitudPreferenciasLanding({ solicitud }: Props) {
               className="flex items-center justify-between gap-3 px-3 py-2.5 text-body-sm"
             >
               <span className="text-on-surface">{item.nombre}</span>
-              <span className="shrink-0 rounded-full bg-secondary-fixed px-2.5 py-0.5 text-xs font-semibold text-on-secondary-fixed">
+              <span className="shrink-0 rounded-full bg-surface-container-high px-2.5 py-0.5 text-xs font-semibold text-on-surface-variant">
                 ×{item.cantidad}
               </span>
             </li>
