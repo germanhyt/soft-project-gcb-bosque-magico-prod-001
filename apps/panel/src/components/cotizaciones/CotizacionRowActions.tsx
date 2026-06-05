@@ -1,4 +1,6 @@
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
+import Swal from 'sweetalert2';
 import { linkPublicoCompleto } from '../../lib/cotizaciones';
 import type { Cotizacion } from '../../lib/cotizaciones';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
@@ -8,7 +10,7 @@ import {
   confirmarAceptacionCotizacion,
   useAceptarCotizacionMutation,
 } from './AceptarCotizacionAction';
-import { useEnviarCotizacionMutation } from './EnviarCotizacionActions';
+import { enviarWhatsAppRapido } from './EnviarCotizacionActions';
 
 type Props = {
   cotizacion: Cotizacion;
@@ -21,7 +23,13 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const linkPublico = linkPublicoCompleto(cotizacion.tokenPublico);
   const puedeEnviar =
     cotizacion.etapa === 'borrador' || cotizacion.etapa === 'enviada';
-  const enviarMut = useEnviarCotizacionMutation(cotizacion.id, cotizacion.cliente);
+  const qc = useQueryClient();
+  const enviarWaMut = useMutation({
+    mutationFn: () => enviarWhatsAppRapido(cotizacion.id, cotizacion.cliente, qc),
+    onError: async () => {
+      await Swal.fire({ icon: 'error', title: 'No se pudo enviar por WhatsApp' });
+    },
+  });
   const aceptarMut = useAceptarCotizacionMutation(cotizacion.id);
 
   return (
@@ -38,8 +46,8 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
           icon="send"
           title="Enviar por WhatsApp"
           aria-label="Enviar por WhatsApp"
-          disabled={enviarMut.isPending}
-          onClick={() => enviarMut.mutate({ canal: 'whatsapp' })}
+          disabled={enviarWaMut.isPending}
+          onClick={() => enviarWaMut.mutate()}
         />
       )}
       {cotizacion.etapa === 'enviada' && (

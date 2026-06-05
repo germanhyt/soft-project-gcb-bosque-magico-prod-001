@@ -158,12 +158,22 @@ function printWithHiddenIframe(html: string): boolean {
   return true;
 }
 
+export type ImprimirCotizacionModo = 'ventana' | 'iframe';
+
 /** Abre vista imprimible; el usuario guarda como PDF desde el diálogo del navegador. */
-export function imprimirCotizacionPdf(cot: Cotizacion): boolean {
+export function imprimirCotizacionPdf(
+  cot: Cotizacion,
+  modo: ImprimirCotizacionModo = 'ventana',
+): boolean {
   if (!cot.cliente?.nombreCompleto || !cot.cumpleanero?.nombre) return false;
 
   const logoUrl = `${window.location.origin}/logo-bm.png`;
   const html = buildCotizacionPrintHtml(cot, logoUrl);
+
+  if (modo === 'iframe') {
+    return printWithHiddenIframe(html);
+  }
+
   const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
   const blobUrl = URL.createObjectURL(blob);
 
