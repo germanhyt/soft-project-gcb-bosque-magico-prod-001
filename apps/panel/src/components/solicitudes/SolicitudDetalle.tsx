@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import type { CotizacionFormTarget } from '../cotizaciones/CotizacionFormModal';
+import { AceptarCotizacionAction } from '../cotizaciones/AceptarCotizacionAction';
+import { EnviarCotizacionActions } from '../cotizaciones/EnviarCotizacionActions';
 import { CerrarSolicitudModal } from './CerrarSolicitudModal';
 import { SolicitudPreferenciasLanding } from './SolicitudPreferenciasLanding';
 import {
@@ -39,6 +41,7 @@ type Props = {
   onClose: () => void;
   listItem?: Solicitud;
   onAbrirCotizacionForm?: (target: CotizacionFormTarget) => void;
+  onEditarSolicitud?: (id: string) => void;
   onVerCotizacion?: (cotizacionId: string) => void;
 };
 
@@ -58,6 +61,7 @@ export function SolicitudDetalle({
   onClose,
   listItem,
   onAbrirCotizacionForm,
+  onEditarSolicitud,
   onVerCotizacion,
 }: Props) {
   const qc = useQueryClient();
@@ -167,6 +171,35 @@ export function SolicitudDetalle({
   const footer =
     s && s.etapa !== 'cerrada' ? (
       <div className="flex flex-col gap-2">
+        {onEditarSolicitud ? (
+          <Button
+            variant="secondary"
+            className="w-full"
+            onClick={() => {
+              onClose();
+              onEditarSolicitud(solicitudId!);
+            }}
+          >
+            Editar solicitud
+          </Button>
+        ) : null}
+        {cotizacionActiva &&
+        s &&
+        (cotizacionActiva.etapa === 'borrador' || cotizacionActiva.etapa === 'enviada') ? (
+          <EnviarCotizacionActions
+            cotizacionId={cotizacionActiva.id}
+            etapa={cotizacionActiva.etapa}
+            cliente={{ celular: s.celular, correo: s.correo }}
+          />
+        ) : null}
+        {cotizacionActiva ? (
+          <AceptarCotizacionAction
+            cotizacionId={cotizacionActiva.id}
+            etapa={cotizacionActiva.etapa}
+            fullWidth
+            onSuccess={() => onClose()}
+          />
+        ) : null}
         {cotizacionActiva?.etapa === 'borrador' ? (
           <Button
             variant="accent"
@@ -176,7 +209,7 @@ export function SolicitudDetalle({
               onAbrirCotizacionForm?.({ mode: 'edit', cotizacionId: cotizacionActiva.id });
             }}
           >
-            Editar borrador
+            Editar cotización (borrador)
           </Button>
         ) : null}
         {cotizacionActiva ? (

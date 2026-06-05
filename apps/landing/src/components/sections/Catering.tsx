@@ -1,6 +1,6 @@
-import { CATERING } from '../../constants/content';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
+import { CatalogConnectionAlert } from '../ui/CatalogConnectionAlert';
 import { CARD_CATALOG, GRID_CATALOG, cardCatalogState } from '../../constants/design';
 import { selectionHint, type SelectionMode } from '../../lib/selection-mode';
 import { SectionShell } from '../ui/SectionShell';
@@ -16,12 +16,8 @@ type Props = {
 };
 
 export function Catering({ selectionMode, selectedCateringIds, onToggleCatering }: Props) {
-  const { data } = useConfiguracion();
+  const { data, isError, isLoading } = useConfiguracion();
   const reduceMotion = useReducedMotion();
-  const minimoGlobal =
-    typeof data?.items.find((i) => i.clave === 'catering.minimo_unidades')?.valor === 'number'
-      ? (data?.items.find((i) => i.clave === 'catering.minimo_unidades')?.valor as number)
-      : 18;
 
   const catering =
     data?.productos.catering?.map((item) => ({
@@ -32,13 +28,7 @@ export function Catering({ selectionMode, selectedCateringIds, onToggleCatering 
       detalle:
         item.descripcion ||
         `Mínimo ${item.cantidadMinima} unidad${item.cantidadMinima > 1 ? 'es' : ''} por evento.`,
-    })) ??
-    CATERING.map((item) => ({
-      id: '',
-      imagenUrl: null as string | null,
-      cantidadMinima: minimoGlobal,
-      ...item,
-    }));
+    })) ?? [];
 
   return (
     <SectionShell id="catering" tone="tinted">
@@ -48,6 +38,15 @@ export function Catering({ selectionMode, selectedCateringIds, onToggleCatering 
         subtitle="El equipo confirma mínimos y disponibilidad al cotizar."
       />
       <SelectionHint>{selectionHint(selectionMode)}</SelectionHint>
+      <CatalogConnectionAlert className="mb-6" />
+      {isLoading && (
+        <p className="mb-6 text-sm text-on-surface-variant">Cargando opciones de catering…</p>
+      )}
+      {!isLoading && !isError && catering.length === 0 && (
+        <p className="mb-6 text-sm text-on-surface-variant">
+          No hay catering activo en el catálogo por el momento.
+        </p>
+      )}
       <div className={GRID_CATALOG}>
         {catering.map((item, index) => {
           const selected = item.id ? selectedCateringIds.includes(item.id) : false;

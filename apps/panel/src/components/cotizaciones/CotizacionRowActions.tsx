@@ -4,6 +4,11 @@ import type { Cotizacion } from '../../lib/cotizaciones';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
 import { RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
+import {
+  confirmarAceptacionCotizacion,
+  useAceptarCotizacionMutation,
+} from './AceptarCotizacionAction';
+import { useEnviarCotizacionMutation } from './EnviarCotizacionActions';
 
 type Props = {
   cotizacion: Cotizacion;
@@ -14,6 +19,10 @@ type Props = {
 export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const navigate = useNavigate();
   const linkPublico = linkPublicoCompleto(cotizacion.tokenPublico);
+  const puedeEnviar =
+    cotizacion.etapa === 'borrador' || cotizacion.etapa === 'enviada';
+  const enviarMut = useEnviarCotizacionMutation(cotizacion.id, cotizacion.cliente);
+  const aceptarMut = useAceptarCotizacionMutation(cotizacion.id);
 
   return (
     <RowActionsToolbar>
@@ -24,6 +33,28 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         enlaceCopiar={linkPublico}
         enlaceTitulo="Copiar link público de cotización"
       />
+      {puedeEnviar && (
+        <RowIconButton
+          icon="send"
+          title="Enviar por WhatsApp"
+          aria-label="Enviar por WhatsApp"
+          disabled={enviarMut.isPending}
+          onClick={() => enviarMut.mutate('whatsapp')}
+        />
+      )}
+      {cotizacion.etapa === 'enviada' && (
+        <RowIconButton
+          icon="check_circle"
+          title="Aceptar (equipo)"
+          aria-label="Aceptar cotización"
+          disabled={aceptarMut.isPending}
+          onClick={() => {
+            void (async () => {
+              if (await confirmarAceptacionCotizacion()) aceptarMut.mutate();
+            })();
+          }}
+        />
+      )}
       {cotizacion.etapa === 'borrador' && (
         <RowIconButton
           icon="edit"

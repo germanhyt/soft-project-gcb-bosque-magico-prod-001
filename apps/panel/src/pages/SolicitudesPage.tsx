@@ -6,7 +6,7 @@ import {
   useReactTable,
   type SortingState,
 } from '@tanstack/react-table';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
@@ -14,6 +14,7 @@ import {
   type CotizacionFormTarget,
 } from '../components/cotizaciones/CotizacionFormModal';
 import { NuevaSolicitudModal } from '../components/solicitudes/NuevaSolicitudModal';
+import { SolicitudFormModal } from '../components/solicitudes/SolicitudFormModal';
 import { SolicitudDetalle } from '../components/solicitudes/SolicitudDetalle';
 import { SolicitudRowActions } from '../components/solicitudes/SolicitudRowActions';
 import { EtapaBadge } from '../components/ui/EtapaBadge';
@@ -35,7 +36,14 @@ import {
   TABLE_ROW_SELECTED,
 } from '../constants/design';
 import { CANAL_LABEL, ETAPAS_FILTRO, TURNO_LABEL } from '../constants/solicitudes';
-import { fetchSolicitudes, type EtapaSolicitud, type Solicitud } from '../lib/api';
+import Swal from 'sweetalert2';
+import {
+  actualizarSolicitud,
+  fetchSolicitud,
+  fetchSolicitudes,
+  type EtapaSolicitud,
+  type Solicitud,
+} from '../lib/api';
 import { formatFecha } from '../lib/format';
 
 const columnHelper = createColumnHelper<Solicitud>();
@@ -51,9 +59,13 @@ export function SolicitudesPage() {
   const [busqueda, setBusqueda] = useState(qParam);
   const [modalOpen, setModalOpen] = useState(false);
   const [cotForm, setCotForm] = useState<CotizacionFormTarget | null>(null);
+  const [editSolicitudId, setEditSolicitudId] = useState<string | null>(null);
 
   const abrirCotizacionForm = useCallback((target: CotizacionFormTarget) => {
     setCotForm(target);
+  }, []);
+  const abrirEditarSolicitud = useCallback((id: string) => {
+    setEditSolicitudId(id);
   }, []);
   const [selectedId, setSelectedId] = useState<string | null>(detalleParam);
   const [sorting, setSorting] = useState<SortingState>([{ id: 'creadoEn', desc: true }]);
@@ -108,6 +120,31 @@ export function SolicitudesPage() {
   const data = paginated?.items ?? [];
   const meta = paginated?.meta;
   const selectedRow = data.find((r) => r.id === selectedId);
+
+  const { data: solicitudEditando } = useQuery({
+    queryKey: ['solicitud', editSolicitudId],
+    queryFn: () => fetchSolicitud(editSolicitudId!),
+    enabled: !!editSolicitudId,
+  });
+
+  const guardarSolicitudMut = useMutation({
+    mutationFn: (payload: Parameters<typeof actualizarSolicitud>[1]) =>
+      actualizarSolicitud(editSolicitudId!, payload),
+    onSuccess: async () => {
+      if (editSolicitudId) {
+        await qc.invalidateQueries({ queryKey: ['solicitud', editSolicitudId] });
+      }
+      await qc.invalidateQueries({ queryKey: ['solicitudes'] });
+      await qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] });
+      await qc.invalidateQueries({ queryKey: ['clientes'] });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Solicitud actualizada',
+        timer: 1400,
+        showConfirmButton: false,
+      });
+    },
+  });
 
   const setPage = (p: number) => {
     const next = new URLSearchParams(searchParams);
@@ -166,11 +203,12 @@ export function SolicitudesPage() {
             solicitud={info.row.original}
             onVer={abrirDetalle}
             onAbrirCotizacionForm={abrirCotizacionForm}
+            onEditarSolicitud={abrirEditarSolicitud}
           />
         ),
       }),
     ],
-    [abrirDetalle, abrirCotizacionForm],
+    [abrirDetalle, abrirCotizacionForm, abrirEditarSolicitud],
   );
 
   const table = useReactTable({
@@ -316,6 +354,7 @@ export function SolicitudesPage() {
         open={!!selectedId}
         onClose={cerrarDetalle}
         onAbrirCotizacionForm={abrirCotizacionForm}
+        onEditarSolicitud={abrirEditarSolicitud}
         onVerCotizacion={(id) => navigate(`/cotizaciones?detalle=${id}`)}
       />
 
@@ -326,6 +365,15 @@ export function SolicitudesPage() {
         onSaved={(id) => {
           if (cotForm?.mode === 'edit') setCotForm(null);
           else setCotForm({ mode: 'edit', cotizacionId: id });
+        }}
+      />
+
+      <SolicitudFormModal
+        open={!!editSolicitudId}
+        solicitud={solicitudEditando}
+        onClose={() => setEditSolicitudId(null)}
+        onSubmit={async (payload) => {
+          await guardarSolicitudMut.mutateAsync(payload);
         }}
       />
 

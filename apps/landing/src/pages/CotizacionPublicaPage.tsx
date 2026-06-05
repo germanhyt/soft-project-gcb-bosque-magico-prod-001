@@ -148,7 +148,13 @@ export function CotizacionPublicaPage() {
           </button>
         ) : (
           <p className="mt-6 text-center text-sm text-on-surface-variant">
-            Esta cotización ya fue {data.etapa === 'aceptada' ? 'aceptada' : 'procesada'}.
+            {data.etapa === 'aceptada'
+              ? 'Esta cotización ya fue aceptada. El equipo Bosque Mágico te contactará para confirmar los detalles finales.'
+              : data.etapa === 'borrador'
+                ? 'Esta propuesta aún no está disponible para aceptar en línea. Si tienes dudas, escríbenos por WhatsApp.'
+                : data.etapa === 'cerrada'
+                  ? 'Esta cotización ya no está activa. Contáctanos si deseas una nueva propuesta.'
+                  : 'Esta cotización ya no admite aceptación en línea. Contáctanos para más información.'}
           </p>
         )}
       </div>

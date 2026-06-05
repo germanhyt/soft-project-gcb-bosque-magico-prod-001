@@ -13,6 +13,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente
 | Landing → solicitud pública | ✅ | Cotizador + `POST /public/.../solicitudes` |
 | Panel: listar / filtrar / detalle | ✅ | TanStack Table |
 | Tomar / cerrar / seguimiento | ✅ | Con motivo de cierre |
+| Editar datos del lead (modal) | ✅ | `SolicitudFormModal` + PATCH ampliado |
 | Duplicados suaves | ✅ | `posibleDuplicado` en API |
 | **Bitácora visible en panel** | ✅ | `GET /auditoria` + timeline en solicitud y cotización |
 | Meta Lead Ads | ⬜ | Fase posterior |
@@ -27,7 +28,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente
 | Catálogo productos | ✅ | CRUD + imagen (Dropzone, POST `/productos/:id/imagen`) |
 | Cálculo centralizado backend | ✅ | `CalculoPreciosService` |
 | Tests reglas de precio | ✅ | `CalculoPreciosService` + use cases aceptar/solicitud pública |
-| Tests E2E HTTP | ⬜ | Opcional con supertest |
+| Tests E2E HTTP | 🟡 | `scripts/qa-smoke-use-cases.mjs` cubre flujo comercial API |
 
 ---
 
@@ -40,6 +41,7 @@ Leyenda: ✅ hecho · 🟡 parcial · ⬜ pendiente
 | Enviar WhatsApp / link público | ✅ | Token + landing `/cotizacion/:token` |
 | Aceptar (público y panel) | ✅ | Idempotente si ya aceptada |
 | Validación doble reserva | ✅ | Slot fecha + turno |
+| PDF / imprimir cotización (panel) | ✅ | Vista imprimible → guardar como PDF en navegador |
 
 ---
 

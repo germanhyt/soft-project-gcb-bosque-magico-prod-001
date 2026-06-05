@@ -33,6 +33,7 @@ import {
   SECTION_QUOTE,
   SWAL_CONFIRM_COLOR,
 } from '../../constants/design';
+import { CatalogConnectionAlert } from '../ui/CatalogConnectionAlert';
 import { MotionReveal } from '../ui/MotionReveal';
 import { SectionTitle } from '../ui/SectionTitle';
 import type { QuoteBuilderSelection } from '../../types/quote-builder';
@@ -288,12 +289,14 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
         resetForm();
         setIdentidadHint(null);
       } catch (err: unknown) {
-        const msg =
-          err && typeof err === 'object' && 'response' in err
-            ? (err as { response?: { data?: { message?: string | string[] } } }).response?.data
-                ?.message
-            : undefined;
-        const texto = Array.isArray(msg) ? msg.join(', ') : msg ?? 'No pudimos registrar tu solicitud. Intenta de nuevo.';
+        const axiosErr = err as { response?: { data?: { message?: string | string[] } }; message?: string };
+        const msg = axiosErr.response?.data?.message;
+        const sinRespuesta = err && typeof err === 'object' && !axiosErr.response;
+        const texto = sinRespuesta
+          ? 'No pudimos conectar con el servidor. Verifica tu conexión o intenta más tarde.'
+          : Array.isArray(msg)
+            ? msg.join(', ')
+            : msg ?? 'No pudimos registrar tu solicitud. Intenta de nuevo.';
         await Swal.fire({
           icon: 'error',
           title: 'Error al enviar',
@@ -406,9 +409,11 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
           subtitle="Estimación referencial en pantalla. El equipo confirma disponibilidad y detalle final."
         />
 
+        <CatalogConnectionAlert className="mb-6" />
         {isError && (
-          <p className="mb-6 rounded-xl border border-tertiary-fixed bg-tertiary-fixed/35 px-4 py-3 text-sm text-tertiary">
-            No pudimos cargar tarifas del servidor. Se usan valores por defecto.
+          <p className="mb-6 text-sm text-on-surface-variant">
+            Mientras el servidor no responda, el envío de solicitud permanece deshabilitado. Los
+            paquetes y el formulario básico usan valores por defecto solo para referencia.
           </p>
         )}
 
@@ -594,10 +599,10 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
 
             <button
               type="submit"
-              disabled={formik.isSubmitting || isLoading}
-              className={`${BTN_PRIMARY} w-full sm:w-auto`}
+              disabled={formik.isSubmitting || isLoading || isError}
+              className={`${BTN_PRIMARY} w-full sm:w-auto disabled:cursor-not-allowed disabled:opacity-50`}
             >
-              {formik.isSubmitting ? 'Enviando…' : 'Enviar solicitud'}
+              {formik.isSubmitting ? 'Enviando…' : isError ? 'Servidor no disponible' : 'Enviar solicitud'}
             </button>
           </form>
 

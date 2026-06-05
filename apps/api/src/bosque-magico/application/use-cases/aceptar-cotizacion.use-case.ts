@@ -25,17 +25,18 @@ export class AceptarCotizacionUseCase {
   async ejecutarPorId(id: string) {
     const cot = await this.cotizaciones.obtenerPorId(id);
     if (!cot) throw new NotFoundException('Cotización no encontrada');
-    return this.aceptar(cot);
+    return this.aceptar(cot, 'vendedor');
   }
 
   async ejecutarPorToken(token: string) {
     const cot = await this.cotizaciones.obtenerPorToken(token);
     if (!cot) throw new NotFoundException('Cotización no encontrada');
-    return this.aceptar(cot);
+    return this.aceptar(cot, 'cliente');
   }
 
   private async aceptar(
     cot: CotizacionConItems & { fechaEvento: Date; turno: TurnoInteres },
+    actorTipo: 'vendedor' | 'cliente',
   ) {
     if (cot.etapa === EtapaCotizacion.aceptada) {
       const evento = await this.cotizaciones.crearEventoDesdeCotizacion(cot.id);
@@ -74,7 +75,7 @@ export class AceptarCotizacionUseCase {
       tipoEntidad: 'cotizacion',
       entidadId: cot.id,
       accion: 'aceptar',
-      actorTipo: 'cliente',
+      actorTipo,
       despues: JSON.parse(JSON.stringify(despues)) as Prisma.InputJsonValue,
       metadata: { eventoId: evento.id },
     });

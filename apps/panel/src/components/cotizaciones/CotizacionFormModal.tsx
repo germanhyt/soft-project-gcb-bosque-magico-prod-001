@@ -4,6 +4,7 @@ import { useFormik } from 'formik';
 import Swal from 'sweetalert2';
 import * as Yup from 'yup';
 import { CatalogoSection } from './CatalogoSection';
+import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { SolicitudPreferenciasLanding } from '../solicitudes/SolicitudPreferenciasLanding';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -578,20 +579,35 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
             />
           </fieldset>
 
-          <div className="flex flex-wrap justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={onClose}>
-              Cancelar
-            </Button>
-            <Button
-              type="submit"
-              disabled={actualizarMut.isPending || crearMut.isPending}
-            >
-              {actualizarMut.isPending || crearMut.isPending
-                ? 'Guardando…'
-                : activeEsEdicion
-                  ? 'Guardar borrador'
-                  : 'Guardar borrador manual'}
-            </Button>
+          <div className="flex flex-col gap-3 border-t border-outline-variant/30 pt-4">
+            {activeEsEdicion && cot && (
+              <>
+                <EnviarCotizacionActions
+                  cotizacionId={cot.id}
+                  etapa={cot.etapa}
+                  cliente={cot.cliente}
+                  onSuccess={onClose}
+                />
+                <p className="text-center text-xs text-outline">
+                  Guarda los cambios antes de enviar si modificaste ítems o montos.
+                </p>
+              </>
+            )}
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={onClose}>
+                Cancelar
+              </Button>
+              <Button
+                type="submit"
+                disabled={actualizarMut.isPending || crearMut.isPending}
+              >
+                {actualizarMut.isPending || crearMut.isPending
+                  ? 'Guardando…'
+                  : activeEsEdicion
+                    ? 'Guardar borrador'
+                    : 'Guardar borrador manual'}
+              </Button>
+            </div>
           </div>
         </form>
       )}

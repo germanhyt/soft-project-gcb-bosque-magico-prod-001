@@ -11,6 +11,8 @@ const ACCION_LABEL: Record<string, string> = {
   tomar: 'Tomada',
   cerrar: 'Cerrada',
   actualizar: 'Actualizada',
+  actualizar_datos: 'Datos actualizados',
+  actualizar_seguimiento: 'Seguimiento actualizado',
   aceptar: 'Cotización aceptada',
   enviar: 'Cotización enviada',
   confirmar: 'Evento confirmado',

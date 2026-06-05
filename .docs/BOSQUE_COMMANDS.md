@@ -15,6 +15,7 @@
 | [MODULOS_ESTADO.md](./MODULOS_ESTADO.md) | Estado MVP por módulo (gentle-ai) |
 
 | [MEJORAS_PANEL_FASE8.md](./MEJORAS_PANEL_FASE8.md) | **Puntos de mejora panel** (tablas, WS, usuario, modales, roles, config) |
+| [PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md](./PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md) | Guía de pruebas con mock data (local + sandbox) |
 
 
 
@@ -102,7 +103,7 @@ npm run db:seed:demo
 **Siguiente:** pruebas manuales por flujo (landing → solicitud → cotización → agenda) con esos datos.
 
 
--- 
+-------------------------------
 
 Observaciones
 () Al cotizar de la landing iría a solicitud? o a cotización? dado que ya se seleccionó las opciones, y si llega a solicitud no tendría sentido "crear cotización" qué recomiendas como experto arquictecto (en base a los cambios que se estuvieron haciendo?)
@@ -110,7 +111,47 @@ Observaciones
 () 
 ()
 
-
 sandbox-api-bosque
 sandbox-panel-bosque
 sandbox-landing-bosque
+
+credenciales sandbox:
+admin@bosquemagico.test / BosqueDev123!
+
+-------------------------------
+
+
+### Observaciones resueltas (2026-06-04)
+
+**1) Edición en Solicitudes: ¿solicitud o cotización?**
+
+- Hoy en **Solicitudes** el detalle ya permite editar la **solicitud (lead)** en la sección **Seguimiento**: notas y próximo seguimiento (`PATCH /solicitudes/:id`).
+- El botón **«Editar cotización (borrador)»** abre el modal de **cotización** a propósito: es la propuesta comercial vinculada, no los datos del lead.
+- **Implementado (2026-06-04):** `SolicitudFormModal` para editar datos del lead (nombre, celular, correo, fecha tentativa, turno, niños, notas, próximo seguimiento). API `PATCH /solicitudes/:id` ampliado.
+
+**2) Link público de cotización (cliente)**
+
+- Sí: el link (`/cotizacion/:token` en **landing**) es para el **cliente final**.
+- Flujo correcto:
+  1. Vendedor deja cotización en **borrador** y la revisa en panel.
+  2. **Envía** por WhatsApp o correo → pasa a **Enviada**.
+  3. El cliente abre el link y puede **Aceptar cotización**.
+  4. Al aceptar → cotización **Aceptada** + se crea **evento** en agenda (por confirmar).
+- Si el link muestra que no se puede aceptar:
+  - **Borrador:** normal (aún no enviada) — mensaje actualizado en landing.
+  - **Aceptada / Cerrada:** ya no admite aceptación en línea.
+- Copiar link en **borrador** sirve para previsualizar, pero el cliente no acepta hasta **Enviada**.
+
+**3) PDF de cotización**
+
+- **Implementado (2026-06-04):** botón **Descargar PDF** en detalle de cotización (panel) → vista imprimible con logo Bosque Mágico; el navegador permite guardar como PDF.
+- Alternativa adicional: link público en landing + imprimir desde navegador.
+
+**4) Marcar «realizado» (evento)**
+
+- Flujo implementado en **Agenda**:
+  - Cotización **Aceptada** → evento **Por confirmar**
+  - **Confirmar evento** → **Confirmado**
+  - **Marcar realizado** → **Realizado** (`POST /eventos/:id/realizar`)
+- También se puede **cancelar** desde por confirmar o confirmado.
+- Contratos PDF y estados extra del doc largo (pre-reserva, contrato enviado, etc.) **no** están todos en MVP actual; el núcleo comercial sí está cubierto.

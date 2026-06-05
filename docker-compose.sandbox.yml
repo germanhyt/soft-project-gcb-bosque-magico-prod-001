@@ -29,6 +29,8 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bosque_magico?schema=public
       JWT_SECRET: sandbox-secret-change-me
       API_CORS_ORIGINS: https://sandbox-landing-bosque.gcbprojects.site,https://sandbox-panel-bosque.gcbprojects.site
+      ADMIN_EMAIL: admin@bosquemagico.test
+      ADMIN_PASSWORD: BosqueDev123!
     depends_on:
       postgres:
         condition: service_healthy

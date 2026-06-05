@@ -9,7 +9,10 @@ RUN npm ci
 RUN npm run prisma:generate --workspace=@bosque/api
 RUN npm run build --workspace=@bosque/api
 
+COPY deploy/entrypoint-api.sh /entrypoint-api.sh
+RUN chmod +x /entrypoint-api.sh
+
 ENV NODE_ENV=production
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm exec --workspace=@bosque/api prisma migrate deploy --schema apps/api/prisma/schema.prisma && node apps/api/dist/src/main.js"]
+CMD ["/entrypoint-api.sh"]

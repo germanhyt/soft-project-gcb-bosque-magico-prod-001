@@ -25,6 +25,7 @@ type Props = {
   solicitud: Solicitud;
   onVer: (id: string) => void;
   onAbrirCotizacionForm?: (target: CotizacionFormTarget) => void;
+  onEditarSolicitud?: (id: string) => void;
 };
 
 function errorMsg(err: unknown, fallback: string) {
@@ -37,7 +38,12 @@ function errorMsg(err: unknown, fallback: string) {
   return fallback;
 }
 
-export function SolicitudRowActions({ solicitud, onVer, onAbrirCotizacionForm }: Props) {
+export function SolicitudRowActions({
+  solicitud,
+  onVer,
+  onAbrirCotizacionForm,
+  onEditarSolicitud,
+}: Props) {
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [cerrarOpen, setCerrarOpen] = useState(false);
@@ -130,6 +136,14 @@ export function SolicitudRowActions({ solicitud, onVer, onAbrirCotizacionForm }:
           aria-label="Ver detalle"
           onClick={() => onVer(solicitud.id)}
         />
+        {!esCerrada && onEditarSolicitud && (
+          <RowIconButton
+            icon="edit_note"
+            title="Editar solicitud"
+            aria-label="Editar solicitud"
+            onClick={() => onEditarSolicitud(solicitud.id)}
+          />
+        )}
         {solicitud.etapa === 'nueva' && (
           <RowIconButton
             icon="how_to_reg"
@@ -142,8 +156,8 @@ export function SolicitudRowActions({ solicitud, onVer, onAbrirCotizacionForm }:
         {!esCerrada && cotizacionActiva?.etapa === 'borrador' && (
           <RowIconButton
             icon="edit"
-            title="Editar borrador"
-            aria-label="Editar borrador"
+            title="Editar cotización en borrador"
+            aria-label="Editar cotización en borrador"
             onClick={() =>
               onAbrirCotizacionForm
                 ? onAbrirCotizacionForm({ mode: 'edit', cotizacionId: cotizacionActiva.id })

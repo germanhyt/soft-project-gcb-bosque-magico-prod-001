@@ -96,7 +96,9 @@ export class SolicitudesController {
   }
 
   @Patch(':id')
-  @ApiOperation({ summary: 'Actualizar seguimiento (notas, próximo contacto)' })
+  @ApiOperation({
+    summary: 'Actualizar solicitud (datos de contacto, evento tentativo o seguimiento)',
+  })
   actualizarSolicitud(
     @Param('id') id: string,
     @Body() dto: ActualizarSolicitudDto,

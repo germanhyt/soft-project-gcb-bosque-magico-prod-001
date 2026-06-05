@@ -29,3 +29,10 @@ jobs:
             git pull origin sandbox
             docker compose -f docker-compose.sandbox.yml up -d --build postgres
             docker compose -f docker-compose.sandbox.yml up -d --build api panel landing
+            docker compose -f docker-compose.sandbox.yml logs api --tail 80
+
+      - name: Verify sandbox API
+        run: |
+          curl -sf "https://sandbox-api-bosque.gcbprojects.site/api/health"
+          curl -sf "https://sandbox-api-bosque.gcbprojects.site/api/public/bosque-magico/catalogo" \
+            | python3 -c "import sys,json; d=json.load(sys.stdin); assert len(d['productos']['shows'])>0, 'sin shows'"

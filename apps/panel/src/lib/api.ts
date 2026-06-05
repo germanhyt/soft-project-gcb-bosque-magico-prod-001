@@ -147,10 +147,25 @@ export async function cerrarSolicitud(
   return data;
 }
 
+export type ActualizarSolicitudPayload = {
+  nombreContacto?: string;
+  celular?: string;
+  correo?: string;
+  fechaTentativa?: string;
+  turnoInteres?: TurnoInteres | null;
+  cantidadNinosEstimada?: number;
+  notas?: string;
+  proximoSeguimientoEn?: string;
+};
+
+export async function actualizarSolicitud(id: string, payload: ActualizarSolicitudPayload) {
+  const { data } = await api.patch<Solicitud>(`/bosque-magico/solicitudes/${id}`, payload);
+  return data;
+}
+
 export async function actualizarSeguimiento(
   id: string,
   payload: { notas?: string; proximoSeguimientoEn?: string },
 ) {
-  const { data } = await api.patch<Solicitud>(`/bosque-magico/solicitudes/${id}`, payload);
-  return data;
+  return actualizarSolicitud(id, payload);
 }

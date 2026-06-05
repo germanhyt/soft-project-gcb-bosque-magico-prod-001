@@ -1,33 +1,18 @@
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
+import { AceptarCotizacionAction } from './AceptarCotizacionAction';
 import { CotizacionBadge } from './CotizacionBadge';
+import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { DetalleModal } from '../ui/DetalleModal';
 import { Button } from '../ui/Button';
-import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { TURNO_LABEL } from '../../constants/solicitudes';
-import {
-  aceptarCotizacionPanel,
-  enviarCotizacion,
-  fetchCotizacion,
-  linkPublicoCompleto,
-  type Cotizacion,
-} from '../../lib/cotizaciones';
+import { fetchCotizacion, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
+import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import { formatFecha } from '../../lib/format';
-
-function invalidateCotizacionQueries(qc: ReturnType<typeof useQueryClient>, id: string) {
-  return Promise.all([
-    qc.invalidateQueries({ queryKey: ['cotizacion', id] }),
-    qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
-    qc.invalidateQueries({ queryKey: ['solicitudes'] }),
-    qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
-    qc.invalidateQueries({ queryKey: ['eventos-resumen'] }),
-    qc.invalidateQueries({ queryKey: ['agenda'] }),
-  ]);
-}
 
 type Props = {
   cotizacionId: string | null;
@@ -46,7 +31,6 @@ export function CotizacionDetalle({
   onAbrirSolicitud,
   onEditarBorrador,
 }: Props) {
-  const qc = useQueryClient();
   const navigate = useNavigate();
 
   const { data: cot, isLoading, isError } = useQuery({
@@ -54,54 +38,6 @@ export function CotizacionDetalle({
     queryFn: () => fetchCotizacion(cotizacionId!),
     enabled: open && !!cotizacionId,
     initialData: listItem,
-  });
-
-  const enviarMut = useMutation({
-    mutationFn: (canal: 'whatsapp' | 'email') =>
-      enviarCotizacion(cotizacionId!, {
-        canal,
-        celularDestino: cot?.cliente.celular,
-        correoDestino: cot?.cliente.correo ?? undefined,
-      }),
-    onSuccess: async (res, canal) => {
-      await invalidateCotizacionQueries(qc, cotizacionId!);
-      if (canal === 'whatsapp' && res.mensajePrearmado && cot?.cliente.celular) {
-        const url = `https://wa.me/51${cot.cliente.celular.replace(/\D/g, '')}?text=${encodeURIComponent(res.mensajePrearmado)}`;
-        window.open(url, '_blank');
-      }
-      await Swal.fire({
-        icon: 'success',
-        title: 'Cotización enviada',
-        html: `<p class="text-sm">Link: <a href="${res.linkPublico}" target="_blank">${res.linkPublico}</a></p>`,
-      });
-    },
-    onError: async (err: unknown) => {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : 'No se pudo enviar';
-      await Swal.fire({ icon: 'error', title: 'Error', text: msg });
-    },
-  });
-
-  const aceptarMut = useMutation({
-    mutationFn: () => aceptarCotizacionPanel(cotizacionId!),
-    onSuccess: async (res: { eventoId?: string }) => {
-      await invalidateCotizacionQueries(qc, cotizacionId!);
-      await Swal.fire({
-        icon: 'success',
-        title: 'Cotización aceptada',
-        text: res.eventoId ? 'Se creó el evento en agenda (por confirmar).' : undefined,
-      });
-      if (res.eventoId) onClose();
-    },
-    onError: async (err: unknown) => {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : '';
-      await Swal.fire({ icon: 'error', title: 'No se pudo aceptar', text: msg || undefined });
-    },
   });
 
   const copiarLink = async () => {
@@ -115,13 +51,30 @@ export function CotizacionDetalle({
 
   const titulo = cot?.codigo ?? listItem?.codigo ?? 'Cotización';
   const evento = cot?.eventos?.[0];
-  const puedeEnviar = cot?.etapa === 'borrador' || cot?.etapa === 'enviada';
   const solicitud = cot?.solicitud;
   const link = cot ? linkPublicoCompleto(cot.tokenPublico) : '';
 
   const footer =
     cot && !isLoading ? (
-      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
+      <div className="flex flex-col gap-2">
+        <EnviarCotizacionActions
+          cotizacionId={cot.id}
+          etapa={cot.etapa}
+          cliente={cot.cliente}
+          className="w-full"
+        />
+        {cot.etapa === 'borrador' && (
+          <p className="text-center text-xs text-outline">
+            Tras enviar, el cliente o el equipo pueden aceptar para crear el evento en Agenda.
+          </p>
+        )}
+        <AceptarCotizacionAction
+          cotizacionId={cot.id}
+          etapa={cot.etapa}
+          fullWidth
+          onSuccess={() => onClose()}
+        />
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {cot.etapa === 'borrador' && (
           <Button
             variant="accent"
@@ -138,38 +91,32 @@ export function CotizacionDetalle({
         <Button variant="ghost" className="sm:flex-1" onClick={() => void copiarLink()}>
           Copiar link público
         </Button>
-        {puedeEnviar && (
-          <>
-            <Button
-              className="inline-flex gap-2 sm:flex-1"
-              disabled={enviarMut.isPending}
-              onClick={() => enviarMut.mutate('whatsapp')}
-            >
-              <WhatsAppIcon size={20} className="text-on-primary" />
-              Enviar por WhatsApp
-            </Button>
-            {cot.cliente.correo && (
-              <Button
-                variant="secondary"
-                className="sm:flex-1"
-                disabled={enviarMut.isPending}
-                onClick={() => enviarMut.mutate('email')}
-              >
-                Enviar por correo
-              </Button>
-            )}
-          </>
-        )}
-        {cot.etapa === 'enviada' && (
-          <Button
-            variant="accent"
-            className="sm:flex-1"
-            disabled={aceptarMut.isPending}
-            onClick={() => aceptarMut.mutate()}
-          >
-            Aceptar (equipo)
-          </Button>
-        )}
+        <Button
+          variant="ghost"
+          className="sm:flex-1"
+          disabled={isLoading}
+          onClick={() => {
+            if (!cot.cliente || !cot.cumpleanero) {
+              void Swal.fire({
+                icon: 'warning',
+                title: 'Datos incompletos',
+                text: 'Espera a que cargue el detalle completo de la cotización.',
+              });
+              return;
+            }
+            const ok = imprimirCotizacionPdf(cot);
+            if (!ok) {
+              void Swal.fire({
+                icon: 'error',
+                title: 'No se pudo generar el PDF',
+                text: 'Permite ventanas emergentes en el navegador o vuelve a intentar.',
+              });
+            }
+          }}
+        >
+          Descargar PDF
+        </Button>
+        </div>
       </div>
     ) : undefined;
 

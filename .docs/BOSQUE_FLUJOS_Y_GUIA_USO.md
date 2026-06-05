@@ -55,7 +55,8 @@ Capacidades actuales:
 - Detectar posible duplicado desde landing.
 - Generar borrador de cotizacion cuando el payload de landing lo permite.
 - Crear cotizacion manual o revisar cotizacion vinculada.
-- Editar borrador de cotizacion cuando ya existe.
+- **Editar solicitud (lead)** con `SolicitudFormModal` (contacto, fecha tentativa, turno, niños, notas).
+- Editar borrador de cotizacion cuando ya existe (`CotizacionFormModal`).
 - Ver bitacora de auditoria.
 
 ### 2.2 Clientes
@@ -251,6 +252,7 @@ Que hace el usuario en panel:
 - Verifica montos, paquete, items y total.
 - Si la cotizacion esta en borrador, puede pasar a edicion completa.
 - Copia link publico.
+- **Descargar PDF** (vista imprimible con logo; guardar como PDF desde el navegador).
 - Envia por WhatsApp o correo.
 - Marca aceptada desde panel cuando corresponde.
 
@@ -305,9 +307,7 @@ Para mantener consistencia, hoy el panel sigue estas reglas:
 
 Cualquier **nuevo registro** o **edición de datos** debe usar el componente **`Modal`** compartido (no páginas de formulario sueltas ni SweetAlert2 para formularios largos).
 
-Ejemplos: `NuevaSolicitudModal`, `CerrarSolicitudModal`, `ProductoFormModal`, formularios de usuario en modal.
-
-Excepción temporal: edición amplia de cotización en borrador puede estar en ruta dedicada hasta migrarla a modal.
+Ejemplos: `NuevaSolicitudModal`, `SolicitudFormModal`, `CotizacionFormModal`, `CerrarSolicitudModal`, `ProductoFormModal`, formularios de usuario en modal.
 
 ### 4.2 Detalle en modal
 
