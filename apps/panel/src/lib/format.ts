@@ -1,5 +1,13 @@
+import {
+  claveFechaCalendario,
+  formatFechaCalendario,
+  formatMesDiaCalendario,
+} from './fecha-calendario';
+
 export function formatFecha(iso: string | null | undefined) {
   if (!iso) return '—';
+  const clave = claveFechaCalendario(iso);
+  if (clave) return formatFechaCalendario(clave);
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return '—';
   return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'short', year: 'numeric' });
@@ -7,6 +15,7 @@ export function formatFecha(iso: string | null | undefined) {
 
 export function formatMesDia(iso: string | null | undefined) {
   if (!iso) return { mes: '—', dia: '—' };
+  if (claveFechaCalendario(iso)) return formatMesDiaCalendario(iso);
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return { mes: '—', dia: '—' };
   return {
@@ -22,7 +31,9 @@ export function formatFechaHora(iso: string | null | undefined) {
   return d.toLocaleString('es-PE', {
     day: '2-digit',
     month: 'short',
+    year: 'numeric',
     hour: '2-digit',
     minute: '2-digit',
+    timeZone: 'America/Lima',
   });
 }

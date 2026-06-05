@@ -1,5 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { mapEventoResponse } from '../../domain/mappers/evento.mapper';
+import {
+  claveFechaCalendario,
+  esFechaCalendario,
+  fechaCalendarioHoy,
+  finDiaCalendarioUtc,
+  inicioDiaCalendarioUtc,
+} from '../../domain/utils/fecha-calendario';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 
 @Injectable()
@@ -7,12 +14,19 @@ export class ObtenerAgendaUseCase {
   constructor(private readonly eventos: EventosRepository) {}
 
   async ejecutar(desde?: string, hasta?: string) {
-    const inicio = desde ? new Date(desde) : new Date();
-    if (!desde) inicio.setHours(0, 0, 0, 0);
+    const inicio = desde
+      ? esFechaCalendario(desde)
+        ? inicioDiaCalendarioUtc(desde)
+        : new Date(desde)
+      : inicioDiaCalendarioUtc(fechaCalendarioHoy());
+
     const fin = hasta
-      ? new Date(hasta)
-      : new Date(inicio.getTime() + 60 * 24 * 60 * 60 * 1000);
-    if (!hasta) fin.setHours(23, 59, 59, 999);
+      ? esFechaCalendario(hasta)
+        ? finDiaCalendarioUtc(hasta)
+        : new Date(hasta)
+      : finDiaCalendarioUtc(
+          claveFechaCalendario(new Date(inicio.getTime() + 60 * 24 * 60 * 60 * 1000)),
+        );
 
     const [eventos, resumen, proximos] = await Promise.all([
       this.eventos.listar({ desde: inicio, hasta: fin }),
@@ -23,7 +37,7 @@ export class ObtenerAgendaUseCase {
     const porFecha = new Map<string, ReturnType<typeof mapEventoResponse>[]>();
     for (const ev of eventos) {
       const mapped = mapEventoResponse(ev);
-      const key = new Date(ev.fechaEvento).toISOString().slice(0, 10);
+      const key = claveFechaCalendario(ev.fechaEvento);
       if (!porFecha.has(key)) porFecha.set(key, []);
       porFecha.get(key)!.push(mapped);
     }

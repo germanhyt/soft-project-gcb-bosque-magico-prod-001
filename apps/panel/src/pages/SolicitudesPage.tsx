@@ -44,7 +44,7 @@ import {
   type EtapaSolicitud,
   type Solicitud,
 } from '../lib/api';
-import { formatFecha } from '../lib/format';
+import { formatFecha, formatFechaHora } from '../lib/format';
 
 const columnHelper = createColumnHelper<Solicitud>();
 
@@ -192,8 +192,8 @@ export function SolicitudesPage() {
         cell: (info) => info.getValue() ?? '—',
       }),
       columnHelper.accessor('creadoEn', {
-        header: 'Creado',
-        cell: (info) => formatFecha(info.getValue()),
+        header: 'Registro',
+        cell: (info) => formatFechaHora(info.getValue()),
       }),
       columnHelper.display({
         id: 'acciones',

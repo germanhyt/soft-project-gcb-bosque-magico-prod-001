@@ -3,9 +3,11 @@ import type { Evento } from '../../lib/eventos';
 import {
   WEEKDAY_LABELS,
   celdasMes,
+  mesToParam,
   nombreMesAnio,
   parseMesParam,
 } from '../../lib/agenda-calendar';
+import { fechaCalendarioHoy } from '../../lib/fecha-calendario';
 import { ETAPA_EVENTO_BADGE } from '../../constants/design';
 import { ETAPA_EVENTO_LABEL } from '../../constants/eventos';
 import { Icon } from '../ui/Icon';
@@ -60,8 +62,9 @@ export function AgendaMonthCalendar({
         <button
           type="button"
           onClick={() => {
-            const n = new Date();
-            onMesChange(`${n.getFullYear()}-${String(n.getMonth() + 1).padStart(2, '0')}`);
+            const hoy = fechaCalendarioHoy();
+            const [y, m] = hoy.split('-').map(Number);
+            onMesChange(mesToParam(y, m - 1));
           }}
           className="rounded-full border border-surface-variant px-4 py-1.5 text-body-sm font-semibold text-primary transition hover:bg-surface-container-low"
         >

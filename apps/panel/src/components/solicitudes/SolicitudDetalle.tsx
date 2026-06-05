@@ -12,7 +12,7 @@ import {
   MOTIVO_CIERRE_LABEL,
   TURNO_LABEL,
 } from '../../constants/solicitudes';
-import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { CARD_CLASS, INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { EtapaBadge } from '../ui/EtapaBadge';
 import { Button } from '../ui/Button';
@@ -285,61 +285,83 @@ export function SolicitudDetalle({
         {isError && !s ? (
           <p className="text-error">No se pudo cargar la solicitud. Verifica la API e intenta de nuevo.</p>
         ) : s ? (
-          <>
-            <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="space-y-6">
+            <div className="flex flex-wrap items-center gap-2">
               <EtapaBadge etapa={s.etapa} />
-              <span className="text-on-surface-variant">{CANAL_LABEL[s.canal] ?? s.canal}</span>
+              <span className="rounded-full bg-surface-container-high px-2.5 py-0.5 text-xs font-medium text-on-surface-variant">
+                {CANAL_LABEL[s.canal] ?? s.canal}
+              </span>
               {esPosibleDuplicadoLanding(s) && (
-                <span className="rounded-full bg-tertiary-fixed/50 px-2 py-0.5 text-xs font-semibold text-tertiary">
+                <span className="rounded-full bg-tertiary-fixed/50 px-2.5 py-0.5 text-xs font-semibold text-tertiary">
                   Posible duplicado
                 </span>
               )}
             </div>
-            <p className="text-title-md text-on-surface">{s.nombreContacto}</p>
-            <p className="mt-1">{s.celular}</p>
-            {s.correo && <p className="text-on-surface-variant">{s.correo}</p>}
 
-            <dl className="mt-4 space-y-2">
+            <dl className={`grid gap-4 p-4 sm:grid-cols-2 ${CARD_CLASS}`}>
+              <div>
+                <dt className="text-label-caps text-outline">Celular</dt>
+                <dd className="mt-0.5 font-medium text-on-surface">{s.celular}</dd>
+              </div>
+              {s.correo ? (
+                <div>
+                  <dt className="text-label-caps text-outline">Correo</dt>
+                  <dd className="mt-0.5 font-medium text-on-surface">{s.correo}</dd>
+                </div>
+              ) : null}
               <div>
                 <dt className="text-label-caps text-outline">Ingreso</dt>
-                <dd>{formatFecha(s.fechaIngreso)}</dd>
+                <dd className="mt-0.5 font-medium text-on-surface">{formatFecha(s.fechaIngreso)}</dd>
               </div>
+              <div>
+                <dt className="text-label-caps text-outline">Registrado</dt>
+                <dd className="mt-0.5 font-medium text-on-surface">{formatFechaHora(s.creadoEn)}</dd>
+              </div>
+            </dl>
+
+            <dl className={`grid gap-4 p-4 sm:grid-cols-2 ${CARD_CLASS}`}>
               <div>
                 <dt className="text-label-caps text-outline">Fecha tentativa</dt>
-                <dd>{formatFecha(s.fechaTentativa)}</dd>
+                <dd className="mt-0.5 font-medium text-on-surface">{formatFecha(s.fechaTentativa)}</dd>
               </div>
-              {s.turnoInteres && (
-                <div>
-                  <dt className="text-label-caps text-outline">Turno</dt>
-                  <dd>{TURNO_LABEL[s.turnoInteres]}</dd>
-                </div>
-              )}
-              {s.cantidadNinosEstimada != null && (
-                <div>
-                  <dt className="text-label-caps text-outline">Niños</dt>
-                  <dd>{s.cantidadNinosEstimada}</dd>
-                </div>
-              )}
+              <div>
+                <dt className="text-label-caps text-outline">Turno</dt>
+                <dd className="mt-0.5 font-medium text-on-surface">
+                  {s.turnoInteres ? (TURNO_LABEL[s.turnoInteres] ?? s.turnoInteres) : '—'}
+                </dd>
+              </div>
+              <div>
+                <dt className="text-label-caps text-outline">Niños estimados</dt>
+                <dd className="mt-0.5 font-medium text-on-surface">
+                  {s.cantidadNinosEstimada ?? '—'}
+                </dd>
+              </div>
               <div>
                 <dt className="text-label-caps text-outline">Último contacto</dt>
-                <dd>{formatFechaHora(s.ultimoContactoEn)}</dd>
+                <dd className="mt-0.5 font-medium text-on-surface">
+                  {formatFechaHora(s.ultimoContactoEn)}
+                </dd>
               </div>
               <div>
                 <dt className="text-label-caps text-outline">Próximo seguimiento</dt>
-                <dd>{formatFechaHora(s.proximoSeguimientoEn)}</dd>
+                <dd className="mt-0.5 font-medium text-on-surface">
+                  {formatFechaHora(s.proximoSeguimientoEn)}
+                </dd>
               </div>
-              {s.motivoCierre && (
+              {s.motivoCierre ? (
                 <div>
                   <dt className="text-label-caps text-outline">Motivo cierre</dt>
-                  <dd>{MOTIVO_CIERRE_LABEL[s.motivoCierre]}</dd>
+                  <dd className="mt-0.5 font-medium text-on-surface">
+                    {MOTIVO_CIERRE_LABEL[s.motivoCierre]}
+                  </dd>
                 </div>
-              )}
+              ) : null}
             </dl>
 
             <SolicitudPreferenciasLanding solicitud={s} />
 
             {cotizacionActiva && (
-              <div className="mt-4 rounded-lg border border-primary/30 bg-primary-fixed/20 p-3">
+              <div className={`p-4 ${CARD_CLASS} border-primary/30 bg-primary-fixed/20`}>
                 <p className="text-label-caps text-outline">Cotización vinculada</p>
                 <p className="mt-1 font-semibold text-primary">{cotizacionActiva.codigo}</p>
                 <p className="text-body-sm capitalize text-on-surface-variant">
@@ -349,19 +371,21 @@ export function SolicitudDetalle({
             )}
 
             {s.notas && (
-              <div className="mt-4 rounded-lg bg-surface-container-low p-3">
+              <div className={`p-4 ${CARD_CLASS}`}>
                 <p className="text-label-caps text-outline">Notas</p>
-                <p className="mt-1 whitespace-pre-wrap">{s.notas}</p>
+                <p className="mt-2 whitespace-pre-wrap text-on-surface">{s.notas}</p>
               </div>
             )}
 
-            <div className="mt-6 border-t border-surface-variant pt-4">
-              <p className="mb-3 font-semibold text-primary">Bitácora</p>
-              <AuditoriaTimeline tipoEntidad="solicitud" entidadId={solicitudId!} />
+            <div>
+              <h3 className="font-bold text-primary">Bitácora</h3>
+              <div className="mt-3">
+                <AuditoriaTimeline tipoEntidad="solicitud" entidadId={solicitudId!} />
+              </div>
             </div>
 
             {s.etapa !== 'cerrada' && (
-              <div className="mt-6 space-y-3 border-t border-surface-variant pt-4">
+              <div className={`space-y-3 p-4 ${CARD_CLASS}`}>
                 <p className="font-semibold text-primary">Seguimiento</p>
                 <textarea
                   rows={3}
@@ -390,12 +414,12 @@ export function SolicitudDetalle({
               </div>
             )}
             {s.etapa === 'cerrada' && (
-              <p className="mt-4 text-center text-body-sm text-outline">
+              <p className="text-center text-body-sm text-outline">
                 Estado: {ETAPA_LABEL[s.etapa]}
                 {s.motivoCierre ? ` · ${MOTIVO_CIERRE_LABEL[s.motivoCierre]}` : ''}
               </p>
             )}
-          </>
+          </div>
         ) : null}
       </DetalleModal>
 

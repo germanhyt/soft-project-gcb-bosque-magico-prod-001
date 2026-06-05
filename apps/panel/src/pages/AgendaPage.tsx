@@ -14,12 +14,9 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { ETAPAS_EVENTO_FILTRO } from '../constants/eventos';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { mesToParam, parseMesParam, rangoMes } from '../lib/agenda-calendar';
+import { isoFechaLocal } from '../lib/fecha-calendario';
 import { fetchAgenda, type EtapaEvento, type Evento } from '../lib/eventos';
 import { formatFecha } from '../lib/format';
-
-function isoDate(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
 
 type VistaAgenda = 'lista' | 'mes';
 
@@ -34,12 +31,12 @@ export function AgendaPage() {
   const mesParam = mesToParam(year, month);
   const { desde: desdeMes, hasta: hastaMes } = rangoMes(year, month);
 
-  const desde = vista === 'mes' ? desdeMes : (searchParams.get('desde') ?? isoDate(new Date()));
+  const desde = vista === 'mes' ? desdeMes : (searchParams.get('desde') ?? isoFechaLocal(new Date()));
   const hasta =
     vista === 'mes'
       ? hastaMes
       : (searchParams.get('hasta') ??
-        isoDate(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)));
+        isoFechaLocal(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)));
 
   const diaMes = searchParams.get('dia') ?? '';
 
@@ -104,10 +101,10 @@ export function AgendaPage() {
         vista: undefined,
         mes: undefined,
         dia: undefined,
-        desde: searchParams.get('desde') ?? isoDate(new Date()),
+        desde: searchParams.get('desde') ?? isoFechaLocal(new Date()),
         hasta:
           searchParams.get('hasta') ??
-          isoDate(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)),
+          isoFechaLocal(new Date(Date.now() + 60 * 24 * 60 * 60 * 1000)),
       });
     }
   };

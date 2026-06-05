@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { EtapaEvento, Prisma, TurnoInteres } from '@prisma/client';
+import {
+  fechaCalendarioHoy,
+  inicioDiaCalendarioUtc,
+} from '../../domain/utils/fecha-calendario';
 import { PrismaService } from '../../../prisma/prisma.service';
 
 export type ListarEventosParams = {
@@ -76,8 +80,7 @@ export class EventosRepository {
   }
 
   proximos(limite = 5) {
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
+    const hoy = inicioDiaCalendarioUtc(fechaCalendarioHoy());
     return this.prisma.bosqueMagicoEvento.findMany({
       where: {
         fechaEvento: { gte: hoy },

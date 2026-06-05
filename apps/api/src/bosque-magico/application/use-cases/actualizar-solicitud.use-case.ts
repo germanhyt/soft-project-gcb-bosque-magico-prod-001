@@ -4,6 +4,10 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EtapaSolicitud, Prisma } from '@prisma/client';
+import {
+  esFechaCalendario,
+  parseFechaCalendarioUtc,
+} from '../../domain/utils/fecha-calendario';
 import { ActualizarSolicitudDto } from '../dto/actualizar-solicitud.dto';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
@@ -18,6 +22,7 @@ function parseFechaTentativa(value?: string) {
   if (value === undefined) return undefined;
   const trimmed = value.trim();
   if (!trimmed) return null;
+  if (esFechaCalendario(trimmed)) return parseFechaCalendarioUtc(trimmed);
   const d = new Date(trimmed);
   if (Number.isNaN(d.getTime())) {
     throw new BadRequestException('Fecha tentativa inválida');
