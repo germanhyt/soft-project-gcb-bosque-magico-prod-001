@@ -1,5 +1,6 @@
 import axios from 'axios';
 import { clearSession, getStoredToken } from './auth-storage';
+import type { EtapaCotizacion } from './cotizaciones';
 import type { ListQueryParams, PaginatedResponse } from './pagination';
 import { DEFAULT_PAGE_SIZE } from './pagination';
 
@@ -48,7 +49,7 @@ export type TurnoInteres = 'turno_1' | 'turno_2' | 'turno_3';
 export type CotizacionResumenSolicitud = {
   id: string;
   codigo: string;
-  etapa: string;
+  etapa: EtapaCotizacion;
   creadoEn: string;
 };
 
