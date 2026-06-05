@@ -29,28 +29,42 @@ function invalidateForEvent(qc: ReturnType<typeof useQueryClient>, event: Bosque
 }
 
 export function useBosqueSocket() {
-  const { authRequired } = useAuth();
+  const { authRequired, user } = useAuth();
   const { pushNotification } = useNotifications();
   const { setStatus } = useSocketStatus();
   const qc = useQueryClient();
 
   useEffect(() => {
     let socket: Socket | undefined;
+    let cancelled = false;
 
     const connect = () => {
+      const token = getStoredToken();
+      if (authRequired && !token) {
+        setStatus('disconnected');
+        return;
+      }
+
       setStatus('connecting');
-      const auth =
-        authRequired && getStoredToken() ? { token: getStoredToken()! } : undefined;
 
       socket = io(resolveSocketServerUrl(), {
         path: '/socket.io',
-        transports: ['websocket', 'polling'],
-        auth,
+        transports: ['polling', 'websocket'],
+        withCredentials: true,
+        reconnection: true,
+        reconnectionAttempts: 8,
+        auth: token ? { token } : undefined,
       });
 
-      socket.on('connect', () => setStatus('connected'));
-      socket.on('disconnect', () => setStatus('disconnected'));
-      socket.on('connect_error', () => setStatus('disconnected'));
+      socket.on('connect', () => {
+        if (!cancelled) setStatus('connected');
+      });
+      socket.on('disconnect', () => {
+        if (!cancelled) setStatus('disconnected');
+      });
+      socket.on('connect_error', () => {
+        if (!cancelled) setStatus('disconnected');
+      });
 
       socket.on('bosque:event', (event: BosquePanelEvent) => {
         pushNotification(event);
@@ -61,8 +75,9 @@ export function useBosqueSocket() {
     connect();
 
     return () => {
+      cancelled = true;
       setStatus('disconnected');
       socket?.disconnect();
     };
-  }, [authRequired, pushNotification, qc, setStatus]);
+  }, [authRequired, user?.id, pushNotification, qc, setStatus]);
 }

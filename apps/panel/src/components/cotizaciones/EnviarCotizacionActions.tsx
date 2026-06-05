@@ -2,12 +2,16 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
+import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import {
   enviarCotizacion,
+  fetchCotizacion,
   type EtapaCotizacion,
 } from '../../lib/cotizaciones';
 
 type ClienteContacto = { celular: string; correo?: string | null };
+
+type EnviarOpts = { canal: 'whatsapp' | 'email'; withPdf?: boolean };
 
 export function useEnviarCotizacionMutation(
   cotizacionId: string,
@@ -17,27 +21,51 @@ export function useEnviarCotizacionMutation(
   const qc = useQueryClient();
 
   return useMutation({
-    mutationFn: (canal: 'whatsapp' | 'email') =>
+    mutationFn: ({ canal }: EnviarOpts) =>
       enviarCotizacion(cotizacionId, {
         canal,
         celularDestino: cliente.celular,
         correoDestino: cliente.correo ?? undefined,
       }),
-    onSuccess: async (res, canal) => {
+    onSuccess: async (res, { canal, withPdf }) => {
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
         qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
         qc.invalidateQueries({ queryKey: ['solicitudes'] }),
         qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
       ]);
+
+      if (canal === 'whatsapp' && withPdf) {
+        try {
+          const cot = await fetchCotizacion(cotizacionId);
+          const ok = imprimirCotizacionPdf(cot);
+          if (!ok) {
+            await Swal.fire({
+              icon: 'warning',
+              title: 'PDF no generado',
+              text: 'Permite ventanas emergentes para descargar el PDF antes de WhatsApp.',
+            });
+          } else {
+            await new Promise((r) => setTimeout(r, 600));
+          }
+        } catch {
+          await Swal.fire({
+            icon: 'warning',
+            title: 'No se pudo generar el PDF',
+            text: 'Puedes descargarlo desde el detalle de la cotización.',
+          });
+        }
+      }
+
       if (canal === 'whatsapp' && res.mensajePrearmado && cliente.celular) {
         const url = `https://wa.me/51${cliente.celular.replace(/\D/g, '')}?text=${encodeURIComponent(res.mensajePrearmado)}`;
         window.open(url, '_blank');
       }
+
       await Swal.fire({
         icon: 'success',
         title: 'Cotización enviada',
-        html: `<p class="text-sm">Estado: <strong>Enviada</strong>. El cliente puede aceptar desde el link o el equipo con <strong>Aceptar (equipo)</strong>.</p>`,
+        html: `<p class="text-sm">Estado: <strong>Enviada</strong>. El link público ya apunta a la landing de sandbox.</p>`,
         timer: 2200,
         showConfirmButton: false,
       });
@@ -71,6 +99,20 @@ export function EnviarCotizacionActions({
   const puedeEnviar = etapa === 'borrador' || etapa === 'enviada';
   const enviarMut = useEnviarCotizacionMutation(cotizacionId, cliente, onSuccess);
 
+  const enviarWhatsApp = async () => {
+    const choice = await Swal.fire({
+      icon: 'question',
+      title: 'Enviar por WhatsApp',
+      html: `<p class="text-sm text-left">WhatsApp no adjunta archivos automáticamente desde el navegador. Puedes generar el PDF ahora y adjuntarlo manualmente en el chat.</p>`,
+      showCancelButton: true,
+      confirmButtonText: 'PDF + WhatsApp',
+      cancelButtonText: 'Solo mensaje',
+      reverseButtons: true,
+    });
+    if (choice.isDismissed) return;
+    enviarMut.mutate({ canal: 'whatsapp', withPdf: choice.isConfirmed });
+  };
+
   if (!puedeEnviar) return null;
 
   return (
@@ -78,7 +120,7 @@ export function EnviarCotizacionActions({
       <Button
         className="inline-flex gap-2 sm:flex-1"
         disabled={enviarMut.isPending}
-        onClick={() => enviarMut.mutate('whatsapp')}
+        onClick={() => void enviarWhatsApp()}
       >
         <WhatsAppIcon size={20} className="text-on-primary" />
         {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
@@ -88,7 +130,7 @@ export function EnviarCotizacionActions({
           variant="secondary"
           className="sm:flex-1"
           disabled={enviarMut.isPending}
-          onClick={() => enviarMut.mutate('email')}
+          onClick={() => enviarMut.mutate({ canal: 'email' })}
         >
           {etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo'}
         </Button>

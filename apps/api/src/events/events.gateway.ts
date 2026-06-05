@@ -8,14 +8,32 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
+import {
+  isAllowedCorsOrigin,
+  parseCorsOrigins,
+} from '../config/cors-origins';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import type { BosquePanelEvent } from './panel-event.types';
 
 const PANEL_ROOM = 'panel-operadores';
 
+function socketCorsOrigins():
+  | boolean
+  | string[]
+  | ((
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => void) {
+  const allowed = parseCorsOrigins(process.env.API_CORS_ORIGINS);
+  if (!allowed.length) return true;
+  return (origin, callback) => {
+    callback(null, isAllowedCorsOrigin(origin, allowed));
+  };
+}
+
 @Injectable()
 @WebSocketGateway({
-  cors: { origin: true, credentials: true },
+  cors: { origin: socketCorsOrigins(), credentials: true },
   path: '/socket.io',
 })
 export class EventsGateway implements OnGatewayConnection, OnGatewayDisconnect {

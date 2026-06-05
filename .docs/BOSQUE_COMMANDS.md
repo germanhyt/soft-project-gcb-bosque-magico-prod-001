@@ -117,7 +117,7 @@ sandbox-landing-bosque
 
 credenciales sandbox:
 admin@bosquemagico.test / BosqueDev123!
-
+  
 -------------------------------
 
 

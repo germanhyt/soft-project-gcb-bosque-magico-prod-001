@@ -39,7 +39,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
           title="Enviar por WhatsApp"
           aria-label="Enviar por WhatsApp"
           disabled={enviarMut.isPending}
-          onClick={() => enviarMut.mutate('whatsapp')}
+          onClick={() => enviarMut.mutate({ canal: 'whatsapp' })}
         />
       )}
       {cotizacion.etapa === 'enviada' && (

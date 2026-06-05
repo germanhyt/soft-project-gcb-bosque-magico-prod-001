@@ -51,7 +51,7 @@ export class EnviarCotizacionUseCase {
 
     const mensaje =
       dto.canal === CanalEnvio.whatsapp
-        ? `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista: ${link}`
+        ? `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\nVer detalle y aceptar:\n${link}\n\nDesde el enlace puedes revisar el PDF en tu navegador (Imprimir → Guardar como PDF).`
         : `Cotización ${cot.codigo} - Bosque Mágico: ${link}`;
 
     const despues = await this.cotizaciones.actualizarEtapa(id, {

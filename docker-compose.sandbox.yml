@@ -29,6 +29,7 @@ services:
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bosque_magico?schema=public
       JWT_SECRET: sandbox-secret-change-me
       API_CORS_ORIGINS: https://sandbox-landing-bosque.gcbprojects.site,https://sandbox-panel-bosque.gcbprojects.site
+      PUBLIC_SITE_URL: https://sandbox-landing-bosque.gcbprojects.site
       ADMIN_EMAIL: admin@bosquemagico.test
       ADMIN_PASSWORD: BosqueDev123!
     depends_on:
@@ -45,6 +46,7 @@ services:
       dockerfile: deploy/Dockerfile.panel
       args:
         VITE_API_URL: https://sandbox-api-bosque.gcbprojects.site/api
+        VITE_PUBLIC_SITE_URL: https://sandbox-landing-bosque.gcbprojects.site
     container_name: sandbox-panel-bosque
     restart: unless-stopped
     depends_on:
