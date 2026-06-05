@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNotifications } from '../contexts/NotificationsContext';
 import { useSocketStatus } from '../contexts/SocketStatusContext';
 import { getStoredToken } from '../lib/auth-storage';
+import { resolveSocketServerUrl } from '../lib/socket-url';
 import type { BosquePanelEvent } from '../types/bosque-panel-event';
 
 function invalidateForEvent(qc: ReturnType<typeof useQueryClient>, event: BosquePanelEvent) {
@@ -41,7 +42,7 @@ export function useBosqueSocket() {
       const auth =
         authRequired && getStoredToken() ? { token: getStoredToken()! } : undefined;
 
-      socket = io({
+      socket = io(resolveSocketServerUrl(), {
         path: '/socket.io',
         transports: ['websocket', 'polling'],
         auth,
