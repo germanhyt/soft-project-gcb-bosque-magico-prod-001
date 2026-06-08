@@ -3,19 +3,21 @@ services:
     image: postgres:16-alpine
     container_name: sandbox-postgres-bosque
     restart: unless-stopped
+    entrypoint: ["/sandbox-entrypoint.sh"]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: bosque_magico
     volumes:
       - sandbox_pg_data:/var/lib/postgresql/data
+      - ./deploy/postgres-sandbox-entrypoint.sh:/sandbox-entrypoint.sh:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d bosque_magico"]
       interval: 5s
       timeout: 5s
       retries: 20
     ports:
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
 
   api:
     build:
