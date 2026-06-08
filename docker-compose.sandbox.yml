@@ -3,7 +3,7 @@ services:
     image: postgres:16-alpine
     container_name: sandbox-postgres-bosque
     restart: unless-stopped
-    entrypoint: ["/sandbox-entrypoint.sh"]
+    entrypoint: ["/bin/sh", "/sandbox-entrypoint.sh"]
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
