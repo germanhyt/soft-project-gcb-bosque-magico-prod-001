@@ -217,6 +217,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
   const [identidadHint, setIdentidadHint] = useState<string | null>(null);
   const { data, isLoading, isError } = useConfiguracion();
   const tarifas = data?.tarifas ?? TARIFAS_DEFAULT;
+  const feriados = data?.feriados ?? [];
   const turnos = useMemo(() => getTurnos(data?.items), [data?.items]);
   const minimoCatering = useMemo(() => getMinimoCatering(data?.items), [data?.items]);
   const productoById = useMemo(() => buildProductoById(data?.productos), [data?.productos]);
@@ -270,7 +271,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
               items: preview.data.montos.items,
             }
           : {
-              ...calcularEstimado(tarifas, values.fechaTentativa, values.cantidadNinos),
+              ...calcularEstimado(tarifas, values.fechaTentativa, values.cantidadNinos, feriados),
               items: 0,
             };
         await Swal.fire({
@@ -335,8 +336,8 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
   });
 
   const estimadoFallback = useMemo(
-    () => calcularEstimado(tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos),
-    [tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos],
+    () => calcularEstimado(tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados),
+    [tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados],
   );
 
   const estimado: {
@@ -368,7 +369,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
   }, [preview.data, estimadoFallback]);
 
   const cartItems = useMemo(() => {
-    const esFds = isWeekend(formik.values.fechaTentativa);
+    const esFds = isWeekend(formik.values.fechaTentativa, feriados);
     return previewItems
       .map((item) => {
         const producto = productoById.get(item.productoId);
@@ -391,7 +392,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
       subtotal: number;
       tipo: ProductoCatalogo['categoria'];
     }>;
-  }, [previewItems, productoById, formik.values.fechaTentativa]);
+  }, [previewItems, productoById, formik.values.fechaTentativa, feriados]);
 
   const wa = import.meta.env.VITE_WHATSAPP_NUMBER;
   const waLink = wa

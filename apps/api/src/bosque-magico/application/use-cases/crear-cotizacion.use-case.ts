@@ -47,8 +47,9 @@ export class CrearCotizacionUseCase {
   private async resolverItems(
     items: ItemCotizacionDto[] | undefined,
     fecha: Date,
+    feriados: ReadonlySet<string>,
   ) {
-    const esFin = this.calculo.isWeekend(fecha);
+    const esFin = this.calculo.esTarifaFinSemana(fecha, feriados);
     const resolved = [];
     for (const item of items ?? []) {
       if (item.productoId) {
@@ -94,6 +95,7 @@ export class CrearCotizacionUseCase {
     }
 
     const fechaEvento = new Date(dto.fechaEvento);
+    const feriados = await this.calculo.obtenerFeriados();
     let cliente = await this.clientes.buscarPorCelular(dto.cliente.celular);
     if (!cliente) {
       cliente = await this.clientes.crear({
@@ -115,7 +117,7 @@ export class CrearCotizacionUseCase {
       cliente: { connect: { id: cliente.id } },
     });
 
-    const items = await this.resolverItems(dto.items, fechaEvento);
+    const items = await this.resolverItems(dto.items, fechaEvento, feriados);
     const tarifas = await this.calculo.obtenerTarifas();
     const resultado = this.calculo.calcular(
       tarifas,
@@ -125,6 +127,7 @@ export class CrearCotizacionUseCase {
         cantidad: i.cantidad,
         precioUnitario: i.precioUnitario,
       })),
+      feriados,
     );
 
     const cotizacion = await this.cotizaciones.crearConItems({

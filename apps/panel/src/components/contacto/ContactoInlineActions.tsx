@@ -15,6 +15,8 @@ type Props = ContactoInlineTarget & {
   /** Texto o URL a copiar con el botón de enlace */
   enlaceCopiar?: string;
   enlaceTitulo?: string;
+  /** Ocultar correo genérico (p. ej. cotizaciones usan envío de cotización) */
+  ocultarCorreo?: boolean;
 };
 
 export function ContactoInlineActions({
@@ -23,6 +25,7 @@ export function ContactoInlineActions({
   correo,
   enlaceCopiar,
   enlaceTitulo = 'Copiar enlace',
+  ocultarCorreo = false,
 }: Props) {
   const [waOpen, setWaOpen] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
@@ -55,13 +58,15 @@ export function ContactoInlineActions({
         aria-label="Contactar por WhatsApp"
         onClick={() => setWaOpen(true)}
       />
-      <RowIconButton
-        icon="mail"
-        title={correo ? 'Contactar por correo' : 'Sin correo registrado'}
-        aria-label="Contactar por correo"
-        disabled={!correo}
-        onClick={() => correo && setMailOpen(true)}
-      />
+      {!ocultarCorreo && (
+        <RowIconButton
+          icon="mail"
+          title={correo ? 'Contactar por correo' : 'Sin correo registrado'}
+          aria-label="Contactar por correo"
+          disabled={!correo}
+          onClick={() => correo && setMailOpen(true)}
+        />
+      )}
       {enlaceCopiar && (
         <RowIconButton
           icon="link"

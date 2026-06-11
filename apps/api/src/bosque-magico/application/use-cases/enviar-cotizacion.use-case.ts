@@ -11,6 +11,7 @@ import {
 } from '../../domain/mappers/cotizacion.mapper';
 import { EventsService } from '../../../events/events.service';
 import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-cotizacion-sync.service';
+import { SmtpService } from '../../domain/services/smtp.service';
 import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { EnviarCotizacionDto } from '../dto/enviar-cotizacion.dto';
@@ -23,6 +24,7 @@ export class EnviarCotizacionUseCase {
     private readonly config: ConfigService,
     private readonly events: EventsService,
     private readonly solicitudSync: SolicitudCotizacionSyncService,
+    private readonly smtp: SmtpService,
   ) {}
 
   async ejecutar(id: string, dto: EnviarCotizacionDto) {
@@ -49,10 +51,33 @@ export class EnviarCotizacionUseCase {
       throw new BadRequestException('Falta destino para el canal de envío');
     }
 
+    const mensajeWhatsApp =
+      `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\nVer detalle y aceptar:\n${link}\n\nDesde el enlace puedes revisar el PDF en tu navegador (Imprimir → Guardar como PDF).`;
+
+    const correoAsuntoDefault = `Cotización ${cot.codigo} - Bosque Mágico`;
+    const correoCuerpoDefault =
+      `Hola ${cot.cliente.nombreCompleto},\n\n` +
+      `Tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\n` +
+      `Ver detalle y aceptar:\n${link}\n\n` +
+      `Saludos cordiales,\nEquipo Bosque Mágico`;
+
+    const correoAsunto =
+      dto.correoAsunto?.trim() || correoAsuntoDefault;
+    const correoCuerpo =
+      dto.correoCuerpo?.trim() || correoCuerpoDefault;
+
     const mensaje =
-      dto.canal === CanalEnvio.whatsapp
-        ? `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\nVer detalle y aceptar:\n${link}\n\nDesde el enlace puedes revisar el PDF en tu navegador (Imprimir → Guardar como PDF).`
-        : `Cotización ${cot.codigo} - Bosque Mágico: ${link}`;
+      dto.canal === CanalEnvio.whatsapp ? mensajeWhatsApp : correoCuerpo;
+
+    let enviadoPorSmtp = false;
+    if (dto.canal === CanalEnvio.email && (await this.smtp.estaActivo())) {
+      await this.smtp.enviarCorreo({
+        destino,
+        asunto: correoAsunto,
+        texto: correoCuerpo,
+      });
+      enviadoPorSmtp = true;
+    }
 
     const despues = await this.cotizaciones.actualizarEtapa(id, {
       etapa: EtapaCotizacion.enviada,
@@ -85,8 +110,11 @@ export class EnviarCotizacionUseCase {
 
     return {
       ...mapCotizacionResponse(despues),
-      mensajePrearmado: mensaje,
+      mensajePrearmado: dto.canal === CanalEnvio.whatsapp ? mensaje : undefined,
       linkPublico: link,
+      enviadoPorSmtp,
+      correoAsunto: dto.canal === CanalEnvio.email ? correoAsunto : undefined,
+      correoCuerpo: dto.canal === CanalEnvio.email ? correoCuerpo : undefined,
     };
   }
 }

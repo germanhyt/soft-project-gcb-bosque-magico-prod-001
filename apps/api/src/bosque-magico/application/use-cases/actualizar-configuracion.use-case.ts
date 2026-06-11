@@ -3,6 +3,7 @@ import { Prisma } from '@prisma/client';
 import { ActualizarConfiguracionDto } from '../dto/actualizar-configuracion.dto';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
+import { parseFeriadosConfig } from '../../domain/utils/tarifa-calendario';
 
 const CLAVES_NUMERICAS_PERMITIDAS = new Set([
   'tarifas.base_lunes_viernes',
@@ -37,7 +38,9 @@ const CLAVES_SMTP_TEXTO = new Set([
   'smtp.from_name',
 ]);
 
-const CLAVES_SMTP_BOOLEAN = new Set(['smtp.secure']);
+const CLAVES_SMTP_BOOLEAN = new Set(['smtp.secure', 'smtp.habilitado']);
+
+const CLAVES_FERIADOS = new Set(['calendario.feriados']);
 
 function parseSelectionMode(valor: unknown): 'single' | 'multiple' {
   if (valor === 'single' || valor === 'multiple') return valor;
@@ -103,6 +106,16 @@ function parseTurnoValor(valor: unknown): {
   return { etiqueta, horaInicio: '09:00', horaFin: '12:00', horario };
 }
 
+function parseFeriadosValor(valor: unknown): string[] {
+  const fechas = parseFeriadosConfig(valor);
+  if (Array.isArray(valor) && valor.length > 0 && fechas.length === 0) {
+    throw new BadRequestException(
+      'Feriados inválidos: use fechas YYYY-MM-DD',
+    );
+  }
+  return fechas;
+}
+
 @Injectable()
 export class ActualizarConfiguracionUseCase {
   constructor(
@@ -136,6 +149,8 @@ export class ActualizarConfiguracionUseCase {
         valorGuardar = parseTexto(item.valor, item.clave);
       } else if (CLAVES_SMTP_BOOLEAN.has(item.clave)) {
         valorGuardar = parseBoolean(item.valor, item.clave);
+      } else if (CLAVES_FERIADOS.has(item.clave)) {
+        valorGuardar = parseFeriadosValor(item.valor);
       } else {
         throw new BadRequestException(`Clave no editable: ${item.clave}`);
       }

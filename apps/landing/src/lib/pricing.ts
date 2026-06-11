@@ -40,9 +40,17 @@ export function mapConfigToTarifas(items: ConfiguracionItem[]): TarifasConfig {
   };
 }
 
-export function isWeekend(dateStr: string): boolean {
+export function feriadosDesdeConfig(items: ConfiguracionItem[]): string[] {
+  const raw = items.find((i) => i.clave === 'calendario.feriados')?.valor;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((v): v is string => typeof v === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(v));
+}
+
+export function isWeekend(dateStr: string, feriados: readonly string[] = []): boolean {
   if (!dateStr) return false;
-  const day = new Date(`${dateStr}T12:00:00`).getDay();
+  const clave = dateStr.slice(0, 10);
+  if (feriados.includes(clave)) return true;
+  const day = new Date(`${clave}T12:00:00`).getDay();
   return day === 0 || day === 6;
 }
 
@@ -50,12 +58,13 @@ export function calcularEstimado(
   tarifas: TarifasConfig,
   fecha: string,
   cantidadNinos: number,
+  feriados: readonly string[] = [],
 ): { base: number; extraNinos: number; total: number; esFinSemana: boolean; advertencia?: string } {
   let advertencia: string | undefined;
   if (cantidadNinos > tarifas.maximoPermitido) {
     advertencia = `Más de ${tarifas.maximoPermitido} niños requiere confirmación con el equipo.`;
   }
-  const esFinSemana = isWeekend(fecha);
+  const esFinSemana = isWeekend(fecha, feriados);
   const base = esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes;
   const extraCount = Math.max(Math.min(cantidadNinos, tarifas.maximoPermitido) - tarifas.maximoBase, 0);
   const extraNinos = extraCount * tarifas.precioNinoExtra;

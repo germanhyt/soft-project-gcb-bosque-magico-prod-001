@@ -65,6 +65,13 @@ const configuraciones = [
     esPublico: true,
   },
   {
+    clave: 'calendario.feriados',
+    valor: [],
+    descripcion:
+      'Fechas feriado (YYYY-MM-DD). Aplican tarifa fin de semana aunque caigan entre semana.',
+    esPublico: true,
+  },
+  {
     clave: 'cotizador.shows.selection_mode',
     valor: 'single',
     descripcion: 'Modo de selección de shows en landing: single o multiple',
@@ -116,45 +123,51 @@ const configuraciones = [
     esPublico: true,
   },
   {
+    clave: 'smtp.habilitado',
+    valor: false,
+    descripcion: 'Si está desactivado, el panel abrirá tu cliente de correo con el mensaje precargado.',
+    esPublico: false,
+  },
+  {
     clave: 'smtp.host',
     valor: '',
-    descripcion: 'Servidor SMTP (ej: smtp.gmail.com)',
+    descripcion: 'Ej: smtp.gmail.com',
     esPublico: false,
   },
   {
     clave: 'smtp.port',
     valor: 587,
-    descripcion: 'Puerto SMTP',
+    descripcion: '587 (STARTTLS) o 465 (SSL)',
     esPublico: false,
   },
   {
     clave: 'smtp.user',
     valor: '',
-    descripcion: 'Usuario SMTP',
+    descripcion: 'Cuenta de autenticación SMTP',
     esPublico: false,
   },
   {
     clave: 'smtp.password',
     valor: '',
-    descripcion: 'Contrasena SMTP',
+    descripcion: 'Contraseña o clave de aplicación',
     esPublico: false,
   },
   {
     clave: 'smtp.from_email',
     valor: 'no-reply@bosquemagico.test',
-    descripcion: 'Correo remitente',
+    descripcion: 'Dirección que verá el cliente como remitente',
     esPublico: false,
   },
   {
     clave: 'smtp.from_name',
     valor: 'Bosque Magico',
-    descripcion: 'Nombre remitente',
+    descripcion: 'Nombre visible del remitente',
     esPublico: false,
   },
   {
     clave: 'smtp.secure',
     valor: false,
-    descripcion: 'Usar conexion segura TLS/SSL',
+    descripcion: 'Usar SSL directo (puerto 465). Para 587 dejar en No.',
     esPublico: false,
   },
 ];

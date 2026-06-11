@@ -178,24 +178,35 @@ la idea ahora es automatizar este proceso usando como canal principal el whatssa
 Tengo base en el uso de n8n y ycloud par el uso de la api de whattssap, también podría usar webhook para integrarlos con el sistema que he avanzando, 
 si bien se puede exponer webhook desde el sistema para recuperar los datos desde meta (me podrías dar unn ejemplo), también por mi lado sería la alternativa de poder recepcionar los mensajes al whattssap que llegaría como el "hola quiero más información" y el agente con n8n responda brindado la información que también utilizando tools apuntando a la base de datos podría realizar verificaciones o validaciones; de ahí podríamos plantear talvez las respuesta que podría realizarce en cada CUS o caso de uso
 
-3)
-()
-Separar las acciones de envío de información (wstp, correo, link), acciones crud, acciones de envío y confirmación; estos que se denoten un poco separados
+La idea puede ser si viene de alguna red social aparte que el agente IA reconozca ese canal en caso haya un patron de consulta, por ejemplo que se mencione "Hola me puede dar más información, vengo del instagram", y que el agente reconozca e canal y pueda responder solicitando los datos; qué opinas?
 
-()
+
+3)
+
+(X)
 En "solicitudes" la fecha/hora registro lo colocamos en la primera columna
 
-()
+(x)
 Analizamos de forma correcta la máquina de estados del flujo de Solcitudes y el de Cotización
 
-()
-El pdf generado lO geneRAMOS en tamaño normal A4 tanto en cotizaciones como en contratos
+(x)
+El pdf generado lo generamos de tamaño normal A4 tanto en cotizaciones como en contratos
 
-()
+(X)
 En configuraciones considerar las fechas de feriado (regla general para determinar las fechas de feriados para nuestro sistema)
 
-()
+(x)
 Pruebas de la config de correos SMTP (test funcional)
+
+
+()
+Distinguir las acciones de envío de información (wstp, correo, link), acciones crud, acciones de envío y confirmación; estos cada módulo
+
+Respecto a 
+
+
+()
+Paginado en el catálogo de productos
 
 
 

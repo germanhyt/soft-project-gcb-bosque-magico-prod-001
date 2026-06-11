@@ -129,12 +129,23 @@ export async function actualizarCotizacion(id: string, payload: ActualizarCotiza
 
 export async function enviarCotizacion(
   id: string,
-  payload: { canal: CanalEnvio; correoDestino?: string; celularDestino?: string },
+  payload: {
+    canal: CanalEnvio;
+    correoDestino?: string;
+    celularDestino?: string;
+    correoAsunto?: string;
+    correoCuerpo?: string;
+  },
 ) {
-  const { data } = await api.post<Cotizacion & { mensajePrearmado: string; linkPublico: string }>(
-    `/bosque-magico/cotizaciones/${id}/enviar`,
-    payload,
-  );
+  const { data } = await api.post<
+    Cotizacion & {
+      mensajePrearmado?: string;
+      linkPublico: string;
+      enviadoPorSmtp?: boolean;
+      correoAsunto?: string;
+      correoCuerpo?: string;
+    }
+  >(`/bosque-magico/cotizaciones/${id}/enviar`, payload);
   return data;
 }
 

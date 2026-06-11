@@ -1,4 +1,5 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { linkPublicoCompleto } from '../../lib/cotizaciones';
@@ -10,6 +11,7 @@ import {
   confirmarAceptacionCotizacion,
   useAceptarCotizacionMutation,
 } from './AceptarCotizacionAction';
+import { EnviarCotizacionCorreoModal } from './EnviarCotizacionCorreoModal';
 import { enviarWhatsAppRapido } from './EnviarCotizacionActions';
 
 type Props = {
@@ -24,6 +26,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const puedeEnviar =
     cotizacion.etapa === 'borrador' || cotizacion.etapa === 'enviada';
   const qc = useQueryClient();
+  const [correoModalOpen, setCorreoModalOpen] = useState(false);
   const enviarWaMut = useMutation({
     mutationFn: () => enviarWhatsAppRapido(cotizacion.id, cotizacion.cliente, qc),
     onError: async () => {
@@ -33,6 +36,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const aceptarMut = useAceptarCotizacionMutation(cotizacion.id);
 
   return (
+    <>
     <RowActionsToolbar>
       <ContactoInlineActions
         nombre={cotizacion.cliente.nombreCompleto}
@@ -40,7 +44,16 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         correo={cotizacion.cliente.correo}
         enlaceCopiar={linkPublico}
         enlaceTitulo="Copiar link público de cotización"
+        ocultarCorreo
       />
+      {puedeEnviar && cotizacion.cliente.correo && (
+        <RowIconButton
+          icon="mail"
+          title="Enviar cotización por correo"
+          aria-label="Enviar cotización por correo"
+          onClick={() => setCorreoModalOpen(true)}
+        />
+      )}
       {puedeEnviar && (
         <RowIconButton
           icon="send"
@@ -65,7 +78,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
       )}
       {cotizacion.etapa === 'borrador' && (
         <RowIconButton
-          icon="edit"
+          icon="edit_square"
           title="Editar borrador"
           aria-label="Editar borrador"
           onClick={() =>
@@ -90,5 +103,17 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         />
       )}
     </RowActionsToolbar>
+    <EnviarCotizacionCorreoModal
+      open={correoModalOpen}
+      onClose={() => setCorreoModalOpen(false)}
+      cotizacionId={cotizacion.id}
+      cliente={cotizacion.cliente}
+      preview={{
+        codigo: cotizacion.codigo,
+        linkPublico,
+        nombreCliente: cotizacion.cliente.nombreCompleto,
+      }}
+    />
+    </>
   );
 }

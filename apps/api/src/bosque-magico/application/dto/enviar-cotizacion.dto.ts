@@ -16,4 +16,14 @@ export class EnviarCotizacionDto {
   @IsOptional()
   @IsString()
   celularDestino?: string;
+
+  @ApiPropertyOptional({ description: 'Asunto personalizado si canal es email' })
+  @IsOptional()
+  @IsString()
+  correoAsunto?: string;
+
+  @ApiPropertyOptional({ description: 'Cuerpo personalizado si canal es email' })
+  @IsOptional()
+  @IsString()
+  correoCuerpo?: string;
 }

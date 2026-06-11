@@ -18,7 +18,8 @@ export class PrevisualizarCotizacionPublicaUseCase {
       throw new BadRequestException('Fecha de evento inválida');
     }
 
-    const esFinSemana = this.calculo.isWeekend(fechaEvento);
+    const feriados = await this.calculo.obtenerFeriados();
+    const esFinSemana = this.calculo.esTarifaFinSemana(fechaEvento, feriados);
     const itemsSeleccionados = [];
     for (const item of dto.items ?? []) {
       const producto = await this.productos.obtenerPorId(item.productoId);
@@ -59,6 +60,7 @@ export class PrevisualizarCotizacionPublicaUseCase {
         cantidad: item.cantidad,
         precioUnitario: item.precioUnitario,
       })),
+      feriados,
     );
 
     return {

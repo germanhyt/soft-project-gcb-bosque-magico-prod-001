@@ -34,6 +34,7 @@ import { SubirImagenProductoUseCase } from './application/use-cases/subir-imagen
 import { TomarSolicitudUseCase } from './application/use-cases/tomar-solicitud.use-case';
 import { CalculoPreciosService } from './domain/services/calculo-precios.service';
 import { SolicitudCotizacionSyncService } from './domain/services/solicitud-cotizacion-sync.service';
+import { SmtpService } from './domain/services/smtp.service';
 import { IdentidadContactoService } from './domain/services/identidad-contacto.service';
 import { AuditoriaRepository } from './infrastructure/repositories/auditoria.repository';
 import { ClientesRepository } from './infrastructure/repositories/clientes.repository';
@@ -92,6 +93,7 @@ import {
     ContratosRepository,
     CalculoPreciosService,
     SolicitudCotizacionSyncService,
+    SmtpService,
     IdentidadContactoService,
     ListarClientesUseCase,
     ObtenerClienteUseCase,

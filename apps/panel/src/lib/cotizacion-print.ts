@@ -60,7 +60,11 @@ function buildCotizacionPrintHtml(cot: Cotizacion, logoUrl: string) {
     .totals div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e8efe9; }
     .totals .grand { font-size: 18px; font-weight: 700; color: #2d5a3d; border-bottom: none; padding-top: 10px; }
     .footer { margin-top: 32px; font-size: 12px; color: #6b7c6f; border-top: 1px solid #e8efe9; padding-top: 12px; }
-    @media print { body { padding: 16px; } }
+    @media print {
+      @page { size: A4 portrait; margin: 15mm; }
+      html, body { width: 210mm; min-height: 297mm; }
+      body { padding: 0; }
+    }
   </style>
 </head>
 <body>

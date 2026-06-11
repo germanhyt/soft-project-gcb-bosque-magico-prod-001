@@ -241,7 +241,11 @@ function buildContratoPrintHtml(payload: ContratoPrintPayload, logoUrl: string) 
     .firma { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
     .firma-line { border-top: 1px solid #2d5a3d; padding-top: 6px; text-align: center; }
     .meta, .muted { font-size: 10px; color: #6b7c6f; margin-top: 8px; }
-    @media print { body { padding: 12px 16px; } }
+    @media print {
+      @page { size: A4 portrait; margin: 12mm; }
+      html, body { width: 210mm; min-height: 297mm; }
+      body { padding: 0; }
+    }
   </style>
 </head>
 <body>

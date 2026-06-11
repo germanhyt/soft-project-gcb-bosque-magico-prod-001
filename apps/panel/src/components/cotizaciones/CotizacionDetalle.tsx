@@ -12,7 +12,14 @@ import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { fetchCotizacion, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
+import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
+import {
+  puedeAceptarCotizacion,
+  puedeEditarCotizacionBorrador,
+  puedeEnviarCotizacion,
+  puedeGenerarContrato,
+} from '../../lib/flujo-estados';
 import { formatFecha } from '../../lib/format';
 
 type Props = {
@@ -57,75 +64,92 @@ export function CotizacionDetalle({
 
   const footer =
     cot && !isLoading ? (
-      <div className="flex flex-col gap-2">
-        <EnviarCotizacionActions
-          cotizacionId={cot.id}
-          etapa={cot.etapa}
-          cliente={cot.cliente}
-          className="w-full"
-        />
-        {cot.etapa === 'borrador' && (
-          <p className="text-center text-xs text-outline">
-            Tras enviar, el cliente o el equipo pueden aceptar para crear el evento en Agenda.
-          </p>
-        )}
-        <AceptarCotizacionAction
-          cotizacionId={cot.id}
-          etapa={cot.etapa}
-          fullWidth
-          onSuccess={() => onClose()}
-        />
-        {cot.etapa === 'aceptada' && cot.eventos?.[0]?.id && (
-          <GenerarContratoAction
-            eventoId={cot.eventos[0].id}
-            cotizacionId={cot.id}
-            fullWidth
-          />
-        )}
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-        {cot.etapa === 'borrador' && (
+      <DetalleActionsFooter>
+        <DetalleActionGroup label="Compartir con el cliente">
+          {puedeEnviarCotizacion(cot.etapa) && (
+            <EnviarCotizacionActions
+              cotizacionId={cot.id}
+              etapa={cot.etapa}
+              cliente={cot.cliente}
+              className="w-full"
+              preview={{
+                codigo: cot.codigo,
+                linkPublico: link,
+                nombreCliente: cot.cliente.nombreCompleto,
+              }}
+            />
+          )}
+          <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
+            Copiar link público
+          </Button>
           <Button
-            variant="accent"
-            className="sm:flex-1"
+            variant="ghost"
+            className="w-full"
             onClick={() => {
-              onClose();
-              if (onEditarBorrador) onEditarBorrador(cot.id);
-              else navigate(`/cotizaciones?editar=${cot.id}`);
+              if (!cot.cliente || !cot.cumpleanero) {
+                void Swal.fire({
+                  icon: 'warning',
+                  title: 'Datos incompletos',
+                  text: 'Espera a que cargue el detalle completo de la cotización.',
+                });
+                return;
+              }
+              const ok = imprimirCotizacionPdf(cot);
+              if (!ok) {
+                void Swal.fire({
+                  icon: 'error',
+                  title: 'No se pudo generar el PDF',
+                  text: 'Permite ventanas emergentes en el navegador o vuelve a intentar.',
+                });
+              }
             }}
           >
-            Editar borrador
+            Descargar PDF
           </Button>
+          {cot.etapa === 'borrador' && (
+            <p className="text-center text-xs text-outline">
+              Tras enviar, el cliente o el equipo pueden aceptar para crear el evento en Agenda.
+            </p>
+          )}
+        </DetalleActionGroup>
+
+        {(puedeAceptarCotizacion(cot.etapa) ||
+          (puedeGenerarContrato(cot.etapa) && cot.eventos?.[0]?.id)) && (
+          <DetalleActionGroup label="Confirmar flujo">
+            {puedeAceptarCotizacion(cot.etapa) && (
+              <AceptarCotizacionAction
+                cotizacionId={cot.id}
+                etapa={cot.etapa}
+                fullWidth
+                onSuccess={() => onClose()}
+              />
+            )}
+            {puedeGenerarContrato(cot.etapa) && cot.eventos?.[0]?.id && (
+              <GenerarContratoAction
+                eventoId={cot.eventos[0].id}
+                cotizacionId={cot.id}
+                fullWidth
+              />
+            )}
+          </DetalleActionGroup>
         )}
-        <Button variant="ghost" className="sm:flex-1" onClick={() => void copiarLink()}>
-          Copiar link público
-        </Button>
-        <Button
-          variant="ghost"
-          className="sm:flex-1"
-          disabled={isLoading}
-          onClick={() => {
-            if (!cot.cliente || !cot.cumpleanero) {
-              void Swal.fire({
-                icon: 'warning',
-                title: 'Datos incompletos',
-                text: 'Espera a que cargue el detalle completo de la cotización.',
-              });
-              return;
-            }
-            const ok = imprimirCotizacionPdf(cot);
-            if (!ok) {
-              void Swal.fire({
-                icon: 'error',
-                title: 'No se pudo generar el PDF',
-                text: 'Permite ventanas emergentes en el navegador o vuelve a intentar.',
-              });
-            }
-          }}
-        >
-          Descargar PDF
-        </Button>
-        </div>
-      </div>
+
+        {puedeEditarCotizacionBorrador(cot.etapa) && (
+          <DetalleActionGroup label="Editar">
+            <Button
+              variant="accent"
+              className="w-full"
+              onClick={() => {
+                onClose();
+                if (onEditarBorrador) onEditarBorrador(cot.id);
+                else navigate(`/cotizaciones?editar=${cot.id}`);
+              }}
+            >
+              Editar borrador
+            </Button>
+          </DetalleActionGroup>
+        )}
+      </DetalleActionsFooter>
     ) : undefined;
 
   return (

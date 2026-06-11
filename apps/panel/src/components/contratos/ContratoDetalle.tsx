@@ -5,7 +5,9 @@ import { ContratoBadge } from './ContratoBadge';
 import { ContratoFormModal } from './ContratoFormModal';
 import { EnviarContratoActions } from './EnviarContratoActions';
 import { DetalleModal } from '../ui/DetalleModal';
+import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { Button } from '../ui/Button';
+import { puedeEnviarContrato, puedeMarcarContratoFirmado } from '../../lib/flujo-estados';
 import { CARD_CLASS } from '../../constants/design';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { contratoToPrintPayload } from '../../lib/contrato';
@@ -58,36 +60,61 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
 
   const footer =
     c && !isLoading ? (
-      <div className="flex flex-col gap-2">
-        {celular && <EnviarContratoActions contrato={c} celular={celular} />}
-        {(c.etapa === 'borrador' || c.etapa === 'enviado') && (
-          <Button
-            variant="accent"
-            className="w-full"
-            disabled={firmarMut.isPending}
-            onClick={() => firmarMut.mutate()}
-          >
-            Marcar firmado
-          </Button>
+      <DetalleActionsFooter>
+        {celular && puedeEnviarContrato(c.etapa) ? (
+          <DetalleActionGroup label="Compartir con el cliente">
+            <EnviarContratoActions contrato={c} celular={celular} />
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                const ok = imprimirContratoPdf(contratoToPrintPayload(c));
+                if (!ok) {
+                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                }
+              }}
+            >
+              Imprimir / PDF
+            </Button>
+          </DetalleActionGroup>
+        ) : (
+          <DetalleActionGroup label="Documento">
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                const ok = imprimirContratoPdf(contratoToPrintPayload(c));
+                if (!ok) {
+                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                }
+              }}
+            >
+              Imprimir / PDF
+            </Button>
+          </DetalleActionGroup>
         )}
-        <Button
-          variant="ghost"
-          className="w-full"
-          onClick={() => {
-            const ok = imprimirContratoPdf(contratoToPrintPayload(c));
-            if (!ok) {
-              void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
-            }
-          }}
-        >
-          Imprimir / PDF
-        </Button>
-        {c.etapa === 'borrador' && (
-          <Button variant="secondary" className="w-full" onClick={() => setEditarOpen(true)}>
-            Editar datos
-          </Button>
-        )}
-      </div>
+
+        {puedeMarcarContratoFirmado(c.etapa) ? (
+          <DetalleActionGroup label="Confirmar flujo">
+            <Button
+              variant="accent"
+              className="w-full"
+              disabled={firmarMut.isPending}
+              onClick={() => firmarMut.mutate()}
+            >
+              Marcar firmado
+            </Button>
+          </DetalleActionGroup>
+        ) : null}
+
+        {c.etapa === 'borrador' ? (
+          <DetalleActionGroup label="Editar">
+            <Button variant="secondary" className="w-full" onClick={() => setEditarOpen(true)}>
+              Editar datos
+            </Button>
+          </DetalleActionGroup>
+        ) : null}
+      </DetalleActionsFooter>
     ) : undefined;
 
   return (

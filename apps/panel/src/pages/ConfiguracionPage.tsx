@@ -14,7 +14,10 @@ import {
   type TurnoConfigValor,
 } from '../lib/configuracion';
 import { horarioDesdeRango, parseTurnoConfig, turnoParaGuardar } from '../lib/turno-config';
+import { parseFeriadosConfig } from '../lib/tarifa-calendario';
+import { smtpValoresDesdeItems, SMTP_ORDEN } from '../lib/smtp-config';
 import type { Producto } from '../lib/cotizaciones';
+import { FeriadosConfigEditor } from '../components/configuracion/FeriadosConfigEditor';
 import { CatalogoProductoRowActions } from '../components/catalogo/CatalogoProductoRowActions';
 import { ProductoFormModal } from '../components/catalogo/ProductoFormModal';
 import { ProductImageDropzone } from '../components/catalogo/ProductImageDropzone';
@@ -24,6 +27,7 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { Button } from '../components/ui/Button';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
+import { PasswordInput } from '../components/ui/PasswordInput';
 import {
   CARD_CLASS,
   INPUT_CLASS,
@@ -59,13 +63,14 @@ const COTIZADOR_MODE_LABEL: Record<string, string> = {
 };
 
 const SMTP_LABELS: Record<string, string> = {
+  'smtp.habilitado': 'Habilitar envío automático (SMTP)',
   'smtp.host': 'Servidor SMTP (host)',
   'smtp.port': 'Puerto SMTP',
   'smtp.user': 'Usuario SMTP',
   'smtp.password': 'Contraseña SMTP',
   'smtp.from_email': 'Correo remitente',
   'smtp.from_name': 'Nombre remitente',
-  'smtp.secure': 'Conexión segura (TLS/SSL)',
+  'smtp.secure': 'Conexión segura (SSL directo)',
 };
 
 const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
@@ -87,6 +92,17 @@ function configLabel(item: ConfigItem) {
   return { titulo, ayuda: redundante ? undefined : ayuda };
 }
 
+function smtpFieldLabel(item: ConfigItem) {
+  const titulo = SMTP_LABELS[item.clave] ?? item.clave;
+  const ayuda = item.descripcion?.trim();
+  const redundante =
+    ayuda &&
+    (ayuda.toLowerCase() === titulo.toLowerCase() ||
+      titulo.toLowerCase().includes(ayuda.toLowerCase().slice(0, 10)) ||
+      ayuda.toLowerCase().includes(titulo.toLowerCase().slice(0, 10)));
+  return { titulo, ayuda: redundante ? undefined : ayuda };
+}
+
 function tienePermiso(permisos: string[] | undefined, clave: string) {
   return permisos?.includes(clave) ?? false;
 }
@@ -105,6 +121,7 @@ export function ConfiguracionPage() {
   const [turnos, setTurnos] = useState<Record<string, TurnoConfigValor>>({});
   const [cotizadorModos, setCotizadorModos] = useState<Record<string, SelectionMode>>({});
   const [smtpValores, setSmtpValores] = useState<Record<string, string>>({});
+  const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
   const [showInactivos, setShowInactivos] = useState(true);
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
   const [productoModalOpen, setProductoModalOpen] = useState(false);
@@ -146,16 +163,14 @@ export function ConfiguracionPage() {
     return map;
   }, [config]);
 
-  const smtpIniciales = useMemo(() => {
-    const map: Record<string, string> = {};
-    config?.smtp?.forEach((item) => {
-      if (typeof item.valor === 'boolean') {
-        map[item.clave] = item.valor ? 'true' : 'false';
-        return;
-      }
-      map[item.clave] = String(item.valor ?? '');
-    });
-    return map;
+  const smtpIniciales = useMemo(
+    () => smtpValoresDesdeItems(config?.smtp),
+    [config?.smtp],
+  );
+
+  const feriadosIniciales = useMemo(() => {
+    const item = config?.calendario?.find((c) => c.clave === 'calendario.feriados');
+    return parseFeriadosConfig(item?.valor);
   }, [config]);
 
   const valoresActuales = Object.keys(valores).length ? valores : valoresIniciales;
@@ -164,12 +179,34 @@ export function ConfiguracionPage() {
     ? cotizadorModos
     : cotizadorModosIniciales;
   const smtpActuales = Object.keys(smtpValores).length ? smtpValores : smtpIniciales;
+  const feriadosActuales = feriadosDraft ?? feriadosIniciales;
 
   const hayCambios =
     JSON.stringify(valoresActuales) !== JSON.stringify(valoresIniciales) ||
     JSON.stringify(turnosActuales) !== JSON.stringify(turnosIniciales) ||
     JSON.stringify(cotizadorModosActuales) !== JSON.stringify(cotizadorModosIniciales) ||
-    JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales);
+    JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales) ||
+    JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales);
+
+  const smtpOrdenados = useMemo(() => {
+    const items = config?.smtp ?? [];
+    const byClave = new Map(items.map((i) => [i.clave, i]));
+    const ordenados = SMTP_ORDEN.map((clave) => {
+      const existente = byClave.get(clave);
+      if (existente) return existente;
+      return {
+        id: clave,
+        clave,
+        valor: smtpIniciales[clave] ?? '',
+        descripcion: null,
+        esPublico: false,
+      } satisfies ConfigItem;
+    });
+    const resto = items.filter((i) => !SMTP_ORDEN.includes(i.clave as (typeof SMTP_ORDEN)[number]));
+    return [...ordenados, ...resto];
+  }, [config?.smtp, smtpIniciales]);
+
+  const smtpHabilitado = smtpActuales['smtp.habilitado'] === 'true';
 
   const productosFiltrados = useMemo(() => {
     if (categoriaFiltro === 'todas') return productos;
@@ -193,8 +230,16 @@ export function ConfiguracionPage() {
         })),
         ...Object.entries(smtpActuales).map(([clave, v]) => ({
           clave,
-          valor: clave === 'smtp.secure' ? v === 'true' : clave === 'smtp.port' ? Number(v) : v,
+          valor:
+            clave === 'smtp.secure' || clave === 'smtp.habilitado'
+              ? v === 'true'
+              : clave === 'smtp.port'
+                ? Number(v)
+                : v,
         })),
+        ...(JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales)
+          ? [{ clave: 'calendario.feriados', valor: feriadosActuales }]
+          : []),
       ];
       return guardarConfiguracion(actualizaciones);
     },
@@ -203,6 +248,7 @@ export function ConfiguracionPage() {
       setTurnos({});
       setCotizadorModos({});
       setSmtpValores({});
+      setFeriadosDraft(null);
       await qc.invalidateQueries({ queryKey: ['config-panel'] });
       await qc.invalidateQueries({ queryKey: ['configuracion-publica'] });
       await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
@@ -445,49 +491,64 @@ export function ConfiguracionPage() {
             </section>
 
             <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Feriados</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Fechas que aplican tarifa fin de semana aunque caigan entre semana (ej. feriados
+                nacionales en Perú). Sábados y domingos se calculan automáticamente.
+              </p>
+              <div className="mt-6">
+                <FeriadosConfigEditor
+                  fechas={feriadosActuales}
+                  onChange={(fechas) => setFeriadosDraft(fechas)}
+                />
+              </div>
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Correo SMTP</h3>
               <p className="mt-1 text-body-sm text-outline">
-                Configuración para habilitar el envío por correo desde el sistema.
+                {smtpHabilitado
+                  ? 'Envío automático activo: las cotizaciones se envían desde el servidor.'
+                  : 'Envío manual: al usar «Enviar por correo» se abrirá tu cliente de correo con el mensaje precargado.'}
               </p>
               <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {(config?.smtp ?? []).map((item) => {
+                {smtpOrdenados.map((item) => {
                   const value = smtpActuales[item.clave] ?? '';
-                  const titulo = SMTP_LABELS[item.clave] ?? item.clave;
+                  const { titulo, ayuda } = smtpFieldLabel(item);
                   const isPassword = item.clave === 'smtp.password';
-                  const isSecure = item.clave === 'smtp.secure';
+                  const isBoolean =
+                    item.clave === 'smtp.secure' || item.clave === 'smtp.habilitado';
                   const isPort = item.clave === 'smtp.port';
+                  const setValor = (next: string) =>
+                    setSmtpValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : smtpIniciales,
+                      [item.clave]: next,
+                    }));
+
                   return (
                     <label key={item.clave} className="block">
                       <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
-                      {item.descripcion && (
-                        <span className="block text-body-sm text-outline">{item.descripcion}</span>
-                      )}
-                      {isSecure ? (
+                      {ayuda && <span className="block text-body-sm text-outline">{ayuda}</span>}
+                      {isBoolean ? (
                         <select
                           className={`mt-1 w-full ${INPUT_CLASS}`}
                           value={value || 'false'}
-                          onChange={(e) =>
-                            setSmtpValores((prev) => ({
-                              ...Object.keys(prev).length ? prev : smtpIniciales,
-                              [item.clave]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => setValor(e.target.value)}
                         >
                           <option value="false">No</option>
                           <option value="true">Sí</option>
                         </select>
+                      ) : isPassword ? (
+                        <div className="mt-1">
+                          <PasswordInput value={value} onChange={setValor} autoComplete="new-password" />
+                        </div>
                       ) : (
                         <input
-                          type={isPort ? 'number' : isPassword ? 'password' : 'text'}
+                          type={isPort ? 'number' : 'text'}
                           step={isPort ? '1' : undefined}
                           className={`mt-1 w-full ${INPUT_CLASS}`}
                           value={value}
-                          onChange={(e) =>
-                            setSmtpValores((prev) => ({
-                              ...Object.keys(prev).length ? prev : smtpIniciales,
-                              [item.clave]: e.target.value,
-                            }))
-                          }
+                          onChange={(e) => setValor(e.target.value)}
                         />
                       )}
                     </label>

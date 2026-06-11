@@ -1,5 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
+import {
+  esTarifaFinSemana,
+  feriadosComoSet,
+} from '../utils/tarifa-calendario';
 
 export type TarifasNegocio = {
   baseLunesViernes: number;
@@ -48,17 +52,27 @@ export class CalculoPreciosService {
     return day === 0 || day === 6;
   }
 
+  async obtenerFeriados(): Promise<Set<string>> {
+    const item = await this.configuracion.obtenerPorClave('calendario.feriados');
+    return feriadosComoSet(item?.valor);
+  }
+
+  esTarifaFinSemana(fecha: Date, feriados: ReadonlySet<string>): boolean {
+    return esTarifaFinSemana(fecha, feriados);
+  }
+
   calcular(
     tarifas: TarifasNegocio,
     fechaEvento: Date,
     cantidadNinos: number,
     items: ItemCalculoInput[],
+    feriados: ReadonlySet<string> = new Set(),
   ): ResultadoCalculo {
     let advertencia: string | undefined;
     if (cantidadNinos > tarifas.maximoPermitido) {
       advertencia = `Más de ${tarifas.maximoPermitido} niños requiere aprobación manual.`;
     }
-    const esFinSemana = this.isWeekend(fechaEvento);
+    const esFinSemana = esTarifaFinSemana(fechaEvento, feriados);
     const montoBase = esFinSemana
       ? tarifas.baseFinSemana
       : tarifas.baseLunesViernes;

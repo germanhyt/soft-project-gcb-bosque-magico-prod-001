@@ -1,31 +1,24 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
+import { invalidarTrasEnviarCotizacion } from '../../lib/enviar-cotizacion-correo';
+import { fetchConfiguracionPanel } from '../../lib/configuracion';
 import {
   enviarCotizacion,
   fetchCotizacion,
   type EtapaCotizacion,
 } from '../../lib/cotizaciones';
+import { parseSmtpEstado } from '../../lib/smtp-config';
 import { abrirWhatsApp, waMeUrlCotizacion } from '../../lib/whatsapp-cotizacion';
+import { puedeEnviarCotizacion } from '../../lib/flujo-estados';
+import { EnviarCotizacionCorreoModal } from './EnviarCotizacionCorreoModal';
 
-type ClienteContacto = { celular: string; correo?: string | null };
+type ClienteContacto = { celular: string; correo?: string | null; nombreCompleto?: string };
 
 type EnviarOpts = { canal: 'whatsapp' | 'email' };
-
-async function invalidarTrasEnviar(
-  qc: ReturnType<typeof useQueryClient>,
-  cotizacionId: string,
-) {
-  await Promise.all([
-    qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
-    qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
-    qc.invalidateQueries({ queryKey: ['solicitudes'] }),
-    qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
-  ]);
-}
 
 export function useEnviarCotizacionMutation(
   cotizacionId: string,
@@ -41,24 +34,17 @@ export function useEnviarCotizacionMutation(
         celularDestino: cliente.celular,
         correoDestino: cliente.correo ?? undefined,
       }),
-    onSuccess: async (_res, { canal }) => {
-      await invalidarTrasEnviar(qc, cotizacionId);
-      if (canal === 'email') {
-        await Swal.fire({
-          icon: 'success',
-          title: 'Cotización enviada',
-          text: 'Se registró el envío por correo.',
-          timer: 2000,
-          showConfirmButton: false,
-        });
-      }
+    onSuccess: async () => {
+      await invalidarTrasEnviarCotizacion(qc, cotizacionId);
       onSuccess?.();
     },
     onError: async (err: unknown) => {
       const msg =
         err && typeof err === 'object' && 'response' in err
           ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : 'No se pudo enviar';
+          : err instanceof Error
+            ? err.message
+            : 'No se pudo enviar';
       await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
     },
   });
@@ -70,6 +56,7 @@ type Props = {
   cliente: ClienteContacto;
   className?: string;
   onSuccess?: () => void;
+  preview?: { codigo?: string; linkPublico?: string; nombreCliente?: string };
 };
 
 export function EnviarCotizacionActions({
@@ -78,11 +65,19 @@ export function EnviarCotizacionActions({
   cliente,
   className = '',
   onSuccess,
+  preview,
 }: Props) {
   const qc = useQueryClient();
   const [enviandoWa, setEnviandoWa] = useState(false);
-  const puedeEnviar = etapa === 'borrador' || etapa === 'enviada';
-  const enviarMut = useEnviarCotizacionMutation(cotizacionId, cliente, onSuccess);
+  const [correoModalOpen, setCorreoModalOpen] = useState(false);
+  const puedeEnviar = puedeEnviarCotizacion(etapa);
+
+  const { data: smtpActivo = false } = useQuery({
+    queryKey: ['config-panel'],
+    queryFn: fetchConfiguracionPanel,
+    select: (data) => (data.meta?.smtp ?? parseSmtpEstado(data.smtp)).activo,
+    staleTime: 60_000,
+  });
 
   const enviarWhatsApp = async (withPdf: boolean, waTab: Window | null) => {
     setEnviandoWa(true);
@@ -92,7 +87,7 @@ export function EnviarCotizacionActions({
         celularDestino: cliente.celular,
         correoDestino: cliente.correo ?? undefined,
       });
-      await invalidarTrasEnviar(qc, cotizacionId);
+      await invalidarTrasEnviarCotizacion(qc, cotizacionId);
 
       if (res.mensajePrearmado && cliente.celular) {
         const waUrl = waMeUrlCotizacion(cliente.celular, res.mensajePrearmado);
@@ -163,29 +158,46 @@ export function EnviarCotizacionActions({
 
   if (!puedeEnviar) return null;
 
-  const pendiente = enviandoWa || enviarMut.isPending;
+  const pendiente = enviandoWa;
+  const labelCorreo =
+    etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo';
 
   return (
-    <div className={`flex flex-col gap-2 sm:flex-row sm:flex-wrap ${className}`}>
-      <Button
-        className="inline-flex gap-2 sm:flex-1"
-        disabled={pendiente}
-        onClick={() => void preguntarYEnviarWhatsApp()}
-      >
-        <WhatsAppIcon size={20} className="text-on-primary" />
-        {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
-      </Button>
-      {cliente.correo && (
+    <>
+      <div className={`flex flex-col gap-2 sm:flex-row sm:flex-wrap ${className}`}>
         <Button
-          variant="secondary"
-          className="sm:flex-1"
+          className="inline-flex gap-2 sm:flex-1"
           disabled={pendiente}
-          onClick={() => enviarMut.mutate({ canal: 'email' })}
+          onClick={() => void preguntarYEnviarWhatsApp()}
         >
-          {etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo'}
+          <WhatsAppIcon size={20} className="text-on-primary" />
+          {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
         </Button>
-      )}
-    </div>
+        {cliente.correo && (
+          <Button
+            variant="secondary"
+            className="sm:flex-1"
+            disabled={pendiente}
+            onClick={() => setCorreoModalOpen(true)}
+            title={
+              smtpActivo
+                ? 'Revisar mensaje y enviar vía SMTP'
+                : 'Revisar mensaje y abrir tu cliente de correo'
+            }
+          >
+            {labelCorreo}
+          </Button>
+        )}
+      </div>
+      <EnviarCotizacionCorreoModal
+        open={correoModalOpen}
+        onClose={() => setCorreoModalOpen(false)}
+        cotizacionId={cotizacionId}
+        cliente={cliente}
+        preview={preview}
+        onSuccess={onSuccess}
+      />
+    </>
   );
 }
 
@@ -202,7 +214,7 @@ export async function enviarWhatsAppRapido(
       celularDestino: cliente.celular,
       correoDestino: cliente.correo ?? undefined,
     });
-    await invalidarTrasEnviar(qc, cotizacionId);
+    await invalidarTrasEnviarCotizacion(qc, cotizacionId);
     if (res.mensajePrearmado) {
       abrirWhatsApp(waMeUrlCotizacion(cliente.celular, res.mensajePrearmado), waTab);
     } else {

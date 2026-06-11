@@ -17,6 +17,7 @@ import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { EtapaBadge } from '../ui/EtapaBadge';
 import { Button } from '../ui/Button';
 import { DetalleModal } from '../ui/DetalleModal';
+import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import {
   actualizarSeguimiento,
   cerrarSolicitud,
@@ -34,6 +35,13 @@ import {
   puedeCrearCotizacionManual,
   puedeGenerarBorradorDesdePayload,
 } from '../../lib/solicitud-cotizacion';
+import {
+  puedeAceptarCotizacion,
+  puedeEditarCotizacionBorrador,
+  puedeEnviarCotizacion,
+  puedeTomarSolicitud,
+  solicitudAbierta,
+} from '../../lib/flujo-estados';
 
 type Props = {
   solicitudId: string | null;
@@ -169,101 +177,125 @@ export function SolicitudDetalle({
       : 'Crear cotización';
 
   const footer =
-    s && s.etapa !== 'cerrada' ? (
-      <div className="flex flex-col gap-2">
-        {onEditarSolicitud ? (
-          <Button
-            variant="secondary"
-            className="w-full"
-            onClick={() => {
-              onClose();
-              onEditarSolicitud(solicitudId!);
-            }}
-          >
-            Editar solicitud
-          </Button>
+    s && solicitudAbierta(s.etapa) ? (
+      <DetalleActionsFooter>
+        {cotizacionActiva && puedeEnviarCotizacion(cotizacionActiva.etapa) ? (
+          <DetalleActionGroup label="Compartir cotización">
+            <EnviarCotizacionActions
+              cotizacionId={cotizacionActiva.id}
+              etapa={cotizacionActiva.etapa}
+              cliente={{
+                celular: s.celular,
+                correo: s.correo,
+                nombreCompleto: s.nombreContacto,
+              }}
+              preview={{ codigo: cotizacionActiva.codigo }}
+            />
+          </DetalleActionGroup>
         ) : null}
-        {cotizacionActiva &&
-        s &&
-        (cotizacionActiva.etapa === 'borrador' || cotizacionActiva.etapa === 'enviada') ? (
-          <EnviarCotizacionActions
-            cotizacionId={cotizacionActiva.id}
-            etapa={cotizacionActiva.etapa}
-            cliente={{ celular: s.celular, correo: s.correo }}
-          />
+
+        {cotizacionActiva && puedeAceptarCotizacion(cotizacionActiva.etapa) ? (
+          <DetalleActionGroup label="Confirmar flujo">
+            <AceptarCotizacionAction
+              cotizacionId={cotizacionActiva.id}
+              etapa={cotizacionActiva.etapa}
+              fullWidth
+              onSuccess={() => onClose()}
+            />
+          </DetalleActionGroup>
         ) : null}
-        {cotizacionActiva ? (
-          <AceptarCotizacionAction
-            cotizacionId={cotizacionActiva.id}
-            etapa={cotizacionActiva.etapa}
-            fullWidth
-            onSuccess={() => onClose()}
-          />
-        ) : null}
-        {cotizacionActiva?.etapa === 'borrador' ? (
-          <Button
-            variant="accent"
-            className="w-full"
-            onClick={() => {
-              onClose();
-              onAbrirCotizacionForm?.({ mode: 'edit', cotizacionId: cotizacionActiva.id });
-            }}
-          >
-            Editar cotización (borrador)
-          </Button>
-        ) : null}
-        {cotizacionActiva ? (
-          <Button
-            variant={cotizacionActiva.etapa === 'borrador' ? 'ghost' : 'accent'}
-            className="w-full"
-            onClick={() => {
-              onClose();
-              onVerCotizacion?.(cotizacionActiva.id);
-            }}
-          >
-            Ver cotización
-          </Button>
-        ) : null}
-        {mostrarGenerarBorrador ? (
-          <Button
-            className="w-full"
-            disabled={generarBorradorMut.isPending}
-            onClick={() => generarBorradorMut.mutate()}
-          >
-            {generarBorradorMut.isPending
-              ? 'Generando borrador…'
-              : 'Generar borrador desde landing'}
-          </Button>
-        ) : null}
-        {mostrarCrearCotizacion ? (
-          <Button
-            variant={cotizacionActiva ? 'ghost' : 'accent'}
-            className="w-full"
-            onClick={() => {
-              onClose();
-              onAbrirCotizacionForm?.({ mode: 'create', solicitudId: solicitudId! });
-            }}
-          >
-            {labelCrearCotizacion}
-          </Button>
-        ) : null}
-        {s.etapa === 'nueva' && (
-          <Button className="w-full" disabled={tomarMut.isPending} onClick={() => tomarMut.mutate()}>
-            Tomar solicitud
-          </Button>
+
+        {(onEditarSolicitud ||
+          (cotizacionActiva && puedeEditarCotizacionBorrador(cotizacionActiva.etapa)) ||
+          mostrarGenerarBorrador ||
+          mostrarCrearCotizacion ||
+          cotizacionActiva) && (
+          <DetalleActionGroup label="Editar y cotización">
+            {onEditarSolicitud ? (
+              <Button
+                variant="secondary"
+                className="w-full"
+                onClick={() => {
+                  onClose();
+                  onEditarSolicitud(solicitudId!);
+                }}
+              >
+                Editar solicitud
+              </Button>
+            ) : null}
+            {cotizacionActiva && puedeEditarCotizacionBorrador(cotizacionActiva.etapa) ? (
+              <Button
+                variant="accent"
+                className="w-full"
+                onClick={() => {
+                  onClose();
+                  onAbrirCotizacionForm?.({ mode: 'edit', cotizacionId: cotizacionActiva.id });
+                }}
+              >
+                Editar cotización (borrador)
+              </Button>
+            ) : null}
+            {mostrarGenerarBorrador ? (
+              <Button
+                className="w-full"
+                disabled={generarBorradorMut.isPending}
+                onClick={() => generarBorradorMut.mutate()}
+              >
+                {generarBorradorMut.isPending
+                  ? 'Generando borrador…'
+                  : 'Generar borrador desde landing'}
+              </Button>
+            ) : null}
+            {mostrarCrearCotizacion ? (
+              <Button
+                variant={cotizacionActiva ? 'ghost' : 'accent'}
+                className="w-full"
+                onClick={() => {
+                  onClose();
+                  onAbrirCotizacionForm?.({ mode: 'create', solicitudId: solicitudId! });
+                }}
+              >
+                {labelCrearCotizacion}
+              </Button>
+            ) : null}
+            {cotizacionActiva ? (
+              <Button
+                variant="ghost"
+                className="w-full"
+                onClick={() => {
+                  onClose();
+                  onVerCotizacion?.(cotizacionActiva.id);
+                }}
+              >
+                Ver cotización
+              </Button>
+            ) : null}
+          </DetalleActionGroup>
         )}
-        <Button
-          variant="ghost"
-          className="w-full"
-          onClick={() => {
-            setCerrarError('');
-            setCerrarOpen(true);
-          }}
-          disabled={cerrarMut.isPending}
-        >
-          Cerrar solicitud
-        </Button>
-      </div>
+
+        <DetalleActionGroup label="Estado de la solicitud">
+          {puedeTomarSolicitud(s.etapa) ? (
+            <Button
+              className="w-full"
+              disabled={tomarMut.isPending}
+              onClick={() => tomarMut.mutate()}
+            >
+              Tomar solicitud
+            </Button>
+          ) : null}
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setCerrarError('');
+              setCerrarOpen(true);
+            }}
+            disabled={cerrarMut.isPending}
+          >
+            Cerrar solicitud
+          </Button>
+        </DetalleActionGroup>
+      </DetalleActionsFooter>
     ) : undefined;
 
   const titulo = s?.nombreContacto ?? listItem?.nombreContacto ?? 'Solicitud';

@@ -155,6 +155,14 @@ export function SolicitudesPage() {
 
   const columns = useMemo(
     () => [
+      columnHelper.accessor('creadoEn', {
+        header: 'Registro',
+        cell: (info) => (
+          <span className="whitespace-nowrap text-on-surface-variant">
+            {formatFechaHora(info.getValue())}
+          </span>
+        ),
+      }),
       columnHelper.accessor('nombreContacto', {
         header: 'Contacto',
         cell: (info) => (
@@ -190,10 +198,6 @@ export function SolicitudesPage() {
       columnHelper.accessor('cantidadNinosEstimada', {
         header: 'Niños',
         cell: (info) => info.getValue() ?? '—',
-      }),
-      columnHelper.accessor('creadoEn', {
-        header: 'Registro',
-        cell: (info) => formatFechaHora(info.getValue()),
       }),
       columnHelper.display({
         id: 'acciones',

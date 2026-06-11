@@ -53,6 +53,13 @@ describe('CalculoPreciosService', () => {
       expect(r.montoTotal).toBe(580);
     });
 
+    it('aplica tarifa fin de semana en feriado configurado', () => {
+      const feriados = new Set(['2026-07-28']);
+      const r = service.calcular(TARIFAS, fechaLocal(2026, 7, 28), 20, [], feriados);
+      expect(r.esFinSemana).toBe(true);
+      expect(r.montoBase).toBe(580);
+    });
+
     it('cobra niños extra por encima del máximo base', () => {
       const r = service.calcular(TARIFAS, fechaLocal(2026, 6, 4), 30, []);
       expect(r.montoNinosExtra).toBe(125);

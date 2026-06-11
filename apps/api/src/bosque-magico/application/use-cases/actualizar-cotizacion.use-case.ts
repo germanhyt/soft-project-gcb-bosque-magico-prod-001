@@ -36,8 +36,12 @@ export class ActualizarCotizacionUseCase {
     return TipoItemCotizacion.extra;
   }
 
-  private async resolverItems(items: ItemCotizacionDto[], fecha: Date) {
-    const esFin = this.calculo.isWeekend(fecha);
+  private async resolverItems(
+    items: ItemCotizacionDto[],
+    fecha: Date,
+    feriados: ReadonlySet<string>,
+  ) {
+    const esFin = this.calculo.esTarifaFinSemana(fecha, feriados);
     const resolved = [];
     for (const item of items) {
       if (item.productoId) {
@@ -83,6 +87,7 @@ export class ActualizarCotizacionUseCase {
     const fechaEvento = dto.fechaEvento
       ? new Date(dto.fechaEvento)
       : antes.fechaEvento;
+    const feriados = await this.calculo.obtenerFeriados();
     const turno = dto.turno ?? antes.turno;
     const cantidadNinos = dto.cantidadNinos ?? antes.cantidadNinos;
     const itemsInput =
@@ -96,7 +101,7 @@ export class ActualizarCotizacionUseCase {
         notas: i.notas ?? undefined,
       }));
 
-    const items = await this.resolverItems(itemsInput, fechaEvento);
+    const items = await this.resolverItems(itemsInput, fechaEvento, feriados);
     const tarifas = await this.calculo.obtenerTarifas();
     const resultado = this.calculo.calcular(
       tarifas,
@@ -106,6 +111,7 @@ export class ActualizarCotizacionUseCase {
         cantidad: i.cantidad,
         precioUnitario: i.precioUnitario,
       })),
+      feriados,
     );
 
     const despues = await this.cotizaciones.reemplazarItems(

@@ -1,5 +1,6 @@
 import { api } from './api';
 import type { Producto } from './cotizaciones';
+import type { SmtpEstadoPanel } from './smtp-config';
 
 export type ConfigItem = {
   id: string;
@@ -22,9 +23,13 @@ export type ConfigPanelResponse = {
   numericas: ConfigItem[];
   turnos: ConfigItem[];
   cotizador: ConfigItem[];
+  calendario: ConfigItem[];
   smtp: ConfigItem[];
   otras: ConfigItem[];
   todas: ConfigItem[];
+  meta?: {
+    smtp: SmtpEstadoPanel;
+  };
 };
 
 export async function fetchConfiguracionPanel() {
@@ -35,7 +40,7 @@ export async function fetchConfiguracionPanel() {
 export async function guardarConfiguracion(
   actualizaciones: {
     clave: string;
-    valor: number | string | boolean | TurnoConfigValor | SelectionMode;
+    valor: number | string | boolean | string[] | TurnoConfigValor | SelectionMode;
   }[],
 ) {
   const { data } = await api.patch<ConfigItem[]>('/bosque-magico/configuracion', {

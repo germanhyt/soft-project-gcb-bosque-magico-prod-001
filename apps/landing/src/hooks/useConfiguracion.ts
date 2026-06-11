@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchCatalogoPublico } from '../lib/api';
-import { mapConfigToTarifas } from '../lib/pricing';
+import { feriadosDesdeConfig, mapConfigToTarifas } from '../lib/pricing';
 
 export function useConfiguracion() {
   return useQuery({
@@ -10,6 +10,7 @@ export function useConfiguracion() {
     select: (data) => ({
       items: data.configuracion,
       tarifas: mapConfigToTarifas(data.configuracion),
+      feriados: feriadosDesdeConfig(data.configuracion),
       productos: data.productos,
     }),
   });

@@ -138,7 +138,7 @@ export function SolicitudRowActions({
         />
         {!esCerrada && onEditarSolicitud && (
           <RowIconButton
-            icon="edit_note"
+            icon="edit_square"
             title="Editar solicitud"
             aria-label="Editar solicitud"
             onClick={() => onEditarSolicitud(solicitud.id)}
