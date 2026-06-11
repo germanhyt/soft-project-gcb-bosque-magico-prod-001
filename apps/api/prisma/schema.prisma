@@ -180,6 +180,30 @@ enum EtapaEvento {
 
 
 
+enum EtapaContrato {
+
+  borrador
+
+  enviado
+
+  firmado
+
+  anulado
+
+}
+
+
+
+enum TipoComprobanteContrato {
+
+  boleta
+
+  factura
+
+}
+
+
+
 model BosqueMagicoConfiguracion {
 
   id            String   @id @default(uuid())
@@ -446,6 +470,8 @@ model BosqueMagicoCotizacion {
 
   logsMensaje BosqueMagicoLogMensaje[]
 
+  contratos   BosqueMagicoContrato[]
+
 
 
   @@index([etapa])
@@ -538,6 +564,8 @@ model BosqueMagicoEvento {
 
   cumpleanero BosqueMagicoCumpleanero @relation(fields: [cumpleaneroId], references: [id])
 
+  contrato    BosqueMagicoContrato?
+
 
 
   @@index([fechaEvento, turno, zona])
@@ -545,6 +573,76 @@ model BosqueMagicoEvento {
   @@index([etapa])
 
   @@map("eventos")
+
+}
+
+
+
+model BosqueMagicoContrato {
+
+  id                  String                  @id @default(uuid())
+
+  eventoId            String                  @unique @map("evento_id")
+
+  cotizacionId        String                  @map("cotizacion_id")
+
+  numero              String                  @unique
+
+  fechaEmision        DateTime                @map("fecha_emision") @db.Date
+
+  montoTotal          Decimal                 @map("monto_total") @db.Decimal(10, 2)
+
+  montoAdelanto       Decimal                 @map("monto_adelanto") @db.Decimal(10, 2)
+
+  montoPendiente      Decimal                 @map("monto_pendiente") @db.Decimal(10, 2)
+
+  montoGarantia       Decimal                 @map("monto_garantia") @db.Decimal(10, 2)
+
+  adelanto1Monto      Decimal                 @map("adelanto_1_monto") @db.Decimal(10, 2)
+
+  adelanto1Fecha      DateTime?               @map("adelanto_1_fecha") @db.Date
+
+  adelanto2Monto      Decimal?                @map("adelanto_2_monto") @db.Decimal(10, 2)
+
+  adelanto2Fecha      DateTime?               @map("adelanto_2_fecha") @db.Date
+
+  tipoComprobante     TipoComprobanteContrato @map("tipo_comprobante")
+
+  documentoTributario String                  @map("documento_tributario")
+
+  numeroDocumento     String                  @map("numero_documento")
+
+  horarioInicio       String                  @map("horario_inicio")
+
+  horarioFin          String                  @map("horario_fin")
+
+  terminosVersion     String                  @map("terminos_version")
+
+  snapshotJson        Json                    @map("snapshot_json")
+
+  etapa               EtapaContrato           @default(borrador)
+
+  enviadoEn           DateTime?               @map("enviado_en")
+
+  firmadoEn           DateTime?               @map("firmado_en")
+
+  creadoEn            DateTime                @default(now()) @map("creado_en")
+
+  actualizadoEn       DateTime                @updatedAt @map("actualizado_en")
+
+
+
+  evento     BosqueMagicoEvento     @relation(fields: [eventoId], references: [id])
+
+  cotizacion BosqueMagicoCotizacion @relation(fields: [cotizacionId], references: [id])
+
+
+
+  @@index([etapa])
+
+  @@index([cotizacionId])
+
+  @@map("contratos")
 
 }
 

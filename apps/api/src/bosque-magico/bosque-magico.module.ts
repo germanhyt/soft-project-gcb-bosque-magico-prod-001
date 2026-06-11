@@ -37,6 +37,7 @@ import { SolicitudCotizacionSyncService } from './domain/services/solicitud-coti
 import { IdentidadContactoService } from './domain/services/identidad-contacto.service';
 import { AuditoriaRepository } from './infrastructure/repositories/auditoria.repository';
 import { ClientesRepository } from './infrastructure/repositories/clientes.repository';
+import { ContratosRepository } from './infrastructure/repositories/contratos.repository';
 import { ConfiguracionRepository } from './infrastructure/repositories/configuracion.repository';
 import { CotizacionesRepository } from './infrastructure/repositories/cotizaciones.repository';
 import { CumpleanerosRepository } from './infrastructure/repositories/cumpleaneros.repository';
@@ -50,10 +51,21 @@ import { EventosController } from './presentation/eventos.controller';
 import { ProductosController } from './presentation/productos.controller';
 import { PublicBosqueMagicoController } from './presentation/public.controller';
 import { SolicitudesController } from './presentation/solicitudes.controller';
+import { ContratosController } from './presentation/contratos.controller';
 import { ClientesController } from './presentation/clientes.controller';
 import { ListarClientesUseCase } from './application/use-cases/listar-clientes.use-case';
 import { ObtenerClienteUseCase } from './application/use-cases/obtener-cliente.use-case';
 import { ResolverIdentidadContactoUseCase } from './application/use-cases/resolver-identidad-contacto.use-case';
+import { GenerarContratoEventoUseCase } from './application/use-cases/generar-contrato-evento.use-case';
+import { ListarContratosUseCase } from './application/use-cases/listar-contratos.use-case';
+import {
+  MarcarContratoEnviadoUseCase,
+  MarcarContratoFirmadoUseCase,
+} from './application/use-cases/marcar-contrato-estado.use-case';
+import {
+  ObtenerContratoPorEventoUseCase,
+  ObtenerContratoUseCase,
+} from './application/use-cases/obtener-contrato.use-case';
 
 @Module({
   imports: [EventsModule],
@@ -63,6 +75,7 @@ import { ResolverIdentidadContactoUseCase } from './application/use-cases/resolv
     ClientesController,
     CotizacionesController,
     EventosController,
+    ContratosController,
     ConfiguracionController,
     ProductosController,
     AuditoriaController,
@@ -76,6 +89,7 @@ import { ResolverIdentidadContactoUseCase } from './application/use-cases/resolv
     CotizacionesRepository,
     ProductosRepository,
     EventosRepository,
+    ContratosRepository,
     CalculoPreciosService,
     SolicitudCotizacionSyncService,
     IdentidadContactoService,
@@ -110,6 +124,12 @@ import { ResolverIdentidadContactoUseCase } from './application/use-cases/resolv
     ConfirmarEventoUseCase,
     RealizarEventoUseCase,
     CancelarEventoUseCase,
+    GenerarContratoEventoUseCase,
+    ObtenerContratoUseCase,
+    ObtenerContratoPorEventoUseCase,
+    ListarContratosUseCase,
+    MarcarContratoEnviadoUseCase,
+    MarcarContratoFirmadoUseCase,
     ListarAuditoriaUseCase,
     SubirImagenProductoUseCase,
     EliminarImagenProductoUseCase,

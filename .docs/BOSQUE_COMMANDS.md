@@ -16,6 +16,7 @@
 
 | [MEJORAS_PANEL_FASE8.md](./MEJORAS_PANEL_FASE8.md) | **Puntos de mejora panel** (tablas, WS, usuario, modales, roles, config) |
 | [PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md](./PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md) | Guía de pruebas con mock data (local + sandbox) |
+| [entrega-junio-2026/](./entrega-junio-2026/README.md) | **Informe gerencia** + **manual operario** (jun 2026) |
 
 
 
@@ -117,9 +118,9 @@ sandbox-landing-bosque
 
 credenciales sandbox:
 admin@bosquemagico.test / BosqueDev123!
-  
--------------------------------
 
+
+=================================================================
 
 ### Observaciones resueltas (2026-06-04)
 
@@ -155,3 +156,47 @@ admin@bosquemagico.test / BosqueDev123!
   - **Marcar realizado** → **Realizado** (`POST /eventos/:id/realizar`)
 - También se puede **cancelar** desde por confirmar o confirmado.
 - Contratos PDF y estados extra del doc largo (pre-reserva, contrato enviado, etc.) **no** están todos en MVP actual; el núcleo comercial sí está cubierto.
+
+
+=================================================================
+
+Observaciones 10/06/2026
+
+1)
+() 
+Analizamos y planificamos:
+Realizar el módulo de contratos en base al módulo de solicitudes y cotizaciones, vemos si realizamos un nuevo módulo o lo extendemos,
+comparto el modelo de contrato donde se puede resaltar solo los datos inciiales / datos que ya existentes de la cotización y los términos y condiciones,
+pdf-contrato
+
+2)
+() 
+Actualmente en Refugio se hacen campañas de marketing para el área de Bosque Mágico donde la cual se hace eventos de fiestas infantiles, se solicita algunos datos base en el formulario de meta mediante campaña por instagram (Cliente, Celular, Tipo, Pers., Fecha tent.) de esto se exporta la tabla de datos csv que nos provee la misma campaña y de ahí se enviaba de forma manual como broadcast hacia los números;
+la idea ahora es automatizar este proceso usando como canal principal el whatssap ( ya he avanzado un panel administrable (registros del leads, módulode  clientes y otros módulos) y tengo una landing donde también se solicita cotización de lo requerido para la fiesta), ahora en base a ello lo ideal talvez es centralizar la comunicación por ese medio y en caso de recibir un mensaje desde las campañas responder de forma automática la información y/o solicitar datos, la idea es tener un diseño de workflow que me permita cubrir este proceso para poder manejar los leads de forma adecuada y profesional
+
+()
+Tengo base en el uso de n8n y ycloud par el uso de la api de whattssap, también podría usar webhook para integrarlos con el sistema que he avanzando, 
+si bien se puede exponer webhook desde el sistema para recuperar los datos desde meta (me podrías dar unn ejemplo), también por mi lado sería la alternativa de poder recepcionar los mensajes al whattssap que llegaría como el "hola quiero más información" y el agente con n8n responda brindado la información que también utilizando tools apuntando a la base de datos podría realizar verificaciones o validaciones; de ahí podríamos plantear talvez las respuesta que podría realizarce en cada CUS o caso de uso
+
+3)
+()
+Separar las acciones de envío de información (wstp, correo, link), acciones crud, acciones de envío y confirmación; estos que se denoten un poco separados
+
+()
+En "solicitudes" la fecha/hora registro lo colocamos en la primera columna
+
+()
+Analizamos de forma correcta la máquina de estados del flujo de Solcitudes y el de Cotización
+
+()
+El pdf generado lO geneRAMOS en tamaño normal A4 tanto en cotizaciones como en contratos
+
+()
+En configuraciones considerar las fechas de feriado (regla general para determinar las fechas de feriados para nuestro sistema)
+
+()
+Pruebas de la config de correos SMTP (test funcional)
+
+
+
+4)

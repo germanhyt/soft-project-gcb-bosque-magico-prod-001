@@ -1,9 +1,12 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { CancelarEventoModal } from './CancelarEventoModal';
+import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
+import { EnviarContratoActions } from '../contratos/EnviarContratoActions';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { ETAPA_EVENTO_LABEL } from '../../constants/eventos';
+import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
 import { Button } from '../ui/Button';
 import { DetalleModal } from '../ui/DetalleModal';
 import { EventoBadge } from './EventoBadge';
@@ -13,6 +16,13 @@ import {
   realizarEvento,
   type Evento,
 } from '../../lib/eventos';
+import {
+  fetchContratoEvento,
+  marcarContratoEnviado,
+  marcarContratoFirmado,
+} from '../../lib/contratos';
+import { contratoToPrintPayload } from '../../lib/contrato';
+import { imprimirContratoPdf } from '../../lib/contrato-print';
 import { formatFecha, formatFechaHora } from '../../lib/format';
 
 type Props = {
@@ -26,6 +36,12 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
   const [cancelarOpen, setCancelarOpen] = useState(false);
   const [cancelarError, setCancelarError] = useState('');
   const eventoId = evento?.id;
+
+  const { data: contrato, refetch: refetchContrato } = useQuery({
+    queryKey: ['contrato-evento', eventoId],
+    queryFn: () => fetchContratoEvento(eventoId!),
+    enabled: open && !!eventoId,
+  });
 
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['agenda'] });
@@ -75,17 +91,84 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
     },
   });
 
+  const enviarContratoMut = useMutation({
+    mutationFn: () => marcarContratoEnviado(contrato!.id),
+    onSuccess: async () => {
+      await refetchContrato();
+      await Swal.fire({ icon: 'success', title: 'Contrato marcado como enviado', timer: 1500, showConfirmButton: false });
+    },
+  });
+
+  const firmarContratoMut = useMutation({
+    mutationFn: () => marcarContratoFirmado(contrato!.id),
+    onSuccess: async () => {
+      await refetchContrato();
+      await Swal.fire({ icon: 'success', title: 'Contrato marcado como firmado', timer: 1500, showConfirmButton: false });
+    },
+  });
+
   const ev = evento;
 
   const footer =
-    ev && ev.etapa !== 'realizado' && ev.etapa !== 'cancelado' ? (
+    ev && ev.etapa !== 'cancelado' ? (
       <div className="flex flex-col gap-2">
-        {ev.etapa === 'por_confirmar' && (
+        <GenerarContratoAction
+          eventoId={ev.id}
+          cotizacionId={ev.cotizacionId}
+          evento={ev}
+          fullWidth
+          label={contrato ? 'Ver / reimprimir contrato' : 'Generar contrato'}
+          onGenerado={() => void refetchContrato()}
+        />
+        {contrato && (
+          <>
+            <p className="text-center text-xs text-outline">
+              {contrato.numero} · {ETAPA_CONTRATO_LABEL[contrato.etapa] ?? contrato.etapa}
+            </p>
+            <EnviarContratoActions
+              contrato={contrato}
+              celular={contrato.snapshotJson?.cliente.celular ?? ev.cliente.celular}
+              onSuccess={() => void refetchContrato()}
+            />
+            {contrato.etapa === 'borrador' && (
+              <Button
+                className="w-full"
+                disabled={enviarContratoMut.isPending}
+                onClick={() => enviarContratoMut.mutate()}
+              >
+                Marcar enviado
+              </Button>
+            )}
+            {(contrato.etapa === 'borrador' || contrato.etapa === 'enviado') && (
+              <Button
+                variant="accent"
+                className="w-full"
+                disabled={firmarContratoMut.isPending}
+                onClick={() => firmarContratoMut.mutate()}
+              >
+                Marcar firmado
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              className="w-full"
+              onClick={() => {
+                const ok = imprimirContratoPdf(contratoToPrintPayload(contrato, ev));
+                if (!ok) {
+                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                }
+              }}
+            >
+              Imprimir contrato
+            </Button>
+          </>
+        )}
+        {ev.etapa !== 'realizado' && ev.etapa === 'por_confirmar' && (
           <Button className="w-full" disabled={confirmarMut.isPending} onClick={() => confirmarMut.mutate()}>
             Confirmar evento
           </Button>
         )}
-        {ev.etapa === 'confirmado' && (
+        {ev.etapa !== 'realizado' && ev.etapa === 'confirmado' && (
           <Button
             className="w-full bg-primary-container"
             disabled={realizarMut.isPending}
@@ -94,16 +177,18 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
             Marcar realizado
           </Button>
         )}
-        <Button
-          variant="ghost"
-          className="w-full"
-          onClick={() => {
-            setCancelarError('');
-            setCancelarOpen(true);
-          }}
-        >
-          Cancelar
-        </Button>
+        {(ev.etapa === 'por_confirmar' || ev.etapa === 'confirmado') && (
+          <Button
+            variant="ghost"
+            className="w-full"
+            onClick={() => {
+              setCancelarError('');
+              setCancelarOpen(true);
+            }}
+          >
+            Cancelar
+          </Button>
+        )}
       </div>
     ) : undefined;
 

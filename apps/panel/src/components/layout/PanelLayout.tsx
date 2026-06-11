@@ -12,6 +12,7 @@ const NAV_MAIN = [
   { to: '/cotizaciones', label: 'Cotizaciones', icon: 'receipt_long' },
   { to: '/clientes', label: 'Clientes', icon: 'contacts' },
   { to: '/agenda', label: 'Agenda', icon: 'calendar_month' },
+  { to: '/contratos', label: 'Contratos', icon: 'description' },
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
 ] as const;
 

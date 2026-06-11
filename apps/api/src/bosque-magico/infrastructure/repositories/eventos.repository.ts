@@ -47,6 +47,20 @@ export class EventosRepository {
     });
   }
 
+  obtenerPorIdParaContrato(id: string) {
+    return this.prisma.bosqueMagicoEvento.findUnique({
+      where: { id },
+      include: {
+        cliente: true,
+        cumpleanero: true,
+        contrato: true,
+        cotizacion: {
+          include: { items: { orderBy: { nombre: 'asc' } } },
+        },
+      },
+    });
+  }
+
   existeConflictoActivo(
     fecha: Date,
     turno: TurnoInteres,

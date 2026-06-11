@@ -1,4 +1,5 @@
 import type { EtapaCotizacion } from '../lib/cotizaciones';
+import type { EtapaContrato } from '../lib/contratos';
 import type { EtapaSolicitud } from '../lib/api';
 import type { EtapaEvento } from '../lib/eventos';
 
@@ -38,6 +39,13 @@ export const ETAPA_EVENTO_BADGE: Record<EtapaEvento, string> = {
   confirmado: 'bg-primary-fixed/50 text-primary',
   realizado: 'bg-secondary-fixed/50 text-secondary',
   cancelado: 'bg-surface-variant text-outline',
+};
+
+export const ETAPA_CONTRATO_BADGE: Record<EtapaContrato, string> = {
+  borrador: 'bg-surface-variant text-on-surface-variant',
+  enviado: 'bg-tertiary-fixed/70 text-tertiary',
+  firmado: 'bg-primary-fixed/60 text-primary',
+  anulado: 'bg-surface-container-high text-outline',
 };
 
 export const ETAPA_EVENTO_CARD: Record<EtapaEvento, string> = {

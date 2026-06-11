@@ -11,6 +11,7 @@ import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { fetchCotizacion, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
+import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import { formatFecha } from '../../lib/format';
 
@@ -74,6 +75,13 @@ export function CotizacionDetalle({
           fullWidth
           onSuccess={() => onClose()}
         />
+        {cot.etapa === 'aceptada' && cot.eventos?.[0]?.id && (
+          <GenerarContratoAction
+            eventoId={cot.eventos[0].id}
+            cotizacionId={cot.id}
+            fullWidth
+          />
+        )}
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
         {cot.etapa === 'borrador' && (
           <Button
