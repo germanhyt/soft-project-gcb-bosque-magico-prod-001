@@ -40,8 +40,10 @@ export function finDiaCalendarioUtc(fecha: string): Date {
 }
 
 export function parseFechaCalendarioUtc(fecha: string): Date {
-  if (!esFechaCalendario(fecha)) {
+  const trimmed = fecha.trim();
+  const clave = esFechaCalendario(trimmed) ? trimmed : claveFechaCalendario(trimmed);
+  if (!esFechaCalendario(clave)) {
     throw new Error(`Fecha de calendario inválida: ${fecha}`);
   }
-  return inicioDiaCalendarioUtc(fecha);
+  return inicioDiaCalendarioUtc(clave);
 }

@@ -1,11 +1,17 @@
 import { useEffect, useState } from 'react';
 import { AREAS_PEDIDO_OPCIONES } from '../../constants/pedidos';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { apiErrorMessage } from '../../lib/api-error';
+import { claveFechaCalendario } from '../../lib/fecha-calendario';
 import type { AreaPedido, TipoPedido } from '../../lib/pedidos';
 import type { Producto } from '../../lib/cotizaciones';
 import type { Proveedor } from '../../lib/proveedores';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+
+function fechaParaInputCalendario(value: string): string {
+  return claveFechaCalendario(value) ?? '';
+}
 
 export type PedidoFormPayload = {
   tipo: TipoPedido;
@@ -54,7 +60,7 @@ export function PedidoFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm({ ...EMPTY, fechaRequerida: fechaEvento });
+    setForm({ ...EMPTY, fechaRequerida: fechaParaInputCalendario(fechaEvento) });
     setError('');
     setPending(false);
   }, [open, fechaEvento]);
@@ -98,12 +104,14 @@ export function PedidoFormModal({
         costo,
         productoId: form.productoId || undefined,
         proveedorId: form.proveedorId || undefined,
-        fechaRequerida: form.fechaRequerida || undefined,
+        fechaRequerida: form.fechaRequerida
+          ? (claveFechaCalendario(form.fechaRequerida) ?? undefined)
+          : undefined,
         notas: form.notas.trim() || undefined,
       });
       onClose();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'No se pudo guardar');
+      setError(apiErrorMessage(err, 'No se pudo guardar'));
     } finally {
       setPending(false);
     }

@@ -42,6 +42,17 @@ export class CrearPedidoUseCase {
       if (!prov) throw new NotFoundException('Proveedor no encontrado');
     }
 
+    let fechaRequerida = evento.fechaEvento;
+    if (dto.fechaRequerida) {
+      try {
+        fechaRequerida = parseFechaCalendarioUtc(dto.fechaRequerida);
+      } catch {
+        throw new BadRequestException(
+          'Fecha requerida inválida. Use formato YYYY-MM-DD.',
+        );
+      }
+    }
+
     const row = await this.pedidos.crear({
       eventoId,
       productoId: dto.productoId,
@@ -50,9 +61,7 @@ export class CrearPedidoUseCase {
       nombre: dto.nombre,
       cantidad: dto.cantidad,
       area: dto.area,
-      fechaRequerida: dto.fechaRequerida
-        ? parseFechaCalendarioUtc(dto.fechaRequerida)
-        : evento.fechaEvento,
+      fechaRequerida,
       costo: dto.costo,
       notas: dto.notas,
     });
