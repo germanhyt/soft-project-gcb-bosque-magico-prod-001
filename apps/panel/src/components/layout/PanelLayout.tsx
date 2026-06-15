@@ -12,6 +12,7 @@ const NAV_MAIN = [
   { to: '/cotizaciones', label: 'Cotizaciones', icon: 'receipt_long' },
   { to: '/clientes', label: 'Clientes', icon: 'contacts' },
   { to: '/agenda', label: 'Agenda', icon: 'calendar_month' },
+  { to: '/operaciones', label: 'Operaciones', icon: 'inventory_2' },
   { to: '/contratos', label: 'Contratos', icon: 'description' },
   { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
 ] as const;
@@ -122,8 +123,8 @@ export function PanelLayout() {
           <div
             className={`mt-auto space-y-1 border-t border-white/10 pt-3 ${rail ? 'px-0' : 'px-2'}`}
           >
-            {esAdmin && <NavItem {...NAV_USUARIOS} rail={rail} />}
             <NavItem {...NAV_CONFIG} rail={rail} />
+            {esAdmin && <NavItem {...NAV_USUARIOS} rail={rail} />}
             {authRequired && (
               <button
                 type="button"

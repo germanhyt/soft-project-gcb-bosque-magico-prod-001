@@ -10,8 +10,20 @@ import { AceptarCotizacionUseCase } from './application/use-cases/aceptar-cotiza
 import { CancelarEventoUseCase } from './application/use-cases/cancelar-evento.use-case';
 import { CerrarSolicitudUseCase } from './application/use-cases/cerrar-solicitud.use-case';
 import { ConfirmarEventoUseCase } from './application/use-cases/confirmar-evento.use-case';
+import { GenerarPedidosEventoUseCase } from './application/use-cases/generar-pedidos-evento.use-case';
 import { CrearCotizacionUseCase } from './application/use-cases/crear-cotizacion.use-case';
 import { CrearProductoUseCase } from './application/use-cases/crear-producto.use-case';
+import { CrearProveedorUseCase } from './application/use-cases/crear-proveedor.use-case';
+import { ActualizarProveedorUseCase } from './application/use-cases/actualizar-proveedor.use-case';
+import { ListarProveedoresUseCase } from './application/use-cases/listar-proveedores.use-case';
+import { CrearPedidoUseCase } from './application/use-cases/crear-pedido.use-case';
+import { ActualizarPedidoUseCase } from './application/use-cases/actualizar-pedido.use-case';
+import { GenerarTareasEventoUseCase } from './application/use-cases/generar-tareas-evento.use-case';
+import { ListarTareasEventoUseCase } from './application/use-cases/listar-tareas-evento.use-case';
+import { CrearTareaEventoUseCase } from './application/use-cases/crear-tarea-evento.use-case';
+import { ActualizarTareaEventoUseCase } from './application/use-cases/actualizar-tarea-evento.use-case';
+import { ListarPedidosEventoUseCase } from './application/use-cases/listar-pedidos-evento.use-case';
+import { ListarPedidosOperacionesUseCase } from './application/use-cases/listar-pedidos-operaciones.use-case';
 import { CrearSolicitudManualUseCase } from './application/use-cases/crear-solicitud-manual.use-case';
 import { CrearSolicitudPublicaUseCase } from './application/use-cases/crear-solicitud-publica.use-case';
 import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cases/generar-cotizacion-borrador-solicitud.use-case';
@@ -44,13 +56,19 @@ import { CotizacionesRepository } from './infrastructure/repositories/cotizacion
 import { CumpleanerosRepository } from './infrastructure/repositories/cumpleaneros.repository';
 import { EventosRepository } from './infrastructure/repositories/eventos.repository';
 import { ProductosRepository } from './infrastructure/repositories/productos.repository';
+import { PedidosRepository } from './infrastructure/repositories/pedidos.repository';
+import { ProveedoresRepository } from './infrastructure/repositories/proveedores.repository';
+import { TareasEventoRepository } from './infrastructure/repositories/tareas-evento.repository';
 import { SolicitudesRepository } from './infrastructure/repositories/solicitudes.repository';
 import { AuditoriaController } from './presentation/auditoria.controller';
 import { ConfiguracionController } from './presentation/configuracion.controller';
 import { CotizacionesController } from './presentation/cotizaciones.controller';
 import { EventosController } from './presentation/eventos.controller';
 import { ProductosController } from './presentation/productos.controller';
+import { PedidosController } from './presentation/pedidos.controller';
+import { ProveedoresController } from './presentation/proveedores.controller';
 import { PublicBosqueMagicoController } from './presentation/public.controller';
+import { TareasEventoController } from './presentation/tareas-evento.controller';
 import { SolicitudesController } from './presentation/solicitudes.controller';
 import { ContratosController } from './presentation/contratos.controller';
 import { ClientesController } from './presentation/clientes.controller';
@@ -79,6 +97,9 @@ import {
     ContratosController,
     ConfiguracionController,
     ProductosController,
+    ProveedoresController,
+    PedidosController,
+    TareasEventoController,
     AuditoriaController,
   ],
   providers: [
@@ -89,6 +110,9 @@ import {
     CumpleanerosRepository,
     CotizacionesRepository,
     ProductosRepository,
+    ProveedoresRepository,
+    PedidosRepository,
+    TareasEventoRepository,
     EventosRepository,
     ContratosRepository,
     CalculoPreciosService,
@@ -119,6 +143,18 @@ import {
     ListarProductosUseCase,
     ListarProductosPanelUseCase,
     CrearProductoUseCase,
+    ListarProveedoresUseCase,
+    CrearProveedorUseCase,
+    ActualizarProveedorUseCase,
+    ListarPedidosEventoUseCase,
+    CrearPedidoUseCase,
+    ActualizarPedidoUseCase,
+    GenerarPedidosEventoUseCase,
+    ListarPedidosOperacionesUseCase,
+    ListarTareasEventoUseCase,
+    CrearTareaEventoUseCase,
+    ActualizarTareaEventoUseCase,
+    GenerarTareasEventoUseCase,
     ActualizarProductoUseCase,
     ListarEventosUseCase,
     ObtenerAgendaUseCase,

@@ -15,7 +15,8 @@ export function formatFecha(iso: string | null | undefined) {
 
 export function formatMesDia(iso: string | null | undefined) {
   if (!iso) return { mes: '—', dia: '—' };
-  if (claveFechaCalendario(iso)) return formatMesDiaCalendario(iso);
+  const clave = claveFechaCalendario(iso);
+  if (clave) return formatMesDiaCalendario(clave);
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return { mes: '—', dia: '—' };
   return {

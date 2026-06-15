@@ -17,6 +17,9 @@ export type Producto = {
   etapa?: 'activo' | 'inactivo';
   descripcion?: string | null;
   imagenUrl?: string | null;
+  origen?: 'propio' | 'proveedor';
+  costoInterno?: number | null;
+  proveedorId?: string | null;
 };
 
 export type ItemCotizacion = {

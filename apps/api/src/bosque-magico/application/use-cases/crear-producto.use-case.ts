@@ -25,6 +25,9 @@ export class CrearProductoUseCase {
       precioFinSemana: dto.precioFinSemana,
       cantidadMinima: dto.cantidadMinima,
       descripcion: dto.descripcion?.trim(),
+      origen: dto.origen,
+      costoInterno: dto.costoInterno,
+      proveedorId: dto.proveedorId,
     });
 
     await this.auditoria.registrar({

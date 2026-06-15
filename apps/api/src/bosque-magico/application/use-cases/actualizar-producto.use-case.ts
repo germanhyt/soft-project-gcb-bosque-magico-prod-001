@@ -33,6 +33,13 @@ export class ActualizarProductoUseCase {
         ? { descripcion: dto.descripcion }
         : {}),
       ...(dto.etapa !== undefined ? { etapa: dto.etapa } : {}),
+      ...(dto.origen !== undefined ? { origen: dto.origen } : {}),
+      ...(dto.costoInterno !== undefined
+        ? { costoInterno: toDecimal(dto.costoInterno) }
+        : {}),
+      ...(dto.proveedorId !== undefined
+        ? { proveedorId: dto.proveedorId }
+        : {}),
     });
 
     await this.auditoria.registrar({

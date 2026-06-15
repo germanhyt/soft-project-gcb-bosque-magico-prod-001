@@ -1,11 +1,12 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CategoriaProducto } from '@prisma/client';
+import { CategoriaProducto, OrigenProducto } from '@prisma/client';
 import {
   IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -49,4 +50,20 @@ export class CrearProductoDto {
   @IsString()
   @MaxLength(500)
   descripcion?: string;
+
+  @ApiPropertyOptional({ enum: OrigenProducto, default: OrigenProducto.propio })
+  @IsOptional()
+  @IsEnum(OrigenProducto)
+  origen?: OrigenProducto;
+
+  @ApiPropertyOptional({ description: 'Costo interno / proveedor (S/)' })
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  costoInterno?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  proveedorId?: string;
 }

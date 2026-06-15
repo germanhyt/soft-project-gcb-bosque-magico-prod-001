@@ -194,6 +194,88 @@ enum EtapaContrato {
 
 
 
+enum OrigenProducto {
+
+  propio
+
+  proveedor
+
+}
+
+
+
+enum EtapaProveedor {
+
+  activo
+
+  inactivo
+
+}
+
+
+
+enum TipoPedido {
+
+  interno
+
+  proveedor
+
+}
+
+
+
+enum AreaPedido {
+
+  ventas
+
+  operaciones
+
+  decoracion
+
+  catering
+
+  shows
+
+  administracion
+
+}
+
+
+
+enum EtapaPedido {
+
+  pendiente
+
+  solicitado
+
+  confirmado
+
+  en_proceso
+
+  entregado
+
+  cerrado
+
+  cancelado
+
+}
+
+
+
+enum EtapaTareaEvento {
+
+  pendiente
+
+  en_proceso
+
+  completado
+
+  bloqueado
+
+}
+
+
+
 enum TipoComprobanteContrato {
 
   boleta
@@ -390,13 +472,23 @@ model BosqueMagicoProducto {
 
   etapa              EtapaProducto     @default(activo)
 
+  origen             OrigenProducto      @default(propio)
+
+  costoInterno       Decimal?            @map("costo_interno") @db.Decimal(10, 2)
+
+  proveedorId        String?             @map("proveedor_id")
+
   creadoEn           DateTime          @default(now()) @map("creado_en")
 
   actualizadoEn      DateTime          @updatedAt @map("actualizado_en")
 
 
 
-  items BosqueMagicoItemCotizacion[]
+  proveedor BosqueMagicoProveedor? @relation(fields: [proveedorId], references: [id])
+
+  items   BosqueMagicoItemCotizacion[]
+
+  pedidos BosqueMagicoPedido[]
 
 
 
@@ -566,6 +658,10 @@ model BosqueMagicoEvento {
 
   contrato    BosqueMagicoContrato?
 
+  pedidos     BosqueMagicoPedido[]
+
+  tareas      BosqueMagicoTareaEvento[]
+
 
 
   @@index([fechaEvento, turno, zona])
@@ -731,6 +827,128 @@ model BosqueMagicoAuditoria {
   @@index([tipoEntidad, entidadId])
 
   @@map("auditorias")
+
+}
+
+
+
+model BosqueMagicoProveedor {
+
+  id            String         @id @default(uuid())
+
+  nombre        String
+
+  contacto      String?
+
+  celular       String?
+
+  correo        String?
+
+  categorias    String[]       @default([])
+
+  notas         String?        @db.Text
+
+  etapa         EtapaProveedor @default(activo)
+
+  creadoEn      DateTime       @default(now()) @map("creado_en")
+
+  actualizadoEn DateTime       @updatedAt @map("actualizado_en")
+
+
+
+  productos BosqueMagicoProducto[]
+
+  pedidos   BosqueMagicoPedido[]
+
+
+
+  @@map("proveedores")
+
+}
+
+
+
+model BosqueMagicoPedido {
+
+  id             String      @id @default(uuid())
+
+  eventoId       String      @map("evento_id")
+
+  productoId     String?     @map("producto_id")
+
+  proveedorId    String?     @map("proveedor_id")
+
+  tipo           TipoPedido
+
+  nombre         String
+
+  cantidad       Int
+
+  area           AreaPedido
+
+  fechaRequerida DateTime?   @map("fecha_requerida") @db.Date
+
+  costo          Decimal     @db.Decimal(10, 2)
+
+  etapa          EtapaPedido @default(pendiente)
+
+  notas          String?     @db.Text
+
+  creadoEn       DateTime    @default(now()) @map("creado_en")
+
+  actualizadoEn  DateTime    @updatedAt @map("actualizado_en")
+
+
+
+  evento    BosqueMagicoEvento      @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+  producto  BosqueMagicoProducto?   @relation(fields: [productoId], references: [id])
+
+  proveedor BosqueMagicoProveedor?  @relation(fields: [proveedorId], references: [id])
+
+
+
+  @@index([eventoId])
+
+  @@index([etapa])
+
+  @@map("pedidos")
+
+}
+
+
+
+model BosqueMagicoTareaEvento {
+
+  id               String           @id @default(uuid())
+
+  eventoId         String           @map("evento_id")
+
+  area             AreaPedido
+
+  nombre           String
+
+  responsable      String?
+
+  etapa            EtapaTareaEvento @default(pendiente)
+
+  fechaVencimiento DateTime?        @map("fecha_vencimiento") @db.Date
+
+  notas            String?          @db.Text
+
+  creadoEn         DateTime         @default(now()) @map("creado_en")
+
+  actualizadoEn    DateTime         @updatedAt @map("actualizado_en")
+
+
+
+  evento BosqueMagicoEvento @relation(fields: [eventoId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([eventoId])
+
+  @@map("tareas_evento")
 
 }
 

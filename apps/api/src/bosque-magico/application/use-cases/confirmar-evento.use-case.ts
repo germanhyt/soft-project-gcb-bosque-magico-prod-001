@@ -4,6 +4,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { EtapaEvento, Prisma } from '@prisma/client';
+import { GenerarPedidosEventoUseCase } from './generar-pedidos-evento.use-case';
+import { GenerarTareasEventoUseCase } from './generar-tareas-evento.use-case';
 import { mapEventoResponse } from '../../domain/mappers/evento.mapper';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
@@ -15,6 +17,8 @@ export class ConfirmarEventoUseCase {
     private readonly eventos: EventosRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
+    private readonly generarPedidos: GenerarPedidosEventoUseCase,
+    private readonly generarTareas: GenerarTareasEventoUseCase,
   ) {}
 
   async ejecutar(id: string) {
@@ -53,6 +57,9 @@ export class ConfirmarEventoUseCase {
     });
 
     this.events.eventoActualizado(id, 'Evento confirmado');
+
+    await this.generarPedidos.ejecutar(id);
+    await this.generarTareas.ejecutar(id);
 
     return mapEventoResponse(despues);
   }

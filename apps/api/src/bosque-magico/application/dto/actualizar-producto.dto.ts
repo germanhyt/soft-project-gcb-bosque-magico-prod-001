@@ -1,11 +1,12 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { CategoriaProducto, EtapaProducto } from '@prisma/client';
+import { CategoriaProducto, EtapaProducto, OrigenProducto } from '@prisma/client';
 import {
   IsEnum,
   IsInt,
   IsNumber,
   IsOptional,
   IsString,
+  IsUUID,
   MaxLength,
   Min,
   MinLength,
@@ -52,4 +53,20 @@ export class ActualizarProductoDto {
   @IsOptional()
   @IsEnum(EtapaProducto)
   etapa?: EtapaProducto;
+
+  @ApiPropertyOptional({ enum: OrigenProducto })
+  @IsOptional()
+  @IsEnum(OrigenProducto)
+  origen?: OrigenProducto;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsNumber()
+  @Min(0)
+  costoInterno?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUUID()
+  proveedorId?: string | null;
 }

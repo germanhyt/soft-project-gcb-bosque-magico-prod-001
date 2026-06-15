@@ -37,6 +37,9 @@ export class ProductosRepository {
     precioFinSemana: number;
     cantidadMinima?: number;
     descripcion?: string;
+    origen?: import('@prisma/client').OrigenProducto;
+    costoInterno?: number;
+    proveedorId?: string;
   }) {
     return this.prisma.bosqueMagicoProducto.create({
       data: {
@@ -47,6 +50,10 @@ export class ProductosRepository {
         precioFinSemana: toDecimal(data.precioFinSemana),
         cantidadMinima: data.cantidadMinima ?? 1,
         descripcion: data.descripcion,
+        origen: data.origen,
+        costoInterno:
+          data.costoInterno != null ? toDecimal(data.costoInterno) : undefined,
+        proveedorId: data.proveedorId,
       },
     });
   }

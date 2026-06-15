@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
-import { RowActionsToolbar } from '../ui/RowActionsToolbar';
+import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
 import type { CotizacionFormTarget } from '../cotizaciones/CotizacionFormModal';
 import { CerrarSolicitudModal } from './CerrarSolicitudModal';
@@ -130,12 +130,19 @@ export function SolicitudRowActions({
           enlaceCopiar={refCopiar}
           enlaceTitulo="Copiar referencia de solicitud"
         />
+        <RowActionDivider />
         <RowIconButton
           icon="visibility"
           title="Ver detalle"
           aria-label="Ver detalle"
           onClick={() => onVer(solicitud.id)}
         />
+        {(!esCerrada &&
+          (onEditarSolicitud ||
+            cotizacionActiva?.etapa === 'borrador' ||
+            cotizacionActiva ||
+            puedeGenerarBorradorDesdePayload(solicitud) ||
+            puedeCrearCotizacionManual(solicitud))) && <RowActionDivider />}
         {!esCerrada && onEditarSolicitud && (
           <RowIconButton
             icon="edit_square"
@@ -197,17 +204,20 @@ export function SolicitudRowActions({
           />
         )}
         {!esCerrada && (
-          <RowIconButton
-            variant="danger"
-            icon="cancel"
-            title="Cerrar solicitud"
-            aria-label="Cerrar solicitud"
-            disabled={pending}
-            onClick={() => {
-              setCerrarError('');
-              setCerrarOpen(true);
-            }}
-          />
+          <>
+            <RowActionDivider />
+            <RowIconButton
+              variant="danger"
+              icon="cancel"
+              title="Cerrar solicitud"
+              aria-label="Cerrar solicitud"
+              disabled={pending}
+              onClick={() => {
+                setCerrarError('');
+                setCerrarOpen(true);
+              }}
+            />
+          </>
         )}
       </RowActionsToolbar>
 

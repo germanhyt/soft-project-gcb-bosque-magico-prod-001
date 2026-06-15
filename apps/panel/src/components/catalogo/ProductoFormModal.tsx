@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { apiErrorMessage } from '../../lib/api-error';
 import type { Producto } from '../../lib/cotizaciones';
+import { fetchProveedores } from '../../lib/proveedores-api';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -14,6 +16,9 @@ export type ProductoFormPayload = {
   precioFinSemana: number;
   cantidadMinima: number;
   descripcion?: string;
+  origen?: 'propio' | 'proveedor';
+  costoInterno?: number;
+  proveedorId?: string;
 };
 
 type Props = {
@@ -34,6 +39,9 @@ const EMPTY = {
   precioFinSemana: '',
   cantidadMinima: '1',
   descripcion: '',
+  origen: 'propio',
+  costoInterno: '',
+  proveedorId: '',
 };
 
 function formFromProducto(p: Producto) {
@@ -45,6 +53,9 @@ function formFromProducto(p: Producto) {
     precioFinSemana: String(p.precioFinSemana),
     cantidadMinima: String(p.cantidadMinima ?? 1),
     descripcion: p.descripcion ?? '',
+    origen: p.origen ?? 'propio',
+    costoInterno: p.costoInterno != null ? String(p.costoInterno) : '',
+    proveedorId: p.proveedorId ?? '',
   };
 }
 
@@ -62,6 +73,12 @@ export function ProductoFormModal({
   const [imagenUrl, setImagenUrl] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+
+  const { data: proveedores = [] } = useQuery({
+    queryKey: ['proveedores', 'activos'],
+    queryFn: () => fetchProveedores(true),
+    enabled: open,
+  });
 
   useEffect(() => {
     if (!open) return;
@@ -88,6 +105,9 @@ export function ProductoFormModal({
         precioFinSemana: Number(form.precioFinSemana),
         cantidadMinima: Number(form.cantidadMinima) || 1,
         descripcion: form.descripcion.trim() || undefined,
+        origen: form.origen as 'propio' | 'proveedor',
+        costoInterno: form.costoInterno ? Number(form.costoInterno) : undefined,
+        proveedorId: form.proveedorId || undefined,
       });
       onClose();
     } catch (err) {
@@ -176,6 +196,46 @@ export function ProductoFormModal({
             onChange={(e) => setForm({ ...form, precioFinSemana: e.target.value })}
           />
         </label>
+        <label className="block">
+          <span className={LABEL_CLASS}>Origen</span>
+          <select
+            className={INPUT_CLASS}
+            value={form.origen}
+            onChange={(e) => setForm({ ...form, origen: e.target.value })}
+          >
+            <option value="propio">Propio (Bosque)</option>
+            <option value="proveedor">Proveedor externo</option>
+          </select>
+        </label>
+        <label className="block">
+          <span className={LABEL_CLASS}>Costo interno (S/)</span>
+          <input
+            type="number"
+            step="0.01"
+            min={0}
+            className={INPUT_CLASS}
+            value={form.costoInterno}
+            onChange={(e) => setForm({ ...form, costoInterno: e.target.value })}
+            placeholder="Costo a proveedor"
+          />
+        </label>
+        {form.origen === 'proveedor' && (
+          <label className="block sm:col-span-2">
+            <span className={LABEL_CLASS}>Proveedor</span>
+            <select
+              className={INPUT_CLASS}
+              value={form.proveedorId}
+              onChange={(e) => setForm({ ...form, proveedorId: e.target.value })}
+            >
+              <option value="">— Seleccionar —</option>
+              {proveedores.map((p) => (
+                <option key={p.id} value={p.id}>
+                  {p.nombre}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         {esEdicion && producto && onUploadImagen && (
           <div className="sm:col-span-2">
             <span className={LABEL_CLASS}>Imagen del producto</span>

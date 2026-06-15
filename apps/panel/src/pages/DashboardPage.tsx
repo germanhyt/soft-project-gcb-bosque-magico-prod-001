@@ -98,7 +98,7 @@ export function DashboardPage() {
                 return (
                   <Link
                     key={ev.id}
-                    to="/agenda"
+                    to={`/agenda?detalle=${ev.id}`}
                     className="group flex cursor-pointer items-center gap-4 rounded-lg p-4 transition-colors hover:bg-surface-container-low"
                   >
                     <div className="flex h-14 w-14 shrink-0 flex-col items-center justify-center rounded-lg border border-primary/10 bg-primary-fixed/40 text-primary">

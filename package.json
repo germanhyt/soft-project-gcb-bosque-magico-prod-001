@@ -16,7 +16,10 @@
     "db:migrate": "npm run prisma:migrate -w @bosque/api",
     "db:seed": "npm run prisma:seed -w @bosque/api",
     "db:seed:demo": "npm run prisma:seed:demo -w @bosque/api",
-    "qa:smoke": "node scripts/qa-smoke-use-cases.mjs"
+    "db:cleanup": "npm run prisma:cleanup -w @bosque/api",
+    "qa:smoke": "node scripts/qa-smoke-use-cases.mjs",
+    "qa:flujo": "node scripts/qa-flujo-paso-a-paso.mjs",
+    "qa:operaciones": "node scripts/qa-operaciones-demo.mjs"
   },
   "devDependencies": {
     "prettier": "^3.4.2"

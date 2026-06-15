@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import {
   actualizarProducto,
@@ -15,10 +15,12 @@ import {
 } from '../lib/configuracion';
 import { horarioDesdeRango, parseTurnoConfig, turnoParaGuardar } from '../lib/turno-config';
 import { parseFeriadosConfig } from '../lib/tarifa-calendario';
+import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import { smtpValoresDesdeItems, SMTP_ORDEN } from '../lib/smtp-config';
 import type { Producto } from '../lib/cotizaciones';
 import { FeriadosConfigEditor } from '../components/configuracion/FeriadosConfigEditor';
 import { CatalogoProductoRowActions } from '../components/catalogo/CatalogoProductoRowActions';
+import { ProveedoresTab } from '../components/proveedores/ProveedoresTab';
 import { ProductoFormModal } from '../components/catalogo/ProductoFormModal';
 import { ProductImageDropzone } from '../components/catalogo/ProductImageDropzone';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,6 +28,7 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { Button } from '../components/ui/Button';
 import { DataTableCard } from '../components/ui/DataTableCard';
+import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import {
@@ -35,7 +38,7 @@ import {
   TABLE_ROW_CLASS,
 } from '../constants/design';
 
-type Tab = 'tarifas' | 'catalogo';
+type Tab = 'tarifas' | 'catalogo' | 'proveedores';
 type CategoriaFiltro = 'todas' | 'paquete' | 'show' | 'catering' | 'extra' | 'espacio';
 
 const LABELS: Record<string, string> = {
@@ -124,6 +127,7 @@ export function ConfiguracionPage() {
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
   const [showInactivos, setShowInactivos] = useState(true);
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
+  const [catalogoPage, setCatalogoPage] = useState(1);
   const [productoModalOpen, setProductoModalOpen] = useState(false);
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
   const qc = useQueryClient();
@@ -212,6 +216,20 @@ export function ConfiguracionPage() {
     if (categoriaFiltro === 'todas') return productos;
     return productos.filter((p) => p.categoria === categoriaFiltro);
   }, [productos, categoriaFiltro]);
+
+  useEffect(() => {
+    setCatalogoPage(1);
+  }, [categoriaFiltro, showInactivos]);
+
+  const catalogoTotalPages = Math.max(
+    1,
+    Math.ceil(productosFiltrados.length / DEFAULT_PAGE_SIZE),
+  );
+
+  const productosPaginados = useMemo(() => {
+    const start = (catalogoPage - 1) * DEFAULT_PAGE_SIZE;
+    return productosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
+  }, [productosFiltrados, catalogoPage]);
 
   const guardarConfigMut = useMutation({
     mutationFn: () => {
@@ -345,6 +363,19 @@ export function ConfiguracionPage() {
         >
           Catálogo
         </button>
+        {puedeGestionarCatalogo && (
+          <button
+            type="button"
+            onClick={() => setTab('proveedores')}
+            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
+              tab === 'proveedores'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-outline hover:text-on-surface'
+            }`}
+          >
+            Proveedores
+          </button>
+        )}
       </div>
 
       {tab === 'tarifas' && puedeEditarTarifas && (
@@ -660,7 +691,19 @@ export function ConfiguracionPage() {
             }}
           />
 
-          <DataTableCard>
+          <DataTableCard
+            footer={
+              !loadingProd && productosFiltrados.length > 0 ? (
+                <DataTablePagination
+                  page={catalogoPage}
+                  totalPages={catalogoTotalPages}
+                  total={productosFiltrados.length}
+                  pageSize={DEFAULT_PAGE_SIZE}
+                  onPageChange={setCatalogoPage}
+                />
+              ) : undefined
+            }
+          >
             <table className="w-full text-left text-body-sm">
               <thead className={TABLE_HEAD_CLASS}>
                 <tr>
@@ -680,7 +723,7 @@ export function ConfiguracionPage() {
                     </td>
                   </tr>
                 ) : (
-                  productosFiltrados.map((p) => (
+                  productosPaginados.map((p) => (
                     <tr key={p.id} className={TABLE_ROW_CLASS}>
                       <td className="px-4 py-3">
                         <p className="font-medium">{p.nombre}</p>
@@ -747,6 +790,10 @@ export function ConfiguracionPage() {
             </table>
           </DataTableCard>
         </div>
+      )}
+
+      {tab === 'proveedores' && puedeGestionarCatalogo && (
+        <ProveedoresTab puedeGestionar={puedeGestionarCatalogo} />
       )}
     </div>
   );

@@ -35,6 +35,11 @@ export async function fetchAgenda(desde?: string, hasta?: string) {
   return data;
 }
 
+export async function fetchEvento(id: string) {
+  const { data } = await api.get<Evento>(`/bosque-magico/eventos/${id}`);
+  return data;
+}
+
 export async function fetchEventosResumen() {
   const { data } = await api.get<{
     porEtapa: Record<string, number>;

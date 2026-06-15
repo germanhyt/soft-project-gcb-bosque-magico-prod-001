@@ -33,8 +33,14 @@ export class CotizacionesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private async generarCodigo(): Promise<string> {
-    const count = await this.prisma.bosqueMagicoCotizacion.count();
-    return `COT-${String(count + 1).padStart(5, '0')}`;
+    const ultima = await this.prisma.bosqueMagicoCotizacion.findFirst({
+      orderBy: { codigo: 'desc' },
+      select: { codigo: true },
+    });
+    const secuencia = ultima
+      ? Number.parseInt(ultima.codigo.replace(/^COT-/, ''), 10) + 1
+      : 1;
+    return `COT-${String(secuencia).padStart(5, '0')}`;
   }
 
   private generarToken(): string {

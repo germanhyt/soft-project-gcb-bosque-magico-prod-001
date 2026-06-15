@@ -6,6 +6,7 @@ import {
 } from '../../lib/usuarios';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { PasswordInput } from '../ui/PasswordInput';
 
 type Props = {
   open: boolean;
@@ -121,14 +122,17 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
           <span className={LABEL_CLASS}>
             {editando ? 'Nueva contraseña (opcional)' : 'Contraseña *'}
           </span>
-          <input
-            type="password"
-            className={INPUT_CLASS}
+          <PasswordInput
             value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required={!editando}
+            onChange={setPassword}
+            generatable
             minLength={6}
+            autoComplete={editando ? 'new-password' : 'new-password'}
+            placeholder={editando ? 'Dejar vacío para no cambiar' : undefined}
           />
+          <p className="mt-1 text-xs text-outline">
+            Mínimo 6 caracteres. Usa «Generar» para una clave segura y cópiala antes de guardar.
+          </p>
         </label>
 
         <fieldset className="rounded-lg border border-surface-variant p-4">

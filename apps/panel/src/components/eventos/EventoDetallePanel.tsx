@@ -1,6 +1,8 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
+import { EventoTareasSection } from '../tareas/EventoTareasSection';
+import { EventoPedidosSection } from '../pedidos/EventoPedidosSection';
 import { CancelarEventoModal } from './CancelarEventoModal';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { EnviarContratoActions } from '../contratos/EnviarContratoActions';
@@ -46,6 +48,8 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ['agenda'] });
     qc.invalidateQueries({ queryKey: ['eventos-resumen'] });
+    if (eventoId) qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] });
+    if (eventoId) qc.invalidateQueries({ queryKey: ['tareas-evento', eventoId] });
   };
 
   const confirmarMut = useMutation({
@@ -229,6 +233,12 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
             {ev.notas && (
               <p className="rounded-lg bg-surface-container-low p-3 whitespace-pre-wrap">{ev.notas}</p>
             )}
+            <EventoPedidosSection
+              eventoId={ev.id}
+              fechaEvento={ev.fechaEvento}
+              etapaEvento={ev.etapa}
+            />
+            <EventoTareasSection eventoId={ev.id} etapaEvento={ev.etapa} />
             <p className="text-center text-body-sm text-outline">{ETAPA_EVENTO_LABEL[ev.etapa]}</p>
           </div>
         )}

@@ -5,7 +5,7 @@ import Swal from 'sweetalert2';
 import { linkPublicoCompleto } from '../../lib/cotizaciones';
 import type { Cotizacion } from '../../lib/cotizaciones';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
-import { RowActionsToolbar } from '../ui/RowActionsToolbar';
+import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
 import {
   confirmarAceptacionCotizacion,
@@ -46,6 +46,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         enlaceTitulo="Copiar link público de cotización"
         ocultarCorreo
       />
+      {puedeEnviar && <RowActionDivider />}
       {puedeEnviar && cotizacion.cliente.correo && (
         <RowIconButton
           icon="mail"
@@ -64,18 +65,22 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         />
       )}
       {cotizacion.etapa === 'enviada' && (
-        <RowIconButton
-          icon="check_circle"
-          title="Aceptar (equipo)"
-          aria-label="Aceptar cotización"
-          disabled={aceptarMut.isPending}
-          onClick={() => {
-            void (async () => {
-              if (await confirmarAceptacionCotizacion()) aceptarMut.mutate();
-            })();
-          }}
-        />
+        <>
+          <RowActionDivider />
+          <RowIconButton
+            icon="check_circle"
+            title="Aceptar (equipo)"
+            aria-label="Aceptar cotización"
+            disabled={aceptarMut.isPending}
+            onClick={() => {
+              void (async () => {
+                if (await confirmarAceptacionCotizacion()) aceptarMut.mutate();
+              })();
+            }}
+          />
+        </>
       )}
+      <RowActionDivider />
       {cotizacion.etapa === 'borrador' && (
         <RowIconButton
           icon="edit_square"

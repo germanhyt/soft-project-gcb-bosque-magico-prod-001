@@ -14,6 +14,20 @@ npm run db:seed
 npm run db:seed:demo
 ```
 
+Limpieza opcional de solicitudes/cotizaciones demo y QA (sin borrar correos german de prueba):
+
+```bash
+npm run db:cleanup
+```
+
+Prueba paso a paso con `germanhuaytalla22@gmail.com` y `germanhuaytalla23@gmail.com`:
+
+```bash
+npm run qa:flujo
+```
+
+Ver detalle en `.docs/PRUEBAS_FLUJO_JUNIO_2026.md`.
+
 Levantar apps:
 
 ```bash
@@ -45,6 +59,8 @@ Script disponible en `scripts/qa-smoke-use-cases.mjs`.
 
 ```bash
 npm run qa:smoke
+npm run qa:flujo
+npm run qa:operaciones
 ```
 
 ### Ejecutar contra sandbox

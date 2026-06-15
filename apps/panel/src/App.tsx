@@ -17,6 +17,7 @@ import { SolicitudesPage } from './pages/SolicitudesPage';
 import { ClientesPage } from './pages/ClientesPage';
 import { ClienteDetallePage } from './pages/ClienteDetallePage';
 import { ContratosPage } from './pages/ContratosPage';
+import { OperacionesPage } from './pages/OperacionesPage';
 
 function App() {
   return (
@@ -34,6 +35,7 @@ function App() {
           <Route path="cotizaciones/:id/editar" element={<CotizacionEditarRedirectPage />} />
           <Route path="cotizaciones/:id" element={<CotizacionDetallePage />} />
           <Route path="agenda" element={<AgendaPage />} />
+          <Route path="operaciones" element={<OperacionesPage />} />
           <Route path="contratos" element={<ContratosPage />} />
           <Route path="configuracion" element={<ConfiguracionPage />} />
           <Route element={<RequireAdmin />}>

@@ -99,9 +99,10 @@ npm run db:seed:demo
 
 ### Agenda
 
-- Vista **Lista** (rango de fechas) o **Mes** (calendario mensual con resumen por día; clic en día muestra eventos del día).
-
-**Siguiente:** pruebas manuales por flujo (landing → solicitud → cotización → agenda) con esos datos.
+- Vista **Mes** por defecto (calendario mensual con resumen por día).
+- Clic en día → **modal** con lista de eventos (`AgendaDiaModal`); clic en evento → **DetalleModal** (`?detalle=id`).
+- Vista **Lista** (rango de fechas) como alternativa (`?vista=lista`).
+- Deep link `/agenda?detalle=id` (p. ej. tras aceptar cotización) abre detalle y navega al mes del evento.
 
 
 -------------------------------
@@ -198,16 +199,41 @@ En configuraciones considerar las fechas de feriado (regla general para determin
 (x)
 Pruebas de la config de correos SMTP (test funcional)
 
-
-()
+(x)
 Distinguir las acciones de envío de información (wstp, correo, link), acciones crud, acciones de envío y confirmación; estos cada módulo
 
-Respecto a 
+(x)
+**Propuesta UX — agrupación de acciones** (implementado en detalle y filas):
 
+| Capa | Dónde | Grupos (orden) |
+|------|-------|----------------|
+| **Detalle (modal)** | Solicitud, Cotización, Contrato | 1. Compartir con el cliente · 2. Confirmar flujo · 3. Editar / CRUD |
+| **Fila (tabla)** | Iconos con `RowActionDivider` | 1. Contacto · 2. Envío documento · 3. Confirmar · 4. Navegar/editar · 5. Cerrar (peligro) |
+
+Reglas: destructivas al final; compartir primero; confirmaciones en bloque `accent`; filas ~6 iconos max — resto en detalle.
+
+(x)
+Paginado en catálogo de productos (Configuración → Catálogo, 20/página)
+
+(x)
+Módulo usuarios: generar contraseña + mostrar/ocultar; Usuarios al final del sidebar (después de Configuración)
+
+
+
+
+4) 
+14/06/2026
+
+(x)
+En el módulo de Agenda vemos como primera vista la de por mes, al presionar fecha que se aperture un modal de la lista de eventos y otro en caso de requerir ver el detalle
+
+(x)
+Analizamos cómo entraría la lógica de pedidos a proveedores?, esto para cubrir lo necesario en el bosque mágico
+
+**Implementado (2026-06-15):** `Proveedor` + `Pedido` en Prisma; CRUD proveedores en Configuración; pedidos en detalle de evento; auto-generación al confirmar desde ítems de cotización con producto `origen=proveedor`.
+
+(x)
+Dashboard «Próximos eventos» mostraba INVALID DATE — fix `formatMesDia` + enlace a detalle agenda. Limpieza demo (`db:cleanup`), prueba paso a paso (`qa:flujo`) con germanhuaytalla22/23@gmail.com. Doc: `.docs/PRUEBAS_FLUJO_JUNIO_2026.md`.
 
 ()
-Paginado en el catálogo de productos
 
-
-
-4)
