@@ -794,6 +794,8 @@ model BosqueMagicoUsuario {
 
   actualizadoEn DateTime @updatedAt @map("actualizado_en")
 
+  notificacionesEstado BosqueMagicoPanelNotificacionUsuario[]
+
 
 
   @@map("usuarios")
@@ -951,6 +953,70 @@ model BosqueMagicoTareaEvento {
   @@index([eventoId])
 
   @@map("tareas_evento")
+
+}
+
+
+
+model BosqueMagicoPanelNotificacion {
+
+  id          String   @id @default(uuid())
+
+  tipo        String
+
+  titulo      String
+
+  mensaje     String
+
+  entidadTipo String?  @map("entidad_tipo")
+
+  entidadId   String?  @map("entidad_id")
+
+  creadoEn    DateTime @default(now()) @map("creado_en")
+
+
+
+  estadosUsuario BosqueMagicoPanelNotificacionUsuario[]
+
+
+
+  @@index([creadoEn(sort: Desc)])
+
+  @@map("panel_notificaciones")
+
+}
+
+
+
+model BosqueMagicoPanelNotificacionUsuario {
+
+  id             String    @id @default(uuid())
+
+  notificacionId String    @map("notificacion_id")
+
+  usuarioId      String    @map("usuario_id")
+
+  leida          Boolean   @default(false)
+
+  oculta         Boolean   @default(false)
+
+  leidaEn        DateTime? @map("leida_en")
+
+  actualizadoEn  DateTime  @updatedAt @map("actualizado_en")
+
+
+
+  notificacion BosqueMagicoPanelNotificacion @relation(fields: [notificacionId], references: [id], onDelete: Cascade)
+
+  usuario      BosqueMagicoUsuario           @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([notificacionId, usuarioId])
+
+  @@index([usuarioId, oculta])
+
+  @@map("panel_notificaciones_usuario")
 
 }
 

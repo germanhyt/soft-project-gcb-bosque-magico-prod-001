@@ -3,6 +3,8 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { EventsGateway } from './events.gateway';
 import { EventsService } from './events.service';
+import { NotificacionesPanelController } from './notificaciones-panel.controller';
+import { PanelNotificacionesRepository } from './panel-notificaciones.repository';
 
 @Module({
   imports: [
@@ -15,7 +17,8 @@ import { EventsService } from './events.service';
       }),
     }),
   ],
-  providers: [EventsGateway, EventsService],
+  controllers: [NotificacionesPanelController],
+  providers: [EventsGateway, EventsService, PanelNotificacionesRepository],
   exports: [EventsService],
 })
 export class EventsModule {}

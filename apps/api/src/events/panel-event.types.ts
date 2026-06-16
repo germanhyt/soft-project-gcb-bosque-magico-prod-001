@@ -8,6 +8,7 @@ export type BosquePanelEventType =
   | 'evento.actualizado';
 
 export type BosquePanelEvent = {
+  id: string;
   type: BosquePanelEventType;
   titulo: string;
   mensaje: string;
