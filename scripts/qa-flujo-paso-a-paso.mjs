@@ -3,6 +3,7 @@
  * Prueba paso a paso de casos de uso comerciales con correos reales de prueba.
  * Flujo A: germanhuaytalla22@gmail.com — solicitud pública (landing) + gestión panel.
  * Flujo B: germanhuaytalla23@gmail.com — solicitud manual + E2E hasta evento realizado.
+ * Flujo C: refugiogastronomico8222@gmail.com — landing + contrato público + operaciones.
  */
 const DEFAULT_BASE_URL = 'http://localhost:3000/api';
 const DEFAULT_EMAIL = 'admin@bosquemagico.test';
@@ -14,11 +15,15 @@ const adminPassword = process.env.QA_PASSWORD || DEFAULT_PASSWORD;
 
 const EMAIL_LANDING = 'germanhuaytalla22@gmail.com';
 const EMAIL_MANUAL = 'germanhuaytalla23@gmail.com';
+const EMAIL_FLUJO_C = 'refugiogastronomico8222@gmail.com';
+/** Celular de prueba compartido en todos los flujos (WhatsApp real). */
+const CELULAR_QA = process.env.QA_CELULAR || '910139973';
 
 const suffix = Date.now().toString().slice(-6);
 const futureDate = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000);
 const fechaEvento = futureDate.toISOString().slice(0, 10);
 const fechaEventoB = new Date(Date.now() + 21 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+const fechaEventoC = new Date(Date.now() + 42 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
 const resultados = [];
 
@@ -65,7 +70,7 @@ function paso(num, titulo, result, accepted = [200, 201], extra = {}) {
 }
 
 function celularUnico() {
-  return `9${Math.floor(10000000 + Math.random() * 89999999)}`;
+  return CELULAR_QA;
 }
 
 async function main() {
@@ -75,7 +80,9 @@ async function main() {
   console.log(`API: ${baseUrl}`);
   console.log(`Admin: ${adminEmail}`);
   console.log(`Flujo A (landing): ${EMAIL_LANDING}`);
-  console.log(`Flujo B (manual E2E): ${EMAIL_MANUAL}\n`);
+  console.log(`Flujo B (manual E2E): ${EMAIL_MANUAL}`);
+  console.log(`Flujo C (landing + contrato): ${EMAIL_FLUJO_C}`);
+  console.log(`Celular QA (todos los flujos): ${CELULAR_QA}\n`);
 
   let n = 0;
 
@@ -313,17 +320,118 @@ async function main() {
   });
   if (!paso(n, 'B10 — Marcar evento como realizado', realizarB, [200, 201])) process.exit(1);
 
+  // ── FLUJO C: Landing refugiogastronomico8222 + contrato público ──
+  console.log('\n── Flujo C: Solicitud landing (refugiogastronomico8222) ──');
+
+  const celularCFlujo = celularUnico();
+  n++;
+  const solicitudCFlujo = await call('/public/bosque-magico/solicitudes', {
+    method: 'POST',
+    body: {
+      cliente: {
+        nombre: `Refugio Gastronómico QA (${suffix})`,
+        celular: celularCFlujo,
+        correo: EMAIL_FLUJO_C,
+      },
+      cumpleanero: { nombre: 'Lucía', edad: 7 },
+      evento: {
+        fechaTentativa: fechaEventoC,
+        turno: 'turno_3',
+        cantidadNinos: 18,
+        tematica: 'Jardín',
+        paquete: 'Clásico',
+      },
+      observaciones: `Prueba flujo refugio ${suffix}`,
+    },
+  });
+  const solicitudCFlujoId = solicitudCFlujo.data?.id;
+  let cotizacionCId = solicitudCFlujo.data?.cotizacion?.id;
+  if (!paso(n, 'C0 — Solicitud pública (refugiogastronomico8222)', solicitudCFlujo, [200, 201], {
+    id: solicitudCFlujoId,
+    extra: cotizacionCId ? `borrador auto: ${cotizacionCId}` : undefined,
+  }))
+    process.exit(1);
+
+  n++;
+  if (!cotizacionCId) {
+    const cotC = await call(`/bosque-magico/solicitudes/${solicitudCFlujoId}/generar-cotizacion-borrador`, {
+      method: 'POST',
+      token,
+    });
+    cotizacionCId = cotC.data?.cotizacion?.id;
+    if (!paso(n, 'C1 — Generar cotización borrador', cotC, [200, 201], { id: cotizacionCId })) process.exit(1);
+  } else {
+    console.log(`✅ Paso ${n}: C1 — Cotización borrador ya generada en landing (${cotizacionCId})`);
+    resultados.push({ paso: n, titulo: 'C1 — Borrador auto landing', status: 200, ok: true });
+  }
+
+  n++;
+  const enviarC = await call(`/bosque-magico/cotizaciones/${cotizacionCId}/enviar`, {
+    method: 'POST',
+    token,
+    body: { canal: 'email', correoDestino: EMAIL_FLUJO_C },
+  });
+  if (!paso(n, 'C2 — Enviar cotización', enviarC, [200, 201])) process.exit(1);
+
+  n++;
+  const aceptarC = await call(`/bosque-magico/cotizaciones/${cotizacionCId}/aceptar`, {
+    method: 'POST',
+    token,
+  });
+  const eventoCId = aceptarC.data?.eventoId;
+  if (!paso(n, 'C3 — Aceptar cotización (evento agenda)', aceptarC, [200, 201], { id: eventoCId }))
+    process.exit(1);
+
+  n++;
+  const confirmarC = await call(`/bosque-magico/eventos/${eventoCId}/confirmar`, {
+    method: 'POST',
+    token,
+  });
+  if (!paso(n, 'C4 — Confirmar evento (checklist auto)', confirmarC, [200, 201])) process.exit(1);
+
+  n++;
+  const contratoC = await call(`/bosque-magico/eventos/${eventoCId}/contrato`, {
+    method: 'POST',
+    token,
+    body: {
+      numeroDocumento: '70998877',
+      tipoComprobante: 'boleta',
+      documentoTributario: '70998877',
+      horarioInicio: '15:00',
+      horarioFin: '18:00',
+      adelanto1Monto: 300,
+      adelanto1Fecha: fechaEventoC,
+    },
+  });
+  const contratoToken = contratoC.data?.tokenPublico;
+  if (!paso(n, 'C5 — Generar contrato', contratoC, [200, 201], { extra: contratoToken ? `token ${contratoToken.slice(0, 8)}…` : undefined }))
+    process.exit(1);
+
+  if (contratoToken) {
+    n++;
+    const contratoPublico = await call(`/public/bosque-magico/contratos/${contratoToken}`);
+    if (!paso(n, 'C6 — Ver contrato público por token', contratoPublico)) process.exit(1);
+  }
+
+  n++;
+  const tareasC = await call(`/bosque-magico/eventos/${eventoCId}/tareas`, { token });
+  if (!paso(n, 'C7 — Checklist del evento', tareasC)) process.exit(1);
+
+  n++;
+  const pedidosC = await call(`/bosque-magico/eventos/${eventoCId}/pedidos`, { token });
+  if (!paso(n, 'C8 — Pedidos del evento', pedidosC)) process.exit(1);
+
   // ── Caso adicional: cerrar solicitud huérfana ─────────────
   console.log('\n── Caso adicional: Cerrar solicitud ──');
 
-  const celularC = celularUnico();
+  const celularCierre = '910139974';
   n++;
   const crearCerrar = await call('/bosque-magico/solicitudes', {
     method: 'POST',
     token,
     body: {
       nombreContacto: `Lead descartado ${suffix}`,
-      celular: celularC,
+      celular: celularCierre,
       correo: `lead.cerrar.${suffix}@example.test`,
       canal: 'whatsapp',
       notas: 'Para probar cierre',
@@ -352,11 +460,12 @@ async function main() {
   console.log('\nIDs generados:');
   console.log(`  Flujo A — solicitud: ${solicitudAId}, cotización: ${cotizacionAId}`);
   console.log(`  Flujo B — solicitud: ${solicitudBId}, cotización: ${cotizacionBId}, evento: ${eventoBId}`);
+  console.log(`  Flujo C — solicitud: ${solicitudCFlujoId}, cotización: ${cotizacionCId}, evento: ${eventoCId}`);
   console.log(`  Cierre — solicitud: ${solicitudCId}`);
   console.log('\nVerificar en panel:');
   console.log('  Dashboard → Próximos eventos (fechas legibles, no INVALID DATE)');
-  console.log(`  Solicitudes → buscar ${EMAIL_LANDING} y ${EMAIL_MANUAL}`);
-  console.log(`  Agenda → ?detalle=${eventoBId}\n`);
+  console.log(`  Solicitudes → buscar ${EMAIL_LANDING}, ${EMAIL_MANUAL} y ${EMAIL_FLUJO_C}`);
+  console.log(`  Agenda → ?detalle=${eventoBId} y ?detalle=${eventoCId}\n`);
 
   if (failCount > 0) process.exit(1);
 }

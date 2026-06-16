@@ -2,7 +2,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { linkPublicoCompleto } from '../../lib/cotizaciones';
+import { linkPdfPublicoCompleto, linkPublicoCompleto } from '../../lib/cotizaciones';
 import type { Cotizacion } from '../../lib/cotizaciones';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
 import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
@@ -23,6 +23,7 @@ type Props = {
 export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const navigate = useNavigate();
   const linkPublico = linkPublicoCompleto(cotizacion.tokenPublico);
+  const linkPdf = linkPdfPublicoCompleto(cotizacion.tokenPublico);
   const puedeEnviar =
     cotizacion.etapa === 'borrador' || cotizacion.etapa === 'enviada';
   const qc = useQueryClient();
@@ -43,7 +44,9 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
         celular={cotizacion.cliente.celular}
         correo={cotizacion.cliente.correo}
         enlaceCopiar={linkPublico}
-        enlaceTitulo="Copiar link público de cotización"
+        enlaceTitulo="Copiar link (aceptar)"
+        enlaceCopiarSecundario={linkPdf}
+        enlaceTituloSecundario="Copiar link PDF"
         ocultarCorreo
       />
       {puedeEnviar && <RowActionDivider />}
@@ -116,6 +119,7 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
       preview={{
         codigo: cotizacion.codigo,
         linkPublico,
+        linkPdfPublico: linkPdf,
         nombreCliente: cotizacion.cliente.nombreCompleto,
       }}
     />

@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import { UsuarioFormModal } from '../components/usuarios/UsuarioFormModal';
 import { AlertError } from '../components/ui/Alert';
@@ -8,6 +8,9 @@ import { PageHeader } from '../components/ui/PageHeader';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
+import { FilterSearchInput } from '../components/ui/FilterSearchInput';
+import { FilterSelect } from '../components/ui/FilterSelect';
+import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import {
@@ -17,26 +20,60 @@ import {
 import {
   actualizarUsuario,
   crearUsuario,
+  etiquetasPermisoUsuario,
   fetchUsuarios,
-  PERMISOS_DISPONIBLES,
+  PERMISO_ADMIN,
+  PERMISO_MANAGE,
+  PERMISO_VIEW,
+  usuarioCoincidePermisoFiltro,
+  type PermisoPanelId,
   type UsuarioPanel,
 } from '../lib/usuarios';
 import { useAuth } from '../contexts/AuthContext';
 
-const PERMISO_LABEL = Object.fromEntries(
-  PERMISOS_DISPONIBLES.map((p) => [p.id, p.label.split('(')[0].trim()]),
-);
+type EstadoFiltro = '' | 'activo' | 'inactivo';
+type PermisoFiltro = '' | PermisoPanelId;
+
+function coincideBusqueda(q: string, u: UsuarioPanel) {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  return [u.nombre, u.email].some((v) => v.toLowerCase().includes(needle));
+}
 
 export function UsuariosPage() {
   const { user: yo } = useAuth();
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const [editUser, setEditUser] = useState<UsuarioPanel | null>(null);
+  const [busqueda, setBusqueda] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoFiltro>('');
+  const [permisoFiltro, setPermisoFiltro] = useState<PermisoFiltro>('');
+  const [page, setPage] = useState(1);
 
-  const { data = [], isLoading, isError } = useQuery({
+  const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['usuarios-panel'],
     queryFn: fetchUsuarios,
   });
+
+  const usuariosFiltrados = useMemo(() => {
+    return data.filter((u) => {
+      if (!coincideBusqueda(busqueda, u)) return false;
+      if (estadoFiltro === 'activo' && !u.activo) return false;
+      if (estadoFiltro === 'inactivo' && u.activo) return false;
+      if (permisoFiltro && !usuarioCoincidePermisoFiltro(u.permisos, permisoFiltro)) return false;
+      return true;
+    });
+  }, [data, busqueda, estadoFiltro, permisoFiltro]);
+
+  useEffect(() => {
+    setPage(1);
+  }, [busqueda, estadoFiltro, permisoFiltro]);
+
+  const totalPages = Math.max(1, Math.ceil(usuariosFiltrados.length / DEFAULT_PAGE_SIZE));
+  const usuariosPaginados = useMemo(() => {
+    const start = (page - 1) * DEFAULT_PAGE_SIZE;
+    return usuariosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
+  }, [usuariosFiltrados, page]);
 
   const crearMut = useMutation({
     mutationFn: crearUsuario,
@@ -68,11 +105,23 @@ export function UsuariosPage() {
     }
   };
 
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstadoFiltro('');
+    setPermisoFiltro('');
+  };
+
+  const hayFiltros = busqueda.trim() || estadoFiltro || permisoFiltro;
+
   return (
     <div>
       <PageHeader
         breadcrumbs={[CRUMB_INICIO, crumb('Usuarios')]}
-        count={!isLoading && !isError ? `${data.length} usuario${data.length === 1 ? '' : 's'}` : undefined}
+        count={
+          !isLoading && !isError
+            ? `${usuariosFiltrados.length} de ${data.length} usuario${data.length === 1 ? '' : 's'}`
+            : undefined
+        }
       >
         <Button
           onClick={() => {
@@ -90,15 +139,54 @@ export function UsuariosPage() {
         </AlertError>
       )}
 
+      <TableFiltersPanel className="mb-4" onRefresh={() => void refetch()}>
+        <FilterSearchInput
+          inline
+          value={busqueda}
+          onChange={setBusqueda}
+          placeholder="Nombre o correo…"
+        />
+        <FilterSelect<EstadoFiltro>
+          inline
+          label="Estado"
+          value={estadoFiltro}
+          onChange={setEstadoFiltro}
+          options={[
+            { value: '', label: 'Todos los estados' },
+            { value: 'activo', label: 'Activos' },
+            { value: 'inactivo', label: 'Inactivos' },
+          ]}
+        />
+        <FilterSelect<PermisoFiltro>
+          inline
+          label="Permiso"
+          value={permisoFiltro}
+          onChange={setPermisoFiltro}
+          options={[
+            { value: '', label: 'Todos los permisos' },
+            { value: PERMISO_VIEW, label: 'Consulta' },
+            { value: PERMISO_MANAGE, label: 'Operación comercial' },
+            { value: PERMISO_ADMIN, label: 'Administración' },
+          ]}
+        />
+        {hayFiltros && (
+          <Button variant="ghost" className="!h-[42px]" onClick={limpiarFiltros}>
+            Limpiar
+          </Button>
+        )}
+      </TableFiltersPanel>
+
       <DataTableCard
         footer={
-          <DataTablePagination
-            page={1}
-            totalPages={1}
-            total={data.length}
-            pageSize={DEFAULT_PAGE_SIZE}
-            onPageChange={() => {}}
-          />
+          !isLoading && usuariosFiltrados.length > 0 ? (
+            <DataTablePagination
+              page={page}
+              totalPages={totalPages}
+              total={usuariosFiltrados.length}
+              pageSize={DEFAULT_PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          ) : undefined
         }
       >
         <table className="w-full text-left text-body-sm">
@@ -117,12 +205,12 @@ export function UsuariosPage() {
                   Cargando…
                 </td>
               </tr>
-            ) : data.length === 0 ? (
+            ) : usuariosPaginados.length === 0 ? (
               <tr>
                 <td colSpan={4} className="px-4 py-6" />
               </tr>
             ) : (
-              data.map((u) => (
+              usuariosPaginados.map((u) => (
                 <tr key={u.id} className={TABLE_ROW_CLASS}>
                   <td className="px-4 py-3">
                     <p className="font-medium">{u.nombre}</p>
@@ -130,12 +218,12 @@ export function UsuariosPage() {
                   </td>
                   <td className="px-4 py-3">
                     <div className="flex flex-wrap gap-1">
-                      {u.permisos.map((p) => (
+                      {etiquetasPermisoUsuario(u.permisos).map((label) => (
                         <span
-                          key={p}
+                          key={label}
                           className="rounded-full bg-surface-variant px-2 py-0.5 text-[10px] font-semibold text-on-surface-variant"
                         >
-                          {PERMISO_LABEL[p] ?? p}
+                          {label}
                         </span>
                       ))}
                     </div>
@@ -177,6 +265,9 @@ export function UsuariosPage() {
         </table>
         {!isLoading && !isError && data.length === 0 && (
           <TableStatusMessage message="No hay usuarios además del administrador. Crea cuentas para vendedores." />
+        )}
+        {!isLoading && !isError && data.length > 0 && usuariosFiltrados.length === 0 && (
+          <TableStatusMessage message="Ningún usuario coincide con los filtros aplicados." />
         )}
       </DataTableCard>
 

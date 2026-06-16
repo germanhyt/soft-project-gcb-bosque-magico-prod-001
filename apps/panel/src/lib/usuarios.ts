@@ -10,11 +10,19 @@ export type UsuarioPanel = {
   actualizadoEn: string;
 };
 
-export const PERMISOS_DISPONIBLES = [
-  { id: 'bosque_magico:view', label: 'Ver (listados y detalle)' },
-  { id: 'bosque_magico:manage', label: 'Gestionar (crear, editar, enviar)' },
-  { id: 'bosque_magico:admin', label: 'Administrar (tarifas y usuarios)' },
-] as const;
+export {
+  PERMISOS_DISPONIBLES,
+  PERMISOS_PANEL,
+  PERMISO_ADMIN,
+  PERMISO_MANAGE,
+  PERMISO_VIEW,
+  etiquetaPermiso,
+  etiquetasPermisoUsuario,
+  permisosEfectivos,
+  togglePermisoPanel,
+  usuarioCoincidePermisoFiltro,
+  type PermisoPanelId,
+} from '../constants/permisos';
 
 export async function fetchUsuarios() {
   const { data } = await api.get<UsuarioPanel[]>('/bosque-magico/usuarios');

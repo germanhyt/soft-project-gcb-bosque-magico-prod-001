@@ -3,8 +3,6 @@ import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
-import { contratoToPrintPayload } from '../../lib/contrato';
-import { imprimirContratoPdf } from '../../lib/contrato-print';
 import { marcarContratoEnviado, type Contrato, type EtapaContrato } from '../../lib/contratos';
 import { waMeUrlContrato } from '../../lib/whatsapp-contrato';
 import { abrirWhatsApp } from '../../lib/whatsapp-cotizacion';
@@ -43,8 +41,9 @@ export function EnviarContratoActions({
     },
   });
 
-  const enviarWhatsApp = async (withPdf: boolean, waTab: Window | null) => {
+  const enviarWhatsApp = async () => {
     setEnviandoWa(true);
+    const waTab = window.open('about:blank', '_blank');
     try {
       if (contrato.etapa === 'borrador') {
         await marcarContratoEnviado(contrato.id);
@@ -61,23 +60,10 @@ export function EnviarContratoActions({
         });
       }
 
-      if (withPdf) {
-        const ok = imprimirContratoPdf(contratoToPrintPayload(contrato), 'iframe');
-        if (!ok) {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'PDF no generado',
-            text: 'WhatsApp ya se abrió. Puedes imprimir el contrato desde el detalle.',
-          });
-        }
-      }
-
       await Swal.fire({
         icon: 'success',
         title: contrato.etapa === 'borrador' ? 'Contrato enviado' : 'WhatsApp abierto',
-        html: withPdf
-          ? '<p class="text-sm">WhatsApp listo. Adjunta el PDF desde el diálogo de impresión.</p>'
-          : '<p class="text-sm">WhatsApp abierto con el resumen del contrato.</p>',
+        html: '<p class="text-sm">WhatsApp abierto con el resumen y el link público del contrato.</p>',
         timer: 2400,
         showConfirmButton: false,
       });
@@ -94,24 +80,6 @@ export function EnviarContratoActions({
     }
   };
 
-  const preguntarYEnviarWhatsApp = async () => {
-    const choice = await Swal.fire({
-      icon: 'question',
-      title: 'Enviar contrato por WhatsApp',
-      html: `<p class="text-sm text-left">Se abrirá WhatsApp con el resumen del contrato. Opcionalmente puedes generar el PDF para adjuntarlo en el chat.</p>`,
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: 'PDF + WhatsApp',
-      denyButtonText: 'Solo mensaje',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-    });
-
-    if (choice.isDismissed) return;
-    const waTab = window.open('about:blank', '_blank');
-    await enviarWhatsApp(choice.isConfirmed, waTab);
-  };
-
   if (!puedeEnviar) return null;
 
   const pendiente = enviandoWa || enviarMut.isPending;
@@ -122,7 +90,7 @@ export function EnviarContratoActions({
       <Button
         className="inline-flex w-full gap-2"
         disabled={pendiente}
-        onClick={() => void preguntarYEnviarWhatsApp()}
+        onClick={() => void enviarWhatsApp()}
       >
         <WhatsAppIcon size={20} className="text-on-primary" />
         {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}

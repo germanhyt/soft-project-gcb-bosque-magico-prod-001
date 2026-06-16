@@ -137,12 +137,6 @@ export function SolicitudRowActions({
           aria-label="Ver detalle"
           onClick={() => onVer(solicitud.id)}
         />
-        {(!esCerrada &&
-          (onEditarSolicitud ||
-            cotizacionActiva?.etapa === 'borrador' ||
-            cotizacionActiva ||
-            puedeGenerarBorradorDesdePayload(solicitud) ||
-            puedeCrearCotizacionManual(solicitud))) && <RowActionDivider />}
         {!esCerrada && onEditarSolicitud && (
           <RowIconButton
             icon="edit_square"
@@ -151,6 +145,13 @@ export function SolicitudRowActions({
             onClick={() => onEditarSolicitud(solicitud.id)}
           />
         )}
+        {(!esCerrada &&
+          (onEditarSolicitud ||
+            cotizacionActiva?.etapa === 'borrador' ||
+            cotizacionActiva ||
+            puedeGenerarBorradorDesdePayload(solicitud) ||
+            puedeCrearCotizacionManual(solicitud))) && <RowActionDivider />}
+
         {solicitud.etapa === 'nueva' && (
           <RowIconButton
             icon="how_to_reg"
@@ -158,6 +159,15 @@ export function SolicitudRowActions({
             aria-label="Tomar solicitud"
             disabled={pending}
             onClick={() => tomarMut.mutate()}
+          />
+        )}
+
+        {!esCerrada && cotizacionActiva && (
+          <RowIconButton
+            icon="receipt_long"
+            title="Revisar cotización"
+            aria-label="Revisar cotización"
+            onClick={() => navigate(`/cotizaciones?detalle=${cotizacionActiva.id}`)}
           />
         )}
         {!esCerrada && cotizacionActiva?.etapa === 'borrador' && (
@@ -170,14 +180,6 @@ export function SolicitudRowActions({
                 ? onAbrirCotizacionForm({ mode: 'edit', cotizacionId: cotizacionActiva.id })
                 : navigate(`/cotizaciones?editar=${cotizacionActiva.id}`)
             }
-          />
-        )}
-        {!esCerrada && cotizacionActiva && (
-          <RowIconButton
-            icon="receipt_long"
-            title="Revisar cotización"
-            aria-label="Revisar cotización"
-            onClick={() => navigate(`/cotizaciones?detalle=${cotizacionActiva.id}`)}
           />
         )}
         {!esCerrada && puedeGenerarBorradorDesdePayload(solicitud) && (

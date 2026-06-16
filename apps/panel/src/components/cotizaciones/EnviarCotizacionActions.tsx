@@ -3,12 +3,10 @@ import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
-import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import { invalidarTrasEnviarCotizacion } from '../../lib/enviar-cotizacion-correo';
 import { fetchConfiguracionPanel } from '../../lib/configuracion';
 import {
   enviarCotizacion,
-  fetchCotizacion,
   type EtapaCotizacion,
 } from '../../lib/cotizaciones';
 import { parseSmtpEstado } from '../../lib/smtp-config';
@@ -56,7 +54,7 @@ type Props = {
   cliente: ClienteContacto;
   className?: string;
   onSuccess?: () => void;
-  preview?: { codigo?: string; linkPublico?: string; nombreCliente?: string };
+  preview?: { codigo?: string; linkPublico?: string; linkPdfPublico?: string; nombreCliente?: string };
 };
 
 export function EnviarCotizacionActions({
@@ -79,7 +77,7 @@ export function EnviarCotizacionActions({
     staleTime: 60_000,
   });
 
-  const enviarWhatsApp = async (withPdf: boolean, waTab: Window | null) => {
+  const enviarWhatsApp = async (waTab: Window | null) => {
     setEnviandoWa(true);
     try {
       const res = await enviarCotizacion(cotizacionId, {
@@ -103,24 +101,10 @@ export function EnviarCotizacionActions({
         waTab?.close();
       }
 
-      if (withPdf) {
-        const cot = await fetchCotizacion(cotizacionId);
-        const ok = imprimirCotizacionPdf(cot, 'iframe');
-        if (!ok) {
-          await Swal.fire({
-            icon: 'warning',
-            title: 'PDF no generado',
-            text: 'WhatsApp ya se abrió con el link. Puedes descargar el PDF desde el detalle.',
-          });
-        }
-      }
-
       await Swal.fire({
         icon: 'success',
         title: 'Cotización enviada',
-        html: withPdf
-          ? '<p class="text-sm">WhatsApp abierto con el link. Adjunta el PDF desde el diálogo de impresión.</p>'
-          : '<p class="text-sm">WhatsApp abierto con el mensaje y link de la cotización.</p>',
+        html: '<p class="text-sm">WhatsApp abierto con links de aceptar y PDF.</p>',
         timer: 2400,
         showConfirmButton: false,
       });
@@ -138,22 +122,8 @@ export function EnviarCotizacionActions({
   };
 
   const preguntarYEnviarWhatsApp = async () => {
-    const choice = await Swal.fire({
-      icon: 'question',
-      title: 'Enviar por WhatsApp',
-      html: `<p class="text-sm text-left">Se abrirá WhatsApp con el link de la cotización. Opcionalmente puedes generar el PDF para adjuntarlo manualmente en el chat.</p>`,
-      showCancelButton: true,
-      showDenyButton: true,
-      confirmButtonText: 'PDF + WhatsApp',
-      denyButtonText: 'Solo mensaje',
-      cancelButtonText: 'Cancelar',
-      reverseButtons: true,
-    });
-
-    if (choice.isDismissed) return;
-    const withPdf = choice.isConfirmed;
     const waTab = window.open('about:blank', '_blank');
-    await enviarWhatsApp(withPdf, waTab);
+    await enviarWhatsApp(waTab);
   };
 
   if (!puedeEnviar) return null;

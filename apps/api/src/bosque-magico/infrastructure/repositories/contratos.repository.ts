@@ -4,6 +4,7 @@ import {
   Prisma,
   TipoComprobanteContrato,
 } from '@prisma/client';
+import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { toDecimal } from '../../domain/utils/decimal';
 
@@ -52,8 +53,20 @@ export class ContratosRepository {
   };
 
   private async generarNumero(): Promise<string> {
-    const count = await this.prisma.bosqueMagicoContrato.count();
-    return `BM-CT-${String(count + 1).padStart(5, '0')}`;
+    const ultimo = await this.prisma.bosqueMagicoContrato.findFirst({
+      orderBy: { numero: 'desc' },
+      select: { numero: true },
+    });
+    let secuencia = 1;
+    const match = ultimo?.numero.match(/(\d+)\s*$/);
+    if (match) {
+      secuencia = Number.parseInt(match[1], 10) + 1;
+    }
+    return `BM-CT-${String(secuencia).padStart(5, '0')}`;
+  }
+
+  private generarToken(): string {
+    return randomBytes(24).toString('hex');
   }
 
   obtenerPorId(id: string) {
@@ -66,6 +79,13 @@ export class ContratosRepository {
   obtenerPorEventoId(eventoId: string) {
     return this.prisma.bosqueMagicoContrato.findUnique({
       where: { eventoId },
+      include: this.includeRelaciones,
+    });
+  }
+
+  obtenerPorToken(token: string) {
+    return this.prisma.bosqueMagicoContrato.findUnique({
+      where: { tokenPublico: token },
       include: this.includeRelaciones,
     });
   }
@@ -128,6 +148,7 @@ export class ContratosRepository {
         eventoId: input.eventoId,
         cotizacionId: input.cotizacionId,
         numero,
+        tokenPublico: this.generarToken(),
         fechaEmision: input.fechaEmision,
         montoTotal: toDecimal(input.montoTotal),
         montoAdelanto: toDecimal(input.montoAdelanto),

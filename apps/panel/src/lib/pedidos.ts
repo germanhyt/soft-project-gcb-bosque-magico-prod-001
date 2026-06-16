@@ -31,5 +31,5 @@ export type Pedido = {
   etapa: EtapaPedido;
   notas: string | null;
   producto?: { id: string; codigo: string; nombre: string; categoria: string } | null;
-  proveedor?: { id: string; nombre: string; celular: string | null } | null;
+  proveedor?: { id: string; nombre: string; celular: string | null; correo?: string | null } | null;
 };

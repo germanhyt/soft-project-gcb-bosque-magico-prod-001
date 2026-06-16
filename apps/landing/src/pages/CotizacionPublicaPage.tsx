@@ -157,6 +157,15 @@ export function CotizacionPublicaPage() {
                   : 'Esta cotización ya no admite aceptación en línea. Contáctanos para más información.'}
           </p>
         )}
+
+        <a
+          href={`/cotizacion/${token}/pdf`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="mt-4 block text-center text-sm font-semibold text-primary underline print:hidden"
+        >
+          Ver / descargar PDF
+        </a>
       </div>
     </div>
     </>

@@ -8,11 +8,14 @@ export function mensajeCorreoCotizacion(
   nombreCompleto: string,
   codigo: string,
   linkPublico: string,
+  linkPdfPublico?: string,
 ): string {
+  const pdfBlock = linkPdfPublico ? `\nDescargar PDF:\n${linkPdfPublico}\n` : '';
   return (
     `Hola ${nombreCompleto},\n\n` +
     `Tu cotización Bosque Mágico (${codigo}) está lista.\n\n` +
-    `Ver detalle y aceptar:\n${linkPublico}\n\n` +
-    `Saludos cordiales,\nEquipo Bosque Mágico`
+    `Ver detalle y aceptar:\n${linkPublico}\n` +
+    pdfBlock +
+    `\nSaludos cordiales,\nEquipo Bosque Mágico`
   );
 }

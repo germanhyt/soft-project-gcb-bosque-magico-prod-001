@@ -26,14 +26,16 @@ import {
 import { contratoToPrintPayload } from '../../lib/contrato';
 import { imprimirContratoPdf } from '../../lib/contrato-print';
 import { formatFecha, formatFechaHora } from '../../lib/format';
+import { fetchTareasEvento } from '../../lib/tareas-api';
 
 type Props = {
   evento: Evento | null;
   open: boolean;
   onClose: () => void;
+  loading?: boolean;
 };
 
-export function EventoDetallePanel({ evento, open, onClose }: Props) {
+export function EventoDetallePanel({ evento, open, onClose, loading = false }: Props) {
   const qc = useQueryClient();
   const [cancelarOpen, setCancelarOpen] = useState(false);
   const [cancelarError, setCancelarError] = useState('');
@@ -42,6 +44,12 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
   const { data: contrato, refetch: refetchContrato } = useQuery({
     queryKey: ['contrato-evento', eventoId],
     queryFn: () => fetchContratoEvento(eventoId!),
+    enabled: open && !!eventoId,
+  });
+
+  const { data: tareas = [] } = useQuery({
+    queryKey: ['tareas-evento', eventoId],
+    queryFn: () => fetchTareasEvento(eventoId!),
     enabled: open && !!eventoId,
   });
 
@@ -176,7 +184,21 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
           <Button
             className="w-full bg-primary-container"
             disabled={realizarMut.isPending}
-            onClick={() => realizarMut.mutate()}
+            onClick={async () => {
+              const pendientes = tareas.filter((t) => t.etapa !== 'completado');
+              if (pendientes.length > 0) {
+                const confirm = await Swal.fire({
+                  icon: 'warning',
+                  title: 'Checklist incompleto',
+                  text: `Quedan ${pendientes.length} tarea(s) pendientes. ¿Marcar el evento como realizado igual?`,
+                  showCancelButton: true,
+                  confirmButtonText: 'Marcar realizado',
+                  cancelButtonText: 'Revisar checklist',
+                });
+                if (!confirm.isConfirmed) return;
+              }
+              realizarMut.mutate();
+            }}
           >
             Marcar realizado
           </Button>
@@ -199,17 +221,18 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
   return (
     <>
       <DetalleModal
-        open={open && !!ev}
+        open={open}
         onClose={onClose}
+        loading={loading}
         title={ev?.cliente.nombreCompleto ?? 'Evento'}
         description={
           ev
             ? `${formatFecha(ev.fechaEvento)} · ${TURNO_LABEL[ev.turno] ?? ev.turno}`
             : undefined
         }
-        footer={footer}
+        footer={ev ? footer : undefined}
       >
-        {ev && (
+        {open && ev ? (
           <div className="space-y-4">
             <EventoBadge etapa={ev.etapa} />
             <p className="text-on-surface-variant">Cumpleañero: {ev.cumpleanero.nombre}</p>
@@ -237,11 +260,15 @@ export function EventoDetallePanel({ evento, open, onClose }: Props) {
               eventoId={ev.id}
               fechaEvento={ev.fechaEvento}
               etapaEvento={ev.etapa}
+              clienteNombre={ev.cliente.nombreCompleto}
+              turnoLabel={TURNO_LABEL[ev.turno] ?? ev.turno}
             />
             <EventoTareasSection eventoId={ev.id} etapaEvento={ev.etapa} />
             <p className="text-center text-body-sm text-outline">{ETAPA_EVENTO_LABEL[ev.etapa]}</p>
           </div>
-        )}
+        ) : open && !loading ? (
+          <p className="py-8 text-center text-on-surface-variant">No se encontró el evento.</p>
+        ) : null}
       </DetalleModal>
 
       <CancelarEventoModal

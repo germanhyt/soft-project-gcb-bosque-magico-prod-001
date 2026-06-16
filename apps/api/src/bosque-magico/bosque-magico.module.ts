@@ -38,6 +38,7 @@ import { ListarSolicitudesUseCase } from './application/use-cases/listar-solicit
 import { ObtenerAgendaUseCase } from './application/use-cases/obtener-agenda.use-case';
 import { ObtenerCatalogoPublicoUseCase } from './application/use-cases/obtener-catalogo-publico.use-case';
 import { ObtenerConfiguracionPublicaUseCase } from './application/use-cases/obtener-configuracion-publica.use-case';
+import { ObtenerContratoPublicoUseCase } from './application/use-cases/obtener-contrato-publico.use-case';
 import { ObtenerCotizacionUseCase } from './application/use-cases/obtener-cotizacion.use-case';
 import { PrevisualizarCotizacionPublicaUseCase } from './application/use-cases/previsualizar-cotizacion-publica.use-case';
 import { RealizarEventoUseCase } from './application/use-cases/realizar-evento.use-case';
@@ -172,6 +173,7 @@ import {
     SubirImagenProductoUseCase,
     EliminarImagenProductoUseCase,
     PrevisualizarCotizacionPublicaUseCase,
+    ObtenerContratoPublicoUseCase,
   ],
 })
 export class BosqueMagicoModule {}

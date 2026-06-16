@@ -56,8 +56,15 @@ export class GenerarContratoEventoUseCase {
     }
 
     const montoTotal = fromDecimal(evento.montoTotal);
-    const adelanto2 = dto.adelanto2Monto ?? 0;
-    const montoAdelanto = dto.adelanto1Monto + adelanto2;
+    const adelanto2Raw = dto.adelanto2Monto ?? 0;
+    let adelanto1 = Math.min(Math.max(dto.adelanto1Monto, 0), montoTotal);
+    let adelanto2 = Math.min(Math.max(adelanto2Raw, 0), Math.max(montoTotal - adelanto1, 0));
+    if (adelanto1 + adelanto2 > montoTotal) {
+      throw new BadRequestException(
+        'La suma de adelantos no puede superar el monto total del evento.',
+      );
+    }
+    const montoAdelanto = adelanto1 + adelanto2;
     const montoPendiente = Math.max(montoTotal - montoAdelanto, 0);
     const montoGarantia = await this.garantiaReferencial(dto);
     const fechaEmision = inicioDiaCalendarioUtc(fechaCalendarioHoy());
@@ -77,7 +84,7 @@ export class GenerarContratoEventoUseCase {
       montoAdelanto,
       montoPendiente,
       montoGarantia,
-      adelanto1Monto: dto.adelanto1Monto,
+      adelanto1Monto: adelanto1,
       adelanto1Fecha: dto.adelanto1Fecha
         ? inicioDiaCalendarioUtc(dto.adelanto1Fecha)
         : null,

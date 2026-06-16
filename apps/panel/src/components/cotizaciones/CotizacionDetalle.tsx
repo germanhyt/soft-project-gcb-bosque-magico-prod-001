@@ -10,7 +10,7 @@ import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { TURNO_LABEL } from '../../constants/solicitudes';
-import { fetchCotizacion, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
+import { fetchCotizacion, linkPdfPublicoCompleto, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
@@ -55,12 +55,20 @@ export function CotizacionDetalle({
     await Swal.fire({ icon: 'success', title: 'Link copiado', timer: 1200, showConfirmButton: false });
   };
 
+  const copiarLinkPdf = async () => {
+    if (!cot) return;
+    const link = linkPdfPublicoCompleto(cot.tokenPublico);
+    await navigator.clipboard.writeText(link);
+    await Swal.fire({ icon: 'success', title: 'Link PDF copiado', timer: 1200, showConfirmButton: false });
+  };
+
   if (!open || !cotizacionId) return null;
 
   const titulo = cot?.codigo ?? listItem?.codigo ?? 'Cotización';
   const evento = cot?.eventos?.[0];
   const solicitud = cot?.solicitud;
   const link = cot ? linkPublicoCompleto(cot.tokenPublico) : '';
+  const linkPdf = cot ? linkPdfPublicoCompleto(cot.tokenPublico) : '';
 
   const footer =
     cot && !isLoading ? (
@@ -75,12 +83,16 @@ export function CotizacionDetalle({
               preview={{
                 codigo: cot.codigo,
                 linkPublico: link,
+                linkPdfPublico: linkPdf,
                 nombreCliente: cot.cliente.nombreCompleto,
               }}
             />
           )}
           <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
-            Copiar link público
+            Copiar link (aceptar)
+          </Button>
+          <Button variant="ghost" className="w-full" onClick={() => void copiarLinkPdf()}>
+            Copiar link PDF
           </Button>
           <Button
             variant="ghost"

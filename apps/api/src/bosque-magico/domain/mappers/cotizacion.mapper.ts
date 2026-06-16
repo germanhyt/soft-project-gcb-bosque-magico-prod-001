@@ -29,6 +29,7 @@ export type CotizacionResponse = CotizacionConItems & {
   montoItems: number;
   montoTotal: number;
   linkPublico: string;
+  linkPdfPublico: string;
   items?: Array<{
     id: string;
     tipo: string;
@@ -62,6 +63,7 @@ export function mapCotizacionResponse(
     montoItems: fromDecimal(cot.montoItems as never),
     montoTotal: fromDecimal(cot.montoTotal as never),
     linkPublico: `/cotizacion/${cot.tokenPublico}`,
+    linkPdfPublico: `/cotizacion/${cot.tokenPublico}/pdf`,
     items,
   };
 }

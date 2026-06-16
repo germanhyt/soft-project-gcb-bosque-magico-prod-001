@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import {
+  MODAL_OVERLAY_CLASS,
+  MODAL_PANEL_CLASS,
+  MODAL_SCROLL_CLASS,
+  useModalLayer,
+} from './useModalLayer';
 
 type Props = {
   open: boolean;
@@ -21,18 +28,20 @@ export function DetalleModal({
   footer,
   loading,
 }: Props) {
+  useModalLayer(open);
+
   if (!open) return null;
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-primary/20 p-4 backdrop-blur-sm"
+      className={`${MODAL_OVERLAY_CLASS} z-[60]`}
       role="dialog"
       aria-modal="true"
       aria-labelledby="detalle-modal-title"
       onClick={onClose}
     >
       <div
-        className="flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-ambient"
+        className={`${MODAL_PANEL_CLASS} max-w-4xl`}
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-surface-variant px-5 py-4">
@@ -53,7 +62,7 @@ export function DetalleModal({
             <Icon name="close" size={22} filled={false} />
           </button>
         </div>
-        <div className="min-h-0 flex-1 overflow-y-auto px-5 py-4 text-body-sm">
+        <div className={MODAL_SCROLL_CLASS}>
           {loading ? (
             <p className="py-8 text-center text-on-surface-variant">Cargando…</p>
           ) : (
@@ -64,6 +73,7 @@ export function DetalleModal({
           <div className="shrink-0 border-t border-surface-variant px-5 py-4">{footer}</div>
         )}
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

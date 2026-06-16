@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import Swal from 'sweetalert2';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { fetchConfiguracionPanel } from '../../lib/configuracion';
-import { fetchCotizacion, linkPublicoCompleto } from '../../lib/cotizaciones';
+import { fetchCotizacion, linkPdfPublicoCompleto, linkPublicoCompleto } from '../../lib/cotizaciones';
 import { enviarCorreoCotizacion } from '../../lib/enviar-cotizacion-correo';
 import {
   asuntoCorreoCotizacion,
@@ -22,7 +22,7 @@ type Props = {
   cotizacionId: string;
   cliente: ClienteContacto;
   /** Datos del listado para prellenar mientras carga el detalle */
-  preview?: { codigo?: string; linkPublico?: string; nombreCliente?: string };
+  preview?: { codigo?: string; linkPublico?: string; linkPdfPublico?: string; nombreCliente?: string };
   onSuccess?: () => void;
 };
 
@@ -56,6 +56,8 @@ export function EnviarCotizacionCorreoModal({
   const codigo = cot?.codigo ?? preview?.codigo ?? '';
   const linkPublico =
     (cot ? linkPublicoCompleto(cot.tokenPublico) : preview?.linkPublico) ?? '';
+  const linkPdf =
+    (cot ? linkPdfPublicoCompleto(cot.tokenPublico) : preview?.linkPdfPublico) ?? '';
   const nombreCliente =
     cot?.cliente.nombreCompleto ??
     preview?.nombreCliente ??
@@ -66,9 +68,9 @@ export function EnviarCotizacionCorreoModal({
   useEffect(() => {
     if (open && codigo && linkPublico) {
       setAsunto(asuntoCorreoCotizacion(codigo));
-      setMensaje(mensajeCorreoCotizacion(nombreCliente, codigo, linkPublico));
+      setMensaje(mensajeCorreoCotizacion(nombreCliente, codigo, linkPublico, linkPdf || undefined));
     }
-  }, [open, codigo, linkPublico, nombreCliente]);
+  }, [open, codigo, linkPublico, linkPdf, nombreCliente]);
 
   const enviarMut = useMutation({
     mutationFn: () =>
@@ -139,10 +141,16 @@ export function EnviarCotizacionCorreoModal({
           />
         </label>
         {linkPublico ? (
-          <p className="text-xs text-outline">
-            Link incluido en el mensaje:{' '}
-            <span className="break-all font-mono">{linkPublico}</span>
-          </p>
+          <div className="space-y-1 text-xs text-outline">
+            <p>
+              Link aceptar: <span className="break-all font-mono">{linkPublico}</span>
+            </p>
+            {linkPdf ? (
+              <p>
+                Link PDF: <span className="break-all font-mono">{linkPdf}</span>
+              </p>
+            ) : null}
+          </div>
         ) : null}
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2">

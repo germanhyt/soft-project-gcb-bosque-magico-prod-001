@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AREA_PEDIDO_LABEL,
@@ -10,10 +10,14 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
 import { isoFechaLocal } from '../lib/fecha-calendario';
+import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import { fetchPedidosOperaciones } from '../lib/tareas-api';
 import { formatFecha } from '../lib/format';
 import { PageHeader } from '../components/ui/PageHeader';
 import { DataTableCard } from '../components/ui/DataTableCard';
+import { DataTablePagination } from '../components/ui/DataTablePagination';
+import { FilterSearchInput } from '../components/ui/FilterSearchInput';
+import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { Button } from '../components/ui/Button';
 
 function rangoSemana() {
@@ -25,28 +29,68 @@ function rangoSemana() {
   return { desde: isoFechaLocal(desde), hasta: isoFechaLocal(hasta) };
 }
 
+function coincideBusqueda(
+  q: string,
+  pedido: Awaited<ReturnType<typeof fetchPedidosOperaciones>>[number],
+) {
+  const needle = q.trim().toLowerCase();
+  if (!needle) return true;
+  const campos = [
+    pedido.nombre,
+    pedido.proveedor?.nombre,
+    pedido.evento.cliente.nombreCompleto,
+    AREA_PEDIDO_LABEL[pedido.area],
+    ETAPA_PEDIDO_LABEL[pedido.etapa],
+  ];
+  return campos.some((v) => v?.toLowerCase().includes(needle));
+}
+
 export function OperacionesPage() {
   const navigate = useNavigate();
   const def = rangoSemana();
   const [desde, setDesde] = useState(def.desde);
   const [hasta, setHasta] = useState(def.hasta);
+  const [busqueda, setBusqueda] = useState('');
+  const [page, setPage] = useState(1);
 
   const { data: pedidos = [], isLoading, isError } = useQuery({
     queryKey: ['pedidos-operaciones', desde, hasta],
     queryFn: () => fetchPedidosOperaciones(desde, hasta),
   });
 
-  const totalCosto = useMemo(() => pedidos.reduce((n, p) => n + p.costo, 0), [pedidos]);
+  const pedidosFiltrados = useMemo(
+    () => pedidos.filter((p) => coincideBusqueda(busqueda, p)),
+    [pedidos, busqueda],
+  );
+
+  useEffect(() => {
+    setPage(1);
+  }, [desde, hasta, busqueda]);
+
+  const totalPages = Math.max(1, Math.ceil(pedidosFiltrados.length / DEFAULT_PAGE_SIZE));
+  const pedidosPaginados = useMemo(() => {
+    const start = (page - 1) * DEFAULT_PAGE_SIZE;
+    return pedidosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
+  }, [pedidosFiltrados, page]);
+
+  const totalCosto = useMemo(
+    () => pedidosFiltrados.reduce((n, p) => n + p.costo, 0),
+    [pedidosFiltrados],
+  );
 
   return (
     <div className="flex flex-col">
       <PageHeader
         breadcrumbs={[CRUMB_INICIO, crumb('Operaciones')]}
-        count={!isLoading ? `${pedidos.length} pedido${pedidos.length === 1 ? '' : 's'}` : undefined}
+        count={
+          !isLoading
+            ? `${pedidosFiltrados.length} pedido${pedidosFiltrados.length === 1 ? '' : 's'}`
+            : undefined
+        }
       />
 
-      <div className={`mb-4 flex flex-wrap items-end gap-3 p-4 ${CARD_CLASS}`}>
-        <label className="flex flex-col gap-1 text-body-sm">
+      <TableFiltersPanel className="mb-4">
+        <label className="flex min-w-[160px] flex-col gap-1 text-body-sm">
           Desde
           <input
             type="date"
@@ -55,7 +99,7 @@ export function OperacionesPage() {
             onChange={(e) => setDesde(e.target.value)}
           />
         </label>
-        <label className="flex flex-col gap-1 text-body-sm">
+        <label className="flex min-w-[160px] flex-col gap-1 text-body-sm">
           Hasta
           <input
             type="date"
@@ -64,14 +108,35 @@ export function OperacionesPage() {
             onChange={(e) => setHasta(e.target.value)}
           />
         </label>
-        {pedidos.length > 0 && (
-          <p className="text-body-sm text-outline">Costo estimado: S/ {totalCosto.toFixed(2)}</p>
-        )}
-      </div>
+        <FilterSearchInput
+          inline
+          value={busqueda}
+          onChange={setBusqueda}
+          placeholder="Cliente, pedido, área o estado…"
+        />
+      </TableFiltersPanel>
+
+      {pedidosFiltrados.length > 0 && (
+        <p className={`mb-4 px-4 py-3 text-body-sm text-outline ${CARD_CLASS}`}>
+          Costo estimado (filtro actual): S/ {totalCosto.toFixed(2)}
+        </p>
+      )}
 
       {isError && <p className="text-error">No se pudieron cargar los pedidos.</p>}
 
-      <DataTableCard>
+      <DataTableCard
+        footer={
+          !isLoading && pedidosFiltrados.length > 0 ? (
+            <DataTablePagination
+              page={page}
+              totalPages={totalPages}
+              total={pedidosFiltrados.length}
+              pageSize={DEFAULT_PAGE_SIZE}
+              onPageChange={setPage}
+            />
+          ) : undefined
+        }
+      >
         <table className="w-full text-left text-body-sm">
           <thead>
             <tr className={TABLE_HEAD_CLASS}>
@@ -93,7 +158,7 @@ export function OperacionesPage() {
               </tr>
             )}
             {!isLoading &&
-              pedidos.map((p) => (
+              pedidosPaginados.map((p) => (
                 <tr key={p.id} className={TABLE_ROW_CLASS}>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {formatFecha(p.evento.fechaEvento)}
@@ -130,10 +195,12 @@ export function OperacionesPage() {
                   </td>
                 </tr>
               ))}
-            {!isLoading && pedidos.length === 0 && (
+            {!isLoading && pedidosFiltrados.length === 0 && (
               <tr>
                 <td colSpan={7} className="px-4 py-8 text-center text-outline">
-                  No hay pedidos pendientes en el rango seleccionado.
+                  {pedidos.length === 0
+                    ? 'No hay pedidos pendientes en el rango seleccionado.'
+                    : 'Ningún pedido coincide con la búsqueda.'}
                 </td>
               </tr>
             )}

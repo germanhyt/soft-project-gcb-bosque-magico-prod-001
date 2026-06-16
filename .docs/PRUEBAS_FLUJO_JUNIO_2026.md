@@ -99,7 +99,7 @@ npm run qa:operaciones      # seed demo operaciones + validación API
 npm run db:seed:demo        # recrear evento demo operaciones
 ```
 
-## 6) Resultado de ejecución (14/06/2026)
+## 6) Resultado de ejecución (14/06/2026 — local)
 
 ### Limpieza (`npm run db:cleanup`)
 
@@ -120,3 +120,45 @@ solicitudes: 10, cotizaciones: 8, logsMensaje: 5, clientesHuerfanos: 9
 **Bug corregido durante QA:** `generarCodigo()` en cotizaciones usaba `count()+1` y colisionaba tras limpieza parcial → ahora usa el último código `COT-#####` + 1.
 
 **Dashboard:** `fechaEvento` del resumen (`2026-07-06T00:00:00.000Z`) formatea correctamente con el fix de `formatMesDia`.
+
+## 7) Resultado sandbox (15/06/2026)
+
+**API:** `https://sandbox-api-bosque.gcbprojects.site/api`  
+**Login panel:** `admin@bosquemagico.test` / `admin@@@`  
+_(El `docker-compose.sandbox.yml` declara `BosqueDev123!` pero el seed en VPS dejó `admin@@@` — usar esa contraseña en sandbox.)_
+
+### `npm run qa:flujo` (sandbox) — 21/21 OK
+
+| Flujo | Correo | IDs sandbox |
+|-------|--------|-------------|
+| A (landing) | germanhuaytalla22@gmail.com | solicitud `88396d0f-…`, cotización `257f014a-…` (enviada WhatsApp) |
+| B (E2E) | germanhuaytalla23@gmail.com | solicitud `bc88b4c0-…`, cotización `53f82cbc-…`, evento `4edb2bdc-…` (realizado, 5 tareas) |
+| C (cierre) | lead @example.test | solicitud `0430e045-…` cerrada `sin_respuesta` |
+
+### Operaciones (`qa-operaciones-demo.mjs` + `db:seed:demo` en VPS)
+
+- Proveedor demo: 1
+- Pedidos en vista operaciones: 1
+- Evento demo: `3e93e6ce-cf03-4f3a-9e57-967572e52737` — 1 pedido + 5 tareas checklist
+
+### Verificación manual en panel sandbox
+
+| Módulo | Qué revisar | URL / acción |
+|--------|-------------|--------------|
+| Login | Credenciales arriba | https://sandbox-panel-bosque.gcbprojects.site |
+| Solicitudes | `germanhuaytalla22@gmail.com` (cotizada/enviada), `23` (cerrada/ganada) | Buscar por correo |
+| Cotizaciones | A enviada, B aceptada/cerrada | Listado + detalle |
+| Dashboard | Fechas legibles en próximos eventos | Inicio |
+| Agenda | Evento demo operaciones | `/agenda?detalle=3e93e6ce-cf03-4f3a-9e57-967572e52737` |
+| Operaciones | Pedido SHOW-MIMO en rango | `/operaciones` |
+| Configuración | Tab Proveedores (1 demo) | Configuración |
+| Landing | Cotizador + envío público | https://sandbox-landing-bosque.gcbprojects.site |
+
+Comando sandbox:
+
+```bash
+QA_API_URL="https://sandbox-api-bosque.gcbprojects.site/api" \
+QA_EMAIL="admin@bosquemagico.test" \
+QA_PASSWORD="admin@@@" \
+npm run qa:flujo
+```

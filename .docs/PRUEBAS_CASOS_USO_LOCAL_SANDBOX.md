@@ -70,7 +70,7 @@ PowerShell:
 ```powershell
 $env:QA_API_URL="https://sandbox-api-bosque.gcbprojects.site/api"
 $env:QA_EMAIL="admin@bosquemagico.test"
-$env:QA_PASSWORD="BosqueDev123!"
+$env:QA_PASSWORD="admin@@@"
 npm run qa:smoke
 ```
 
@@ -79,7 +79,7 @@ Git Bash:
 ```bash
 QA_API_URL="https://sandbox-api-bosque.gcbprojects.site/api" \
 QA_EMAIL="admin@bosquemagico.test" \
-QA_PASSWORD="BosqueDev123!" \
+QA_PASSWORD="admin@@@" \
 npm run qa:smoke
 ```
 
@@ -132,10 +132,10 @@ El smoke valida:
 
 ## 5) Datos de prueba recomendados
 
-- Usuario admin base:
+- Usuario admin base (local tras seed):
   - `admin@bosquemagico.test` / `BosqueDev123!`
-- Usuario admin sandbox alterno:
-  - `admin.sandbox@gcbprojects.site` / `BosqueSandbox!2026`
+- Usuario admin **sandbox** (actual en VPS):
+  - `admin@bosquemagico.test` / `admin@@@`
 
 Nota: para refresh de credenciales en cualquier entorno:
 

@@ -14,7 +14,7 @@ export class PedidosRepository {
 
   private includeRelaciones = {
     producto: { select: { id: true, codigo: true, nombre: true, categoria: true } },
-    proveedor: { select: { id: true, nombre: true, celular: true } },
+    proveedor: { select: { id: true, nombre: true, celular: true, correo: true } },
   };
 
   listarPorEvento(eventoId: string) {

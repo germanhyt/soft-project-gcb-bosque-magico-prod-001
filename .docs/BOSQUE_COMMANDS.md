@@ -16,7 +16,9 @@
 
 | [MEJORAS_PANEL_FASE8.md](./MEJORAS_PANEL_FASE8.md) | **Puntos de mejora panel** (tablas, WS, usuario, modales, roles, config) |
 | [PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md](./PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md) | Guía de pruebas con mock data (local + sandbox) |
-| [entrega-junio-2026/](./entrega-junio-2026/README.md) | **Informe gerencia** + **manual operario** (jun 2026) |
+| [entrega-2026-06-16/](./entrega-2026-06-16/README.md) | **Entrega vigente**: informe gerencia + manual operario + QA + demo german22 (16 jun 2026) |
+| [entrega-2026-06-15/](./entrega-2026-06-15/README.md) | Entrega previa (15 jun 2026) |
+| [entrega-junio-2026/](./entrega-junio-2026/README.md) | Entrega anterior (11 jun 2026) |
 
 
 
@@ -235,5 +237,39 @@ Analizamos cómo entraría la lógica de pedidos a proveedores?, esto para cubri
 (x)
 Dashboard «Próximos eventos» mostraba INVALID DATE — fix `formatMesDia` + enlace a detalle agenda. Limpieza demo (`db:cleanup`), prueba paso a paso (`qa:flujo`) con germanhuaytalla22/23@gmail.com. Doc: `.docs/PRUEBAS_FLUJO_JUNIO_2026.md`.
 
+
+
+5)
+16/06/2026
+
+(X) Problema de renderizado al abrir los modales por ejemplo /agenda?dia=2026-06-22&detalle=e9f2f943-1ae2-4b6f-b052-4e3a9ebadb51
+(X) En cada tabla de datos con tanstack/table considerar el paginado de datos, veo que falta en el módulo de operaciones
+(X) En catálogo y proveedores consideramos usar filtros de búsqueda, también faltaría su paginado
+(X) El módulo de usuarios lo colocamos debajo de Dashboard
+
+
+Consultas
+() Respecto al adelanto referencial de igual forma procede en caso la cotización sale menor a dicho monto?
+() al enviar mensaje de confirmación al cliente al elgir con pdf se está incluyendo el link del pdf como tál o lo estás aperturando? no crees que es ilógica aperutrarlo cuando estamos en la opción de envío?
+() EL checklist es es con mock data o en qué consiste? es correcto considerarlo?
+() El flujo para pediddos a proveedores y contrato está bien pensado? se llega a notificar también a los proveedores?
+() 
+
+- Las acciones en proveedores es suficiente?
+- considerar el poder adjuntar link del pdf de cotización para el cliente también aparte del aceptar
+- el proveedor también puede tener correo de contacto
+
+
+
+(X)
+- Detectemos problemas de renderización, por ejemplo como usuario percibo que en le siguiente modal lo percibo un poco lento al scrollear dentro de este modal "/agenda?dia=2026-06-30&detalle=17f57a7f-6b96-45f8-8582-faecd7ca2be7", de paso revisemos otros modal
+
+al último
+() Para gestión de usuario también cosnsideramos filtros y actualizar lista de permisos acorda al sistema 
+
 ()
+procedemos a desplegar 
+- commmit / push a git
+- los últimos cambios al sandbox en vps paso a paso
+
 

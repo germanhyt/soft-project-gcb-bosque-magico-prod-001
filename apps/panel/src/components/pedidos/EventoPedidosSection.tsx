@@ -17,6 +17,8 @@ import {
 import { fetchProveedores } from '../../lib/proveedores-api';
 import type { EtapaPedido } from '../../lib/pedidos';
 import { formatFecha } from '../../lib/format';
+import { abrirWhatsApp } from '../../lib/whatsapp-cotizacion';
+import { mailtoPedidoProveedor, waMeUrlPedidoProveedor } from '../../lib/whatsapp-pedido-proveedor';
 import { Button } from '../ui/Button';
 import { PedidoFormModal } from './PedidoFormModal';
 
@@ -24,9 +26,17 @@ type Props = {
   eventoId: string;
   fechaEvento: string;
   etapaEvento: string;
+  clienteNombre?: string;
+  turnoLabel?: string;
 };
 
-export function EventoPedidosSection({ eventoId, fechaEvento, etapaEvento }: Props) {
+export function EventoPedidosSection({
+  eventoId,
+  fechaEvento,
+  etapaEvento,
+  clienteNombre = '',
+  turnoLabel = '',
+}: Props) {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
   const puedeOperar = etapaEvento === 'confirmado' || etapaEvento === 'realizado';
@@ -159,6 +169,41 @@ export function EventoPedidosSection({ eventoId, fechaEvento, etapaEvento }: Pro
               >
                 {ETAPA_PEDIDO_LABEL[p.etapa]}
               </span>
+              {puedeOperar && p.tipo === 'proveedor' && (p.proveedor?.celular || p.proveedor?.correo) && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {p.proveedor?.celular && (
+                    <Button
+                      variant="ghost"
+                      className="!px-2 !py-1 text-xs"
+                      onClick={() => {
+                        const url = waMeUrlPedidoProveedor(p.proveedor!.celular!, p, {
+                          clienteNombre,
+                          fechaEvento,
+                          turnoLabel,
+                        });
+                        abrirWhatsApp(url, window.open('about:blank', '_blank'));
+                      }}
+                    >
+                      WhatsApp proveedor
+                    </Button>
+                  )}
+                  {p.proveedor?.correo && (
+                    <Button
+                      variant="ghost"
+                      className="!px-2 !py-1 text-xs"
+                      onClick={() => {
+                        window.location.href = mailtoPedidoProveedor(p.proveedor!.correo!, p, {
+                          clienteNombre,
+                          fechaEvento,
+                          turnoLabel,
+                        });
+                      }}
+                    >
+                      Correo proveedor
+                    </Button>
+                  )}
+                </div>
+              )}
             </li>
           ))}
         </ul>

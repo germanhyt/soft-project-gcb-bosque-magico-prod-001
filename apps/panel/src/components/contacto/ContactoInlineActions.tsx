@@ -15,6 +15,8 @@ type Props = ContactoInlineTarget & {
   /** Texto o URL a copiar con el botón de enlace */
   enlaceCopiar?: string;
   enlaceTitulo?: string;
+  enlaceCopiarSecundario?: string;
+  enlaceTituloSecundario?: string;
   /** Ocultar correo genérico (p. ej. cotizaciones usan envío de cotización) */
   ocultarCorreo?: boolean;
 };
@@ -25,18 +27,20 @@ export function ContactoInlineActions({
   correo,
   enlaceCopiar,
   enlaceTitulo = 'Copiar enlace',
+  enlaceCopiarSecundario,
+  enlaceTituloSecundario = 'Copiar enlace',
   ocultarCorreo = false,
 }: Props) {
   const [waOpen, setWaOpen] = useState(false);
   const [mailOpen, setMailOpen] = useState(false);
 
-  const copiar = async () => {
-    if (!enlaceCopiar) return;
+  const copiar = async (texto: string, tituloOk = 'Copiado') => {
+    if (!texto) return;
     try {
-      await navigator.clipboard.writeText(enlaceCopiar);
+      await navigator.clipboard.writeText(texto);
       await Swal.fire({
         icon: 'success',
-        title: 'Copiado',
+        title: tituloOk,
         timer: 1500,
         showConfirmButton: false,
       });
@@ -44,7 +48,7 @@ export function ContactoInlineActions({
       await Swal.fire({
         icon: 'info',
         title: enlaceTitulo,
-        html: `<p class="text-sm break-all">${enlaceCopiar}</p>`,
+        html: `<p class="text-sm break-all">${texto}</p>`,
       });
     }
   };
@@ -72,7 +76,15 @@ export function ContactoInlineActions({
           icon="link"
           title={enlaceTitulo}
           aria-label={enlaceTitulo}
-          onClick={() => void copiar()}
+          onClick={() => void copiar(enlaceCopiar, 'Link copiado')}
+        />
+      )}
+      {enlaceCopiarSecundario && (
+        <RowIconButton
+          icon="description"
+          title={enlaceTituloSecundario}
+          aria-label={enlaceTituloSecundario}
+          onClick={() => void copiar(enlaceCopiarSecundario, 'Link PDF copiado')}
         />
       )}
       <ContactarWhatsAppModal

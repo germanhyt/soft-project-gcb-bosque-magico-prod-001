@@ -1,5 +1,12 @@
 import type { ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import {
+  MODAL_OVERLAY_CLASS,
+  MODAL_PANEL_CLASS,
+  MODAL_SCROLL_CLASS,
+  useModalLayer,
+} from './useModalLayer';
 
 type Props = {
   open: boolean;
@@ -11,23 +18,27 @@ type Props = {
 };
 
 export function Modal({ open, onClose, title, description, children, size = 'md' }: Props) {
+  useModalLayer(open);
+
   if (!open) return null;
 
   const maxW =
     size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
 
-  return (
+  return createPortal(
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-primary/20 p-4 backdrop-blur-sm"
+      className={MODAL_OVERLAY_CLASS}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
+      onClick={onClose}
     >
       <div
-        className={`max-h-[90vh] w-full ${maxW} overflow-y-auto rounded-xl bg-surface-container-lowest p-6 shadow-ambient`}
+        className={`${MODAL_PANEL_CLASS} ${maxW}`}
+        onClick={(e) => e.stopPropagation()}
       >
-        <div className="mb-4 flex items-start justify-between gap-3">
-          <div>
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-surface-variant px-5 py-4">
+          <div className="min-w-0">
             <h2 id="modal-title" className="text-title-md text-primary">
               {title}
             </h2>
@@ -38,14 +49,15 @@ export function Modal({ open, onClose, title, description, children, size = 'md'
           <button
             type="button"
             onClick={onClose}
-            className="text-outline hover:text-on-surface"
+            className="shrink-0 text-outline transition hover:text-on-surface"
             aria-label="Cerrar"
           >
             <Icon name="close" size={22} filled={false} />
           </button>
         </div>
-        {children}
+        <div className={MODAL_SCROLL_CLASS}>{children}</div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

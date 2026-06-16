@@ -51,6 +51,7 @@ export type Cotizacion = {
   montoTotal: number;
   etapa: EtapaCotizacion;
   linkPublico: string;
+  linkPdfPublico?: string;
   notas?: string | null;
   cliente: { nombreCompleto: string; celular: string; correo?: string | null };
   cumpleanero: { nombre: string; edad?: number | null };
@@ -144,6 +145,7 @@ export async function enviarCotizacion(
     Cotizacion & {
       mensajePrearmado?: string;
       linkPublico: string;
+      linkPdfPublico?: string;
       enviadoPorSmtp?: boolean;
       correoAsunto?: string;
       correoCuerpo?: string;
@@ -163,5 +165,18 @@ export function linkPublicoCompleto(tokenOrLink: string) {
   const path = tokenOrLink.startsWith('/cotizacion/')
     ? tokenOrLink
     : `/cotizacion/${tokenOrLink}`;
+  return `${base}${path}`;
+}
+
+export function linkPdfPublicoCompleto(tokenOrLink: string) {
+  const base = import.meta.env.VITE_PUBLIC_SITE_URL ?? 'http://localhost:5173';
+  if (tokenOrLink.startsWith('http')) return tokenOrLink;
+  const path = tokenOrLink.includes('/pdf')
+    ? tokenOrLink.startsWith('/')
+      ? tokenOrLink
+      : `/cotizacion/${tokenOrLink}`
+    : tokenOrLink.startsWith('/cotizacion/')
+      ? `${tokenOrLink}/pdf`
+      : `/cotizacion/${tokenOrLink}/pdf`;
   return `${base}${path}`;
 }

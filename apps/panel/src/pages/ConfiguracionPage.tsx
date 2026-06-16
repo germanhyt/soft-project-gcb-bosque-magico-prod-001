@@ -29,6 +29,7 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { Button } from '../components/ui/Button';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
+import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import {
@@ -127,6 +128,7 @@ export function ConfiguracionPage() {
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
   const [showInactivos, setShowInactivos] = useState(true);
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
+  const [catalogoBusqueda, setCatalogoBusqueda] = useState('');
   const [catalogoPage, setCatalogoPage] = useState(1);
   const [productoModalOpen, setProductoModalOpen] = useState(false);
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
@@ -213,13 +215,23 @@ export function ConfiguracionPage() {
   const smtpHabilitado = smtpActuales['smtp.habilitado'] === 'true';
 
   const productosFiltrados = useMemo(() => {
-    if (categoriaFiltro === 'todas') return productos;
-    return productos.filter((p) => p.categoria === categoriaFiltro);
-  }, [productos, categoriaFiltro]);
+    let rows = productos;
+    if (categoriaFiltro !== 'todas') {
+      rows = rows.filter((p) => p.categoria === categoriaFiltro);
+    }
+    const q = catalogoBusqueda.trim().toLowerCase();
+    if (!q) return rows;
+    return rows.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(q) ||
+        p.codigo.toLowerCase().includes(q) ||
+        (p.descripcion?.toLowerCase().includes(q) ?? false),
+    );
+  }, [productos, categoriaFiltro, catalogoBusqueda]);
 
   useEffect(() => {
     setCatalogoPage(1);
-  }, [categoriaFiltro, showInactivos]);
+  }, [categoriaFiltro, showInactivos, catalogoBusqueda]);
 
   const catalogoTotalPages = Math.max(
     1,
@@ -613,6 +625,15 @@ export function ConfiguracionPage() {
             {puedeGestionarCatalogo && (
               <Button onClick={abrirNuevoProducto}>+ Nuevo producto</Button>
             )}
+          </div>
+          <div className="mb-4 flex flex-wrap items-center gap-3">
+            <FilterSearchInput
+              inline
+              value={catalogoBusqueda}
+              onChange={setCatalogoBusqueda}
+              placeholder="Nombre, código o descripción…"
+              className="min-w-[240px] flex-1"
+            />
           </div>
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {(Object.keys(CATEGORIA_LABEL) as CategoriaFiltro[]).map((categoria) => {

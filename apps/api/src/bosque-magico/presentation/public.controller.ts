@@ -9,6 +9,7 @@ import { CrearSolicitudPublicaUseCase } from '../application/use-cases/crear-sol
 import { ResolverIdentidadContactoUseCase } from '../application/use-cases/resolver-identidad-contacto.use-case';
 import { ObtenerCatalogoPublicoUseCase } from '../application/use-cases/obtener-catalogo-publico.use-case';
 import { ObtenerConfiguracionPublicaUseCase } from '../application/use-cases/obtener-configuracion-publica.use-case';
+import { ObtenerContratoPublicoUseCase } from '../application/use-cases/obtener-contrato-publico.use-case';
 import { ObtenerCotizacionUseCase } from '../application/use-cases/obtener-cotizacion.use-case';
 import { PrevisualizarCotizacionPublicaUseCase } from '../application/use-cases/previsualizar-cotizacion-publica.use-case';
 
@@ -22,6 +23,7 @@ export class PublicBosqueMagicoController {
     private readonly obtenerConfig: ObtenerConfiguracionPublicaUseCase,
     private readonly obtenerCatalogo: ObtenerCatalogoPublicoUseCase,
     private readonly obtenerCotizacion: ObtenerCotizacionUseCase,
+    private readonly obtenerContratoPublico: ObtenerContratoPublicoUseCase,
     private readonly aceptarCotizacion: AceptarCotizacionUseCase,
     private readonly previsualizarCotizacion: PrevisualizarCotizacionPublicaUseCase,
   ) {}
@@ -69,6 +71,12 @@ export class PublicBosqueMagicoController {
   @ApiOperation({ summary: 'Ver cotización pública por token' })
   cotizacionPublica(@Param('token') token: string) {
     return this.obtenerCotizacion.ejecutarPublica(token);
+  }
+
+  @Get('contratos/:token')
+  @ApiOperation({ summary: 'Ver contrato público por token (vista imprimible)' })
+  contratoPublico(@Param('token') token: string) {
+    return this.obtenerContratoPublico.ejecutar(token);
   }
 
   @Post('cotizaciones/preview')

@@ -208,6 +208,12 @@ export function ContratoFormModal({
       return;
     }
 
+    const total = evento?.montoTotal ?? cot.montoTotal;
+    if (adelanto1 + adelanto2 > total) {
+      setError('La suma de adelantos no puede superar el total del evento.');
+      return;
+    }
+
     const datos: ContratoFormDatos = {
       numeroDocumento: form.numeroDocumento.trim(),
       tipoComprobante: form.tipoComprobante,

@@ -7,6 +7,8 @@ import { LiveStatusBadge } from './LiveStatusBadge';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { UserAccountMenu } from './UserAccountMenu';
 
+const NAV_TOP = [{ to: '/', label: 'Dashboard', icon: 'dashboard', end: true }] as const;
+
 const NAV_MAIN = [
   { to: '/solicitudes', label: 'Solicitudes', icon: 'inbox' },
   { to: '/cotizaciones', label: 'Cotizaciones', icon: 'receipt_long' },
@@ -14,7 +16,6 @@ const NAV_MAIN = [
   { to: '/agenda', label: 'Agenda', icon: 'calendar_month' },
   { to: '/operaciones', label: 'Operaciones', icon: 'inventory_2' },
   { to: '/contratos', label: 'Contratos', icon: 'description' },
-  { to: '/', label: 'Dashboard', icon: 'dashboard', end: true },
 ] as const;
 
 const NAV_CONFIG = { to: '/configuracion', label: 'Configuración', icon: 'settings' } as const;
@@ -110,21 +111,28 @@ export function PanelLayout() {
                 Bosque Mágico
               </h1>
               <p className="mt-0.5 text-[11px] font-medium uppercase tracking-wider text-secondary-fixed-dim/75">
-                CRM Premium
+                CRM Panel
               </p>
             </div>
           )}
         </div>
 
         <nav className="flex flex-1 flex-col gap-1 overflow-y-auto overflow-x-hidden px-1">
+
           {NAV_MAIN.map((item) => (
             <NavItem key={item.to} {...item} rail={rail} />
           ))}
+
+          {NAV_TOP.map((item) => (
+            <NavItem key={item.to} {...item} rail={rail} />
+          ))}
+
+          {esAdmin && <NavItem {...NAV_USUARIOS} rail={rail} />}
+
           <div
             className={`mt-auto space-y-1 border-t border-white/10 pt-3 ${rail ? 'px-0' : 'px-2'}`}
           >
             <NavItem {...NAV_CONFIG} rail={rail} />
-            {esAdmin && <NavItem {...NAV_USUARIOS} rail={rail} />}
             {authRequired && (
               <button
                 type="button"

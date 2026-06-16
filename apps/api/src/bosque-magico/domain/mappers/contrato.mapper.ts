@@ -1,8 +1,10 @@
 import { fromDecimal } from '../utils/decimal';
 
 export function mapContratoResponse(contrato: Record<string, unknown>) {
+  const tokenPublico = String(contrato.tokenPublico ?? '');
   return {
     ...contrato,
+    linkPublico: tokenPublico ? `/contrato/${tokenPublico}` : '',
     montoTotal: fromDecimal(contrato.montoTotal as never),
     montoAdelanto: fromDecimal(contrato.montoAdelanto as never),
     montoPendiente: fromDecimal(contrato.montoPendiente as never),

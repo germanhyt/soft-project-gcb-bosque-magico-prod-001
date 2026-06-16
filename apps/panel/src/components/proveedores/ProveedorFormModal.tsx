@@ -115,7 +115,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
           </label>
         </div>
         <label className={LABEL_CLASS}>
-          Correo
+          Correo de contacto
           <input
             type="email"
             className={INPUT_CLASS}

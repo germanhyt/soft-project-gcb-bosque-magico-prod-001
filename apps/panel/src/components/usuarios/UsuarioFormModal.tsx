@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import {
-  PERMISOS_DISPONIBLES,
+  PERMISOS_PANEL,
+  PERMISO_MANAGE,
+  PERMISO_VIEW,
+  togglePermisoPanel,
   type UsuarioPanel,
 } from '../../lib/usuarios';
 import { Button } from '../ui/Button';
@@ -29,7 +32,7 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
   const [nombre, setNombre] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [permisos, setPermisos] = useState<string[]>(['bosque_magico:view']);
+  const [permisos, setPermisos] = useState<string[]>([PERMISO_VIEW]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
@@ -44,15 +47,9 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
     } else {
       setNombre('');
       setEmail('');
-      setPermisos(['bosque_magico:view', 'bosque_magico:manage']);
+      setPermisos([PERMISO_VIEW, PERMISO_MANAGE]);
     }
   }, [open, usuario]);
-
-  const togglePermiso = (id: string) => {
-    setPermisos((prev) =>
-      prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id],
-    );
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -136,18 +133,27 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
         </label>
 
         <fieldset className="rounded-lg border border-surface-variant p-4">
-          <legend className="px-1 text-label-caps text-outline">Permisos</legend>
-          <div className="mt-2 space-y-2">
-            {PERMISOS_DISPONIBLES.map((p) => (
-              <label key={p.id} className="flex cursor-pointer items-start gap-2 text-body-sm">
+          <legend className="px-1 text-label-caps text-outline">Permisos del panel</legend>
+          <p className="mb-3 text-xs text-on-surface-variant">
+            Los permisos son jerárquicos: Administración incluye Operación y Consulta; Operación
+            incluye Consulta.
+          </p>
+          <div className="space-y-4">
+            {PERMISOS_PANEL.map((p) => (
+              <label key={p.id} className="flex cursor-pointer items-start gap-3 text-body-sm">
                 <input
                   type="checkbox"
+                  className="mt-1"
                   checked={permisos.includes(p.id)}
-                  onChange={() => togglePermiso(p.id)}
+                  onChange={() => setPermisos((prev) => togglePermisoPanel(prev, p.id))}
                 />
-                <span>
-                  <span className="font-medium text-on-surface">{p.label}</span>
-                  <span className="block font-mono text-xs text-outline">{p.id}</span>
+                <span className="min-w-0">
+                  <span className="font-semibold text-on-surface">{p.label}</span>
+                  <span className="block text-on-surface-variant">{p.descripcion}</span>
+                  <span className="mt-1 block text-xs text-outline">
+                    {p.modulos.join(' · ')}
+                  </span>
+                  <span className="mt-0.5 block font-mono text-[10px] text-outline">{p.id}</span>
                 </span>
               </label>
             ))}
@@ -171,4 +177,4 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
       </form>
     </Modal>
   );
-}
+};

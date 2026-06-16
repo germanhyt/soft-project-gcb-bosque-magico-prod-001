@@ -48,6 +48,8 @@ export type Contrato = {
   eventoId: string;
   cotizacionId: string;
   numero: string;
+  tokenPublico: string;
+  linkPublico: string;
   fechaEmision: string;
   montoTotal: number;
   montoAdelanto: number;
@@ -134,4 +136,13 @@ export async function fetchContratos(
     },
   });
   return data;
+}
+
+export function linkPublicoContratoCompleto(tokenOrLink: string) {
+  const base = import.meta.env.VITE_PUBLIC_SITE_URL ?? 'http://localhost:5173';
+  if (tokenOrLink.startsWith('http')) return tokenOrLink;
+  const path = tokenOrLink.startsWith('/contrato/')
+    ? tokenOrLink
+    : `/contrato/${tokenOrLink}`;
+  return `${base}${path}`;
 }

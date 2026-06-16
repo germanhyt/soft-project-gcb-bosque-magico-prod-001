@@ -2,7 +2,8 @@
   "name": "proyecto-bosque-magio",
   "private": true,
   "workspaces": [
-    "apps/*"
+    "apps/*",
+    "packages/*"
   ],
   "scripts": {
     "dev:api": "npm run start:dev -w @bosque/api",

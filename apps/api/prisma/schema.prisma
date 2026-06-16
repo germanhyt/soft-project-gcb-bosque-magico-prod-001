@@ -684,6 +684,8 @@ model BosqueMagicoContrato {
 
   numero              String                  @unique
 
+  tokenPublico        String                  @unique @map("token_publico")
+
   fechaEmision        DateTime                @map("fecha_emision") @db.Date
 
   montoTotal          Decimal                 @map("monto_total") @db.Decimal(10, 2)

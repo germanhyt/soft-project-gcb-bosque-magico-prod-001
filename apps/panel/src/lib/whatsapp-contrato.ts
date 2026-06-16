@@ -1,4 +1,5 @@
 import type { Contrato } from './contratos';
+import { linkPublicoContratoCompleto } from './contratos';
 import { ETAPA_CONTRATO_LABEL } from '../constants/contratos';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { waMeUrlCotizacion } from './whatsapp-cotizacion';
@@ -18,6 +19,7 @@ export function mensajeWhatsAppContrato(contrato: Contrato) {
   const turno = TURNO_LABEL[snap.evento.turno] ?? snap.evento.turno;
   const fecha = formatFecha(snap.evento.fechaEvento);
   const nombre = snap.cliente.nombreCompleto.split(' ')[0] ?? snap.cliente.nombreCompleto;
+  const link = linkPublicoContratoCompleto(contrato.linkPublico || contrato.tokenPublico);
 
   return `Hola ${nombre}, te compartimos el contrato de la fiesta en Bosque Mágico.
 
@@ -28,8 +30,10 @@ Total: S/ ${contrato.montoTotal.toFixed(2)}
 Adelanto registrado: S/ ${contrato.adelanto1Monto.toFixed(2)}
 Saldo pendiente: S/ ${contrato.montoPendiente.toFixed(2)}
 
+Ver e imprimir contrato:
+${link}
+
 Estado: ${ETAPA_CONTRATO_LABEL[contrato.etapa]}
-Adjunta o revisa el PDF del contrato con los términos y condiciones.
 
 Bosque Mágico`;
 }

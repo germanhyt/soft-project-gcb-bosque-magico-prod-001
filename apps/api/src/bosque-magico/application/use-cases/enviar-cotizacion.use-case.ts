@@ -42,6 +42,7 @@ export class EnviarCotizacionUseCase {
     const siteUrl =
       this.config.get<string>('PUBLIC_SITE_URL') ?? 'http://localhost:5173';
     const link = `${siteUrl}/cotizacion/${cot.tokenPublico}`;
+    const linkPdf = `${siteUrl}/cotizacion/${cot.tokenPublico}/pdf`;
     const destino =
       dto.canal === CanalEnvio.email
         ? (dto.correoDestino ?? cot.cliente.correo ?? '')
@@ -52,13 +53,16 @@ export class EnviarCotizacionUseCase {
     }
 
     const mensajeWhatsApp =
-      `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\nVer detalle y aceptar:\n${link}\n\nDesde el enlace puedes revisar el PDF en tu navegador (Imprimir → Guardar como PDF).`;
+      `Hola ${cot.cliente.nombreCompleto}, tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\n` +
+      `Ver detalle y aceptar:\n${link}\n\n` +
+      `Descargar PDF:\n${linkPdf}`;
 
     const correoAsuntoDefault = `Cotización ${cot.codigo} - Bosque Mágico`;
     const correoCuerpoDefault =
       `Hola ${cot.cliente.nombreCompleto},\n\n` +
       `Tu cotización Bosque Mágico (${cot.codigo}) está lista.\n\n` +
       `Ver detalle y aceptar:\n${link}\n\n` +
+      `Descargar PDF:\n${linkPdf}\n\n` +
       `Saludos cordiales,\nEquipo Bosque Mágico`;
 
     const correoAsunto =
@@ -112,6 +116,7 @@ export class EnviarCotizacionUseCase {
       ...mapCotizacionResponse(despues),
       mensajePrearmado: dto.canal === CanalEnvio.whatsapp ? mensaje : undefined,
       linkPublico: link,
+      linkPdfPublico: linkPdf,
       enviadoPorSmtp,
       correoAsunto: dto.canal === CanalEnvio.email ? correoAsunto : undefined,
       correoCuerpo: dto.canal === CanalEnvio.email ? correoCuerpo : undefined,
