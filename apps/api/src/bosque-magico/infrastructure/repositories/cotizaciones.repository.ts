@@ -33,13 +33,17 @@ export class CotizacionesRepository {
   constructor(private readonly prisma: PrismaService) {}
 
   private async generarCodigo(): Promise<string> {
-    const ultima = await this.prisma.bosqueMagicoCotizacion.findFirst({
-      orderBy: { codigo: 'desc' },
+    const rows = await this.prisma.bosqueMagicoCotizacion.findMany({
+      where: { codigo: { startsWith: 'COT-' } },
       select: { codigo: true },
     });
-    const secuencia = ultima
-      ? Number.parseInt(ultima.codigo.replace(/^COT-/, ''), 10) + 1
-      : 1;
+    let secuencia = 1;
+    for (const row of rows) {
+      const match = row.codigo.match(/^COT-(\d+)$/);
+      if (match) {
+        secuencia = Math.max(secuencia, Number.parseInt(match[1], 10) + 1);
+      }
+    }
     return `COT-${String(secuencia).padStart(5, '0')}`;
   }
 
