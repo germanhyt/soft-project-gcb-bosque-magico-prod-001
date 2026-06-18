@@ -57,24 +57,33 @@ export function PedidoFormModal({
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [costoManual, setCostoManual] = useState(false);
 
   useEffect(() => {
     if (!open) return;
     setForm({ ...EMPTY, fechaRequerida: fechaParaInputCalendario(fechaEvento) });
     setError('');
     setPending(false);
+    setCostoManual(false);
   }, [open, fechaEvento]);
 
   const onProductoChange = (productoId: string) => {
     const p = productos.find((x) => x.id === productoId);
+    const cantidad = Number(form.cantidad);
+    const cantidadValida = Number.isFinite(cantidad) && cantidad > 0 ? cantidad : 1;
+    const costoSugerido =
+      p?.costoInterno != null
+        ? String(Number((p.costoInterno * cantidadValida).toFixed(2)))
+        : form.costo;
     setForm((f) => ({
       ...f,
       productoId,
       nombre: p?.nombre ?? f.nombre,
       tipo: p?.origen === 'proveedor' ? 'proveedor' : f.tipo,
       proveedorId: p?.proveedorId ?? f.proveedorId,
-      costo: p?.costoInterno != null ? String(p.costoInterno) : f.costo,
+      costo: costoSugerido,
     }));
+    setCostoManual(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -119,10 +128,10 @@ export function PedidoFormModal({
 
   return (
     <Modal open={open} onClose={onClose} title="Nuevo pedido" size="lg">
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={LABEL_CLASS}>
-            Tipo
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Tipo</span>
             <select
               className={INPUT_CLASS}
               value={form.tipo}
@@ -132,8 +141,8 @@ export function PedidoFormModal({
               <option value="proveedor">Proveedor</option>
             </select>
           </label>
-          <label className={LABEL_CLASS}>
-            Área
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Área</span>
             <select
               className={INPUT_CLASS}
               value={form.area}
@@ -149,8 +158,8 @@ export function PedidoFormModal({
         </div>
 
         {productos.length > 0 && (
-          <label className={LABEL_CLASS}>
-            Producto (opcional)
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Producto (opcional)</span>
             <select
               className={INPUT_CLASS}
               value={form.productoId}
@@ -166,8 +175,8 @@ export function PedidoFormModal({
           </label>
         )}
 
-        <label className={LABEL_CLASS}>
-          Descripción *
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Descripción *</span>
           <input
             className={INPUT_CLASS}
             value={form.nombre}
@@ -175,30 +184,52 @@ export function PedidoFormModal({
           />
         </label>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <label className={LABEL_CLASS}>
-            Cantidad
+        <div className="grid gap-5 sm:grid-cols-3">
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Cantidad</span>
             <input
               type="number"
               min={1}
               className={INPUT_CLASS}
               value={form.cantidad}
-              onChange={(e) => setForm((f) => ({ ...f, cantidad: e.target.value }))}
+              onChange={(e) => {
+                const cantidad = e.target.value;
+                setForm((f) => {
+                  if (!f.productoId || costoManual) return { ...f, cantidad };
+                  const producto = productos.find((x) => x.id === f.productoId);
+                  if (producto?.costoInterno == null) return { ...f, cantidad };
+                  const qty = Number(cantidad);
+                  const qtyValida = Number.isFinite(qty) && qty > 0 ? qty : 1;
+                  return {
+                    ...f,
+                    cantidad,
+                    costo: String(Number((producto.costoInterno * qtyValida).toFixed(2))),
+                  };
+                });
+              }}
             />
           </label>
-          <label className={LABEL_CLASS}>
-            Costo total (S/)
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Costo total (S/)</span>
             <input
               type="number"
               min={0}
               step="0.01"
               className={INPUT_CLASS}
               value={form.costo}
-              onChange={(e) => setForm((f) => ({ ...f, costo: e.target.value }))}
+              onChange={(e) => {
+                setCostoManual(true);
+                setForm((f) => ({ ...f, costo: e.target.value }));
+              }}
             />
+            {form.productoId && !costoManual && (
+              <p className="text-xs text-outline">
+                Se calcula automáticamente por producto x cantidad.
+              </p>
+            )}
           </label>
-          <label className={LABEL_CLASS}>
-            Fecha requerida
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Fecha requerida</span>
             <input
               type="date"
               className={INPUT_CLASS}
@@ -209,8 +240,8 @@ export function PedidoFormModal({
         </div>
 
         {form.tipo === 'proveedor' && proveedores.length > 0 && (
-          <label className={LABEL_CLASS}>
-            Proveedor
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Proveedor</span>
             <select
               className={INPUT_CLASS}
               value={form.proveedorId}
@@ -226,8 +257,8 @@ export function PedidoFormModal({
           </label>
         )}
 
-        <label className={LABEL_CLASS}>
-          Notas
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Notas</span>
           <textarea
             className={`${INPUT_CLASS} min-h-[72px]`}
             value={form.notas}
