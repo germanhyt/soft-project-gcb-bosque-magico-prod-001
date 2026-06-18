@@ -25,14 +25,27 @@ const EMPTY = {
   contacto: '',
   celular: '',
   correo: '',
-  categorias: '',
+  categoriaPrincipal: '',
+  categoriasExtra: '',
   notas: '',
 };
+
+const CATEGORIA_OPTIONS = [
+  { value: 'show', label: 'Show' },
+  { value: 'catering', label: 'Catering' },
+  { value: 'inflables', label: 'Inflables' },
+  { value: 'decoracion', label: 'Decoración' },
+  { value: 'animacion', label: 'Animación' },
+  { value: 'fotografia-video', label: 'Fotografía / Video' },
+];
 
 export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const categoriaPrincipalNoListada =
+    form.categoriaPrincipal &&
+    !CATEGORIA_OPTIONS.some((categoria) => categoria.value === form.categoriaPrincipal);
 
   useEffect(() => {
     if (!open) return;
@@ -43,7 +56,8 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             contacto: proveedor.contacto ?? '',
             celular: proveedor.celular ?? '',
             correo: proveedor.correo ?? '',
-            categorias: proveedor.categorias.join(', '),
+            categoriaPrincipal: proveedor.categorias[0] ?? '',
+            categoriasExtra: proveedor.categorias.slice(1).join(', '),
             notas: proveedor.notas ?? '',
           }
         : EMPTY,
@@ -66,10 +80,13 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
         contacto: form.contacto.trim() || undefined,
         celular: form.celular.trim() || undefined,
         correo: form.correo.trim() || undefined,
-        categorias: form.categorias
-          .split(',')
-          .map((c) => c.trim())
-          .filter(Boolean),
+        categorias: Array.from(
+          new Set(
+            [form.categoriaPrincipal, ...form.categoriasExtra.split(',')]
+              .map((c) => c.trim())
+              .filter(Boolean),
+          ),
+        ),
         notas: form.notas.trim() || undefined,
       });
       onClose();
@@ -87,26 +104,26 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
       title={proveedor ? 'Editar proveedor' : 'Nuevo proveedor'}
       size="lg"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <label className={LABEL_CLASS}>
-          Nombre *
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Nombre *</span>
           <input
             className={INPUT_CLASS}
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
           />
         </label>
-        <div className="grid gap-4 sm:grid-cols-2">
-          <label className={LABEL_CLASS}>
-            Contacto
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Contacto</span>
             <input
               className={INPUT_CLASS}
               value={form.contacto}
               onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
             />
           </label>
-          <label className={LABEL_CLASS}>
-            Celular / WhatsApp
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Celular / WhatsApp</span>
             <input
               className={INPUT_CLASS}
               value={form.celular}
@@ -114,8 +131,8 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             />
           </label>
         </div>
-        <label className={LABEL_CLASS}>
-          Correo de contacto
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Correo de contacto</span>
           <input
             type="email"
             className={INPUT_CLASS}
@@ -123,17 +140,37 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             onChange={(e) => setForm((f) => ({ ...f, correo: e.target.value }))}
           />
         </label>
-        <label className={LABEL_CLASS}>
-          Categorías (separadas por coma)
-          <input
-            className={INPUT_CLASS}
-            placeholder="show, catering, inflables"
-            value={form.categorias}
-            onChange={(e) => setForm((f) => ({ ...f, categorias: e.target.value }))}
-          />
-        </label>
-        <label className={LABEL_CLASS}>
-          Notas
+        <div className="grid gap-5 sm:grid-cols-2">
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Categoría principal</span>
+            <select
+              className={INPUT_CLASS}
+              value={form.categoriaPrincipal}
+              onChange={(e) => setForm((f) => ({ ...f, categoriaPrincipal: e.target.value }))}
+            >
+              <option value="">— Seleccionar —</option>
+              {categoriaPrincipalNoListada && (
+                <option value={form.categoriaPrincipal}>{form.categoriaPrincipal}</option>
+              )}
+              {CATEGORIA_OPTIONS.map((categoria) => (
+                <option key={categoria.value} value={categoria.value}>
+                  {categoria.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="block space-y-2">
+            <span className={LABEL_CLASS}>Categorías adicionales (opcional)</span>
+            <input
+              className={INPUT_CLASS}
+              placeholder="inflables, utilería, transporte"
+              value={form.categoriasExtra}
+              onChange={(e) => setForm((f) => ({ ...f, categoriasExtra: e.target.value }))}
+            />
+          </label>
+        </div>
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Notas</span>
           <textarea
             className={`${INPUT_CLASS} min-h-[80px]`}
             value={form.notas}
