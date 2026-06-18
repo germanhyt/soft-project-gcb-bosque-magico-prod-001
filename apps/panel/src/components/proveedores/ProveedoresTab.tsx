@@ -13,6 +13,7 @@ import { DataTableCard } from '../ui/DataTableCard';
 import { DataTablePagination } from '../ui/DataTablePagination';
 import { FilterSearchInput } from '../ui/FilterSearchInput';
 import { TABLE_HEAD_CLASS, TABLE_ROW_CLASS, CARD_CLASS } from '../../constants/design';
+import { formatFechaHora } from '../../lib/format';
 import { ProveedorFormModal } from './ProveedorFormModal';
 
 type Props = {
@@ -130,6 +131,7 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
           <table className="w-full text-left text-body-sm">
             <thead>
               <tr className={TABLE_HEAD_CLASS}>
+                <th className="px-4 py-3">Registro</th>
                 <th className="px-4 py-3">Proveedor</th>
                 <th className="px-4 py-3">Contacto</th>
                 <th className="px-4 py-3">Categorías</th>
@@ -140,7 +142,7 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
             <tbody>
               {isLoading && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-outline">
+                  <td colSpan={6} className="px-4 py-6 text-outline">
                     Cargando…
                   </td>
                 </tr>
@@ -148,6 +150,9 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
               {!isLoading &&
                 proveedoresPaginados.map((p) => (
                   <tr key={p.id} className={TABLE_ROW_CLASS}>
+                    <td className="px-4 py-3 text-xs text-outline">
+                      {p.creadoEn ? formatFechaHora(p.creadoEn) : '—'}
+                    </td>
                     <td className="px-4 py-3 font-medium">{p.nombre}</td>
                     <td className="px-4 py-3 text-on-surface-variant">
                       <div className="space-y-0.5">
@@ -198,7 +203,7 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
                 ))}
               {!isLoading && proveedoresFiltrados.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-6 text-on-surface-variant">
+                  <td colSpan={6} className="px-4 py-6 text-on-surface-variant">
                     {proveedores.length === 0
                       ? 'No hay proveedores registrados.'
                       : 'Ningún proveedor coincide con la búsqueda.'}

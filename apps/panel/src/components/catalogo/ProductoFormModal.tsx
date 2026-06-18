@@ -94,6 +94,30 @@ export function ProductoFormModal({
       setError('Código y nombre son obligatorios');
       return;
     }
+    const precioLunesViernes = Number(form.precioLunesViernes);
+    const precioFinSemana = Number(form.precioFinSemana);
+    const cantidadMinima = Number(form.cantidadMinima) || 1;
+    const costoInterno = form.costoInterno ? Number(form.costoInterno) : undefined;
+    if (!Number.isFinite(precioLunesViernes) || !Number.isFinite(precioFinSemana)) {
+      setError('Los precios deben ser números válidos');
+      return;
+    }
+    if (precioLunesViernes < 0 || precioFinSemana < 0) {
+      setError('Los precios no pueden ser negativos');
+      return;
+    }
+    if (!Number.isInteger(cantidadMinima) || cantidadMinima < 1) {
+      setError('El mínimo de unidades debe ser un entero mayor o igual a 1');
+      return;
+    }
+    if (costoInterno != null && (!Number.isFinite(costoInterno) || costoInterno < 0)) {
+      setError('El costo interno debe ser un número válido mayor o igual a 0');
+      return;
+    }
+    if (form.origen === 'proveedor' && !form.proveedorId) {
+      setError('Selecciona un proveedor cuando el origen es externo');
+      return;
+    }
     setPending(true);
     setError('');
     try {
@@ -101,12 +125,12 @@ export function ProductoFormModal({
         codigo: form.codigo.trim(),
         nombre: form.nombre.trim(),
         categoria: form.categoria,
-        precioLunesViernes: Number(form.precioLunesViernes),
-        precioFinSemana: Number(form.precioFinSemana),
-        cantidadMinima: Number(form.cantidadMinima) || 1,
+        precioLunesViernes,
+        precioFinSemana,
+        cantidadMinima,
         descripcion: form.descripcion.trim() || undefined,
         origen: form.origen as 'propio' | 'proveedor',
-        costoInterno: form.costoInterno ? Number(form.costoInterno) : undefined,
+        costoInterno,
         proveedorId: form.proveedorId || undefined,
       });
       onClose();
@@ -201,7 +225,14 @@ export function ProductoFormModal({
           <select
             className={INPUT_CLASS}
             value={form.origen}
-            onChange={(e) => setForm({ ...form, origen: e.target.value })}
+            onChange={(e) => {
+              const origen = e.target.value as 'propio' | 'proveedor';
+              setForm({
+                ...form,
+                origen,
+                proveedorId: origen === 'proveedor' ? form.proveedorId : '',
+              });
+            }}
           >
             <option value="propio">Propio (Bosque)</option>
             <option value="proveedor">Proveedor externo</option>

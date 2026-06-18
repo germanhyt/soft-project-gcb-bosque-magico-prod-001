@@ -10,6 +10,7 @@ export type Producto = {
   id: string;
   codigo: string;
   nombre: string;
+  creadoEn?: string;
   categoria: string;
   precioLunesViernes: number;
   precioFinSemana: number;

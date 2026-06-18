@@ -27,6 +27,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/ui/PageHeader';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { Button } from '../components/ui/Button';
+import { formatFechaHora } from '../lib/format';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
@@ -704,6 +705,10 @@ export function ConfiguracionPage() {
                     precioFinSemana: payload.precioFinSemana,
                     cantidadMinima: payload.cantidadMinima,
                     descripcion: payload.descripcion,
+                    origen: payload.origen,
+                    costoInterno: payload.costoInterno,
+                    proveedorId:
+                      payload.origen === 'proveedor' ? (payload.proveedorId ?? null) : null,
                   },
                 });
               } else {
@@ -728,6 +733,7 @@ export function ConfiguracionPage() {
             <table className="w-full text-left text-body-sm">
               <thead className={TABLE_HEAD_CLASS}>
                 <tr>
+                  <th className="px-4 py-3">Registro</th>
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3">Imagen</th>
                   <th className="px-4 py-3">Categoría</th>
@@ -739,13 +745,16 @@ export function ConfiguracionPage() {
               <tbody>
                 {loadingProd ? (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center">
+                    <td colSpan={7} className="px-4 py-8 text-center">
                       Cargando…
                     </td>
                   </tr>
                 ) : (
                   productosPaginados.map((p) => (
                     <tr key={p.id} className={TABLE_ROW_CLASS}>
+                      <td className="px-4 py-3 text-xs text-outline">
+                        {p.creadoEn ? formatFechaHora(p.creadoEn) : '—'}
+                      </td>
                       <td className="px-4 py-3">
                         <p className="font-medium">{p.nombre}</p>
                         <p className="font-mono text-xs text-outline">{p.codigo}</p>
@@ -802,7 +811,7 @@ export function ConfiguracionPage() {
                 )}
                 {!loadingProd && productosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-outline">
+                    <td colSpan={7} className="px-4 py-8 text-center text-outline">
                       No hay productos para el filtro seleccionado.
                     </td>
                   </tr>
