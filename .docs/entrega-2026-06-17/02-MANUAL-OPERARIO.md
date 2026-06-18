@@ -1,8 +1,8 @@
 # Manual del operario — Panel Bosque Mágico
 
 **Para:** Equipo comercial y operación  
-**Versión:** 1.3  
-**Fecha:** 2026-06-16  
+**Versión:** 1.4  
+**Fecha:** 2026-06-17  
 
 Este manual explica **cómo usar el sistema en el día a día**: qué hace cada pantalla, en qué orden trabajar y qué significa cada estado. Incluye el **módulo Operaciones** (pedidos a proveedores) y el **checklist** por evento, incorporados en junio 2026.
 
@@ -32,7 +32,7 @@ Este manual explica **cómo usar el sistema en el día a día**: qué hace cada 
 
 ### 1.2 Qué verás al entrar
 
-- **Barra lateral (izquierda):** Dashboard, Solicitudes, Cotizaciones, Agenda, **Operaciones**, Contratos, Clientes, Configuración, Usuarios (admin).
+- **Barra lateral (izquierda):** Solicitudes, Cotizaciones, Clientes, Agenda, Operaciones, Contratos, **Dashboard**, **Usuarios** (admin, debajo de Dashboard), Configuración al pie.
 - **Barra superior:** tu cuenta, indicador **En vivo** (tiempo real) y **campana** de notificaciones.
 - **Contenido central:** listados con filtros y tablas.
 
@@ -125,6 +125,7 @@ Lista de eventos confirmados o por confirmar en las próximas semanas:
 ### 4.1 Pantalla principal
 
 - **Filtros (arriba):** busca por nombre, celular o correo; filtra por **Estado**; botón refrescar.
+- **Columnas:** **Cliente** (nombre del contacto) y **Contacto** (celular + correo en la misma celda).
 - **Tabla:** cada fila es una solicitud.
 - **Al final de la fila:** iconos rápidos (WhatsApp, correo, ver detalle, etc.).
 
@@ -205,6 +206,8 @@ Alerta si la misma persona envió el formulario en las últimas **24 horas**.
 **Menú:** Cotizaciones  
 **Para qué sirve:** Armar la propuesta, enviarla al cliente y registrar si aceptó.
 
+**Columnas del listado:** **Cliente** (nombre) y **Contacto** (celular + correo), igual que en Solicitudes.
+
 ### 5.1 Estados
 
 | Estado | Significado | Acción |
@@ -225,7 +228,9 @@ Alerta si la misma persona envió el formulario en las últimas **24 horas**.
 
 **WhatsApp:** **Enviar por WhatsApp** → revisa mensaje → confirma → se abre `wa.me` → envía al cliente → **Enviada**.
 
-**Correo:** **Enviar por correo** → confirma → **Enviada**.
+**Correo:** **Enviar por correo** → se abre **modal** con asunto y mensaje prellenados (link para aceptar + link PDF). Si SMTP está activo en Configuración, envía automáticamente; si no, abre tu cliente de correo. La cotización pasa a **Enviada**.
+
+> El link PDF va **en el cuerpo del mensaje** para que el cliente lo abra cuando quiera; no se abre automáticamente al enviar.
 
 ### 5.4 Link público y PDF
 
@@ -319,9 +324,11 @@ En el pie del detalle: **Generar contrato**, enviar WhatsApp, imprimir PDF, marc
 
 ### 7.1 Pantalla principal
 
-- **Filtro de fechas:** Desde / Hasta (por defecto ~2 semanas desde inicio de semana actual).
-- **Costo estimado:** suma de costos de pedidos en el rango.
-- **Tabla:** fecha del evento, cliente, nombre del pedido, área, estado, costo.
+- **Filtro de fechas:** Desde / Hasta — por defecto **inicio del mes actual → hoy** (zona Lima).
+- **Búsqueda:** filtra por nombre de pedido, cliente, proveedor o área.
+- **Paginado:** tabla con paginación (como otros módulos).
+- **Costo estimado:** suma de costos de pedidos en el rango filtrado.
+- **Tabla:** fecha del evento, cliente, pedido, área, estado, costo.
 
 ### 7.2 Acciones
 
@@ -432,9 +439,12 @@ Barra **Guardar cambios** al pie cuando hay modificaciones pendientes. Los nuevo
 
 **URL sandbox:** `https://sandbox-landing-bosque.gcbprojects.site`
 
-1. Navega paquetes, shows, catering.
-2. **Cotizador** → envía → crea **solicitud** (y a veces borrador).
-3. Recibe link de cotización → **Aceptar** en web.
+El cliente puede:
+
+1. Navegar paquetes, shows, catering y usar el **cotizador**.
+2. Abrir **cotización pública** (`/cotizacion/:token`) → revisar y **Aceptar**.
+3. Abrir **contrato público** (`/contrato/:token`) cuando el equipo lo comparte.
+4. Ver **PDF de contrato** (`/contrato/:token/pdf`) si aplica.
 
 ---
 
@@ -492,6 +502,7 @@ Barra **Guardar cambios** al pie cuando hay modificaciones pendientes. Los nuevo
 | WhatsApp no abre | Permitir pop-ups para el panel |
 | Error slot ocupado al aceptar | Cambiar fecha/turno con el cliente |
 | Sandbox no entra con BosqueDev123! | Usar contraseña **`admin@@@`** |
+| Mismo nombre de cliente en varias cotizaciones | Si comparten **celular**, Clientes los fusiona; buscar por **correo** en Solicitudes |
 
 ---
 
@@ -523,11 +534,12 @@ Barra **Guardar cambios** al pie cuando hay modificaciones pendientes. Los nuevo
 
 | Documento | Ubicación |
 |-----------|-----------|
-| Informe gerencia | `.docs/entrega-2026-06-16/01-INFORME-GERENCIA.md` |
-| **Demo integral gerencia (german22)** | `.docs/entrega-2026-06-16/04-EJEMPLO-REAL-GERMAN22-GERENCIA.md` |
-| Pruebas sandbox | `.docs/entrega-2026-06-16/03-PRUEBAS-Y-QA.md` |
+| Informe gerencia | `.docs/entrega-2026-06-17/01-INFORME-GERENCIA.md` |
+| **Demo integral gerencia (german22)** | `.docs/entrega-2026-06-17/04-EJEMPLO-REAL-GERMAN22-GERENCIA.md` |
+| Demo flujo C (contrato público) | `.docs/entrega-2026-06-17/05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md` |
+| Pruebas sandbox | `.docs/entrega-2026-06-17/03-PRUEBAS-Y-QA.md` |
 | Flujos con diagramas | `.docs/BOSQUE_FLUJOS_Y_GUIA_USO.md` |
 
 ---
 
-*Manual operativo — Bosque Mágico. Versión 1.3 — 2026-06-16.*
+*Manual operativo — Bosque Mágico. Versión 1.4 — 2026-06-17.*

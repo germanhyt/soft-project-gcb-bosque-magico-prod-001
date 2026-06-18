@@ -1,8 +1,17 @@
-import type { ItemCotizacion, TipoItem } from './cotizaciones';
+export type TipoItemContrato = 'show' | 'catering' | 'extra' | 'manual';
+
+export type ContratoPrintItem = {
+  id: string;
+  tipo: TipoItemContrato | string;
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+};
 
 export type PaqueteTipo = 'basico' | 'estandar' | 'premium' | null;
 
-const TIPO_LABEL: Record<TipoItem, string> = {
+const TIPO_LABEL: Record<TipoItemContrato, string> = {
   show: 'Show',
   catering: 'Catering',
   extra: 'Servicios adicionales',
@@ -47,11 +56,11 @@ export function esCajita(nombre: string) {
   return normTexto(nombre).includes('cajita');
 }
 
-export function agruparItemsPorTipo(items: ItemCotizacion[]) {
-  const orden: TipoItem[] = ['show', 'catering', 'extra', 'manual'];
-  const map = new Map<TipoItem, ItemCotizacion[]>();
+export function agruparItemsPorTipo(items: ContratoPrintItem[]) {
+  const orden: TipoItemContrato[] = ['show', 'catering', 'extra', 'manual'];
+  const map = new Map<TipoItemContrato, ContratoPrintItem[]>();
   for (const item of items) {
-    const tipo = item.tipo;
+    const tipo = (item.tipo as TipoItemContrato) || 'manual';
     const lista = map.get(tipo) ?? [];
     lista.push(item);
     map.set(tipo, lista);
@@ -65,19 +74,19 @@ export function agruparItemsPorTipo(items: ItemCotizacion[]) {
     }));
 }
 
-export function itemsExtras(items: ItemCotizacion[]) {
+export function itemsExtras(items: ContratoPrintItem[]) {
   return items.filter((i) => i.tipo === 'extra');
 }
 
-export function itemsSnacks(items: ItemCotizacion[]) {
+export function itemsSnacks(items: ContratoPrintItem[]) {
   return items.filter((i) => i.tipo === 'catering' && esCarritoOSnack(i.nombre));
 }
 
-export function itemsCajitas(items: ItemCotizacion[]) {
+export function itemsCajitas(items: ContratoPrintItem[]) {
   return items.filter((i) => i.tipo === 'catering' && esCajita(i.nombre));
 }
 
-export function itemsCateringTematico(items: ItemCotizacion[]) {
+export function itemsCateringTematico(items: ContratoPrintItem[]) {
   return items.filter(
     (i) => i.tipo === 'catering' && !esCarritoOSnack(i.nombre) && !esCajita(i.nombre),
   );

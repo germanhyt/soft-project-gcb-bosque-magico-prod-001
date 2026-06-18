@@ -1,28 +1,14 @@
 import type { Cotizacion, ItemCotizacion } from './cotizaciones';
 import type { Evento } from './eventos';
 import type { Contrato } from './contratos';
+import {
+  contratoToPrintPayload as sharedContratoToPrintPayload,
+  type ContratoFormDatos,
+  type ContratoPrintPayload,
+  type TipoComprobante,
+} from '@bosque/shared';
 
-export type TipoComprobante = 'boleta' | 'factura';
-
-export type ContratoFormDatos = {
-  numeroDocumento: string;
-  tipoComprobante: TipoComprobante;
-  documentoTributario: string;
-  horarioInicio: string;
-  horarioFin: string;
-  adelanto1Monto: number;
-  adelanto1Fecha: string;
-  adelanto2Monto: number;
-  adelanto2Fecha: string;
-  montoGarantia: number;
-};
-
-export type ContratoPrintPayload = {
-  cotizacion: Cotizacion;
-  evento?: Evento | null;
-  form: ContratoFormDatos;
-  fechaEmision: string;
-};
+export type { TipoComprobante, ContratoFormDatos, ContratoPrintPayload };
 
 export type ClienteContrato = {
   nombreCompleto: string;
@@ -74,69 +60,5 @@ export function configNumero(items: { clave: string; valor: unknown }[], clave: 
 
 /** Convierte contrato persistido en payload para imprimir (usa snapshot congelado). */
 export function contratoToPrintPayload(contrato: Contrato, evento?: Evento | null): ContratoPrintPayload {
-  const snap = contrato.snapshotJson;
-  const cotizacion: Cotizacion = {
-    id: snap.cotizacion.id,
-    codigo: snap.codigoCotizacion,
-    fechaEvento: snap.evento.fechaEvento,
-    turno: snap.evento.turno,
-    cantidadNinos: snap.evento.cantidadNinos,
-    tematica: snap.cotizacion.tematica,
-    paquete: snap.cotizacion.paquete,
-    montoBase: snap.cotizacion.montoBase,
-    montoNinosExtra: snap.cotizacion.montoNinosExtra,
-    montoItems: snap.cotizacion.montoItems,
-    montoTotal: snap.cotizacion.montoTotal,
-    etapa: 'aceptada',
-    tokenPublico: '',
-    linkPublico: '',
-    cliente: {
-      nombreCompleto: snap.cliente.nombreCompleto,
-      celular: snap.cliente.celular,
-      correo: snap.cliente.correo,
-    } as Cotizacion['cliente'],
-    cumpleanero: {
-      nombre: snap.cumpleanero.nombre,
-      edad: snap.cumpleanero.edad,
-    },
-    items: snap.cotizacion.items as ItemCotizacion[],
-  };
-
-  return {
-    cotizacion,
-    evento: evento ?? {
-      id: snap.evento.id,
-      cotizacionId: snap.cotizacion.id,
-      fechaEvento: snap.evento.fechaEvento,
-      turno: snap.evento.turno,
-      zona: snap.evento.zona,
-      tematica: snap.evento.tematica,
-      cantidadNinos: snap.evento.cantidadNinos,
-      montoTotal: snap.evento.montoTotal,
-      etapa: 'por_confirmar',
-      notas: null,
-      confirmadoEn: null,
-      realizadoEn: null,
-      canceladoEn: null,
-      cliente: {
-        nombreCompleto: snap.cliente.nombreCompleto,
-        celular: snap.cliente.celular,
-        correo: snap.cliente.correo,
-      },
-      cumpleanero: snap.cumpleanero,
-    },
-    form: {
-      numeroDocumento: contrato.numeroDocumento,
-      tipoComprobante: contrato.tipoComprobante,
-      documentoTributario: contrato.documentoTributario,
-      horarioInicio: contrato.horarioInicio,
-      horarioFin: contrato.horarioFin,
-      adelanto1Monto: contrato.adelanto1Monto,
-      adelanto1Fecha: contrato.adelanto1Fecha ?? '',
-      adelanto2Monto: contrato.adelanto2Monto ?? 0,
-      adelanto2Fecha: contrato.adelanto2Fecha ?? '',
-      montoGarantia: contrato.montoGarantia,
-    },
-    fechaEmision: contrato.fechaEmision,
-  };
+  return sharedContratoToPrintPayload(contrato, evento ?? undefined);
 }

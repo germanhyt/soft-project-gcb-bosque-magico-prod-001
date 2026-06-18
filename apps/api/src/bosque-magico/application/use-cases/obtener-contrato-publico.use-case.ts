@@ -18,6 +18,7 @@ export class ObtenerContratoPublicoUseCase {
     return {
       ...publica,
       linkPublico: `/contrato/${contrato.tokenPublico}`,
+      linkPdfPublico: `/contrato/${contrato.tokenPublico}/pdf`,
     };
   }
 }

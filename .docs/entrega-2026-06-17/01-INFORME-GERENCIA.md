@@ -1,8 +1,8 @@
 # Informe de avance — Bosque Mágico
 
 **Para:** Gerencia  
-**Versión:** 1.3  
-**Fecha:** 2026-06-16  
+**Versión:** 1.4  
+**Fecha:** 2026-06-17  
 **Producto:** Sistema comercial Bosque Mágico (landing + panel CRM + API)
 
 ---
@@ -24,7 +24,7 @@ Se entregó y **validó en sandbox** un **MVP comercial completo** ampliado con 
 - Configurar **tarifas, turnos, catálogo y proveedores** sin redeploy.
 - Administrar **usuarios y permisos** (solo rol admin).
 
-El sistema está desplegado en **entorno sandbox** para pruebas reales del equipo. La **Fase 8 del panel** (tablas, notificaciones en tiempo real, modales unificados, UX consistente) está **completada**. El **15/06/2026** se ejecutó el script de QA de flujo comercial (`npm run qa:flujo`) contra sandbox con **21/21 pasos OK**.
+El sistema está desplegado en **entorno sandbox** para pruebas reales del equipo. La **Fase 8 del panel** está **completada**. Entre el **15/06** y el **18/06/2026** se ejecutó una **batería QA ampliada** en local: smoke **20/20**, flujo **30/30**, negativos **5/5**, pedidos **18/18** y operaciones **OK** (ver [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md)).
 
 **Fuera del alcance actual (decisión de producto):** pagos en línea y registro de abonos, firma electrónica legal, integración Meta Lead Ads automatizada, reportes exportables y postventa operativa. La **cobranza** sigue siendo manual fuera del sistema.
 
@@ -111,7 +111,9 @@ flowchart TB
 | Configuración | Tarifas, turnos editables, catálogo productos con imagen, proveedores |
 | Panel UX Fase 8 | Filtros en tablas, paginado, WebSocket + campana, modales unificados, sidebar colapsable |
 | Dashboard | KPIs por estado de solicitud; próximos eventos con fecha legible y enlace a agenda |
-| Calidad | Tests unitarios de precios; smoke E2E API; **flujo paso a paso 21 pasos** |
+| Calidad | Tests unitarios; smoke 20/20; flujo **30/30**; negativos 5/5; pedidos 18/18; `db:cleanup:operativo` |
+| **Contrato público (landing)** | Vista `/contrato/:token` y PDF público consultable por el cliente |
+| **Envío cotización por correo** | Modal con plantilla, link aceptar + link PDF; SMTP automático o cliente de correo |
 | Sandbox | Stack desplegable; QA validado 15/06/2026 |
 
 ### 3.2 Pendiente (fases posteriores)
@@ -153,6 +155,8 @@ flowchart TB
 | **CU-16** | **Operación genera pedidos desde cotización** | **Operador** | **Pedidos por ítem proveedor al confirmar evento** |
 | **CU-17** | **Operación gestiona pedidos semanales** | **Operador** | **Vista Operaciones con filtro de fechas y costo total** |
 | **CU-18** | **Operación ejecuta checklist del evento** | **Operador** | **Tareas pendiente → completado en detalle de evento** |
+| **CU-19** | **Cliente consulta contrato en landing** | **Cliente** | **Link público `/contrato/:token` + PDF** |
+| **CU-20** | **Vendedor envía cotización por correo (SMTP o manual)** | **Operador** | **Modal con asunto, cuerpo y links; estado Enviada** |
 
 ### 4.2 Caso crítico: de la landing a la operación del evento
 
@@ -311,7 +315,7 @@ Los productos del catálogo pueden marcarse como `origen=proveedor` y vincularse
 
 ---
 
-## 8. Avances recientes (hasta 16 jun 2026)
+## 8. Avances recientes (hasta 17 jun 2026)
 
 | Fecha / hito | Entrega |
 |--------------|---------|
@@ -320,13 +324,17 @@ Los productos del catálogo pueden marcarse como `origen=proveedor` y vincularse
 | Módulo Contratos (2026-06-10) | PDF, WhatsApp, estados Borrador/Enviado/Firmado |
 | Agenda TZ Lima + vista mes default | Calendario mensual; modal de día |
 | Fase 8 panel | Tablas, WS, modales, usuarios — **completada** |
-| **Proveedores + Pedidos (2026-06-15)** | CRUD proveedores; pedidos en evento; vista Operaciones |
-| **Checklist por evento (2026-06-15)** | Tareas generables; progreso en detalle de agenda |
-| **Dashboard fix (2026-06-14)** | Fechas legibles en Próximos eventos; enlace `?detalle=` |
-| **QA flujo 21/21 (14–15/06)** | Local y sandbox con correos germanhuaytalla22/23@gmail.com |
-| **Limpieza demo (`db:cleanup`)** | Script para borrar datos QA sin afectar correos de prueba german |
-| **Fix `generarCodigo` cotizaciones** | Evita colisión COT-##### tras limpieza parcial |
-| **Documentación entrega (2026-06-16)** | Informe gerencia, manual operario, QA y **demo integral german22** consolidados en carpeta del día |
+| Proveedores + Pedidos (2026-06-15) | CRUD proveedores; pedidos en evento; vista Operaciones |
+| Checklist por evento (2026-06-15) | Tareas generables; progreso en detalle de agenda |
+| Dashboard fix (2026-06-14) | Fechas legibles en Próximos eventos; enlace `?detalle=` |
+| Documentación entrega (2026-06-16) | Informe, manual, QA y demo german22 consolidados |
+| **Batería QA ampliada (17–18/06)** | Smoke 20/20, flujo **30/30**, negativos 5/5, pedidos 18/18, operaciones OK |
+| **`db:cleanup:operativo`** | Limpieza de datos operativos preservando catálogo, config y usuarios |
+| **Flujo C QA** | `refugiogastronomico8222@gmail.com` + contrato público en landing |
+| **Celular QA unificado** | `QA_CELULAR=910139973` en scripts de prueba |
+| **Panel UX (17/06)** | Columnas Cliente/Contacto en Solicitudes y Cotizaciones; Operaciones con búsqueda, paginado y rango mes→hoy |
+| **Envío correo cotización** | `EnviarCotizacionCorreoModal`: SMTP o mailto; incluye link PDF en el cuerpo (no auto-abre) |
+| **Fix validación landing** | Solicitud pública vacía devuelve **400** (no 500) |
 
 ---
 
@@ -365,25 +373,35 @@ _(El `docker-compose.sandbox.yml` declara `BosqueDev123!` pero el seed en VPS de
 | Reglas de precio en servidor | ✅ Con tests unitarios |
 | Trazabilidad (auditoría) | ✅ En solicitud y cotización |
 | UX unificada en panel | ✅ Fase 8 cerrada |
-| Prueba automatizada API (smoke + flujo 21 pasos) | ✅ |
+| Prueba automatizada API (smoke + flujo 30 + negativos + pedidos) | ✅ |
 | Prueba E2E UI automatizada | ⬜ Pendiente |
 | Producción final (dominio cliente) | ⬜ Siguiente decisión de go-live |
 
 ---
 
-## 11. Resultados QA (15 jun 2026)
+## 11. Resultados QA (17–18 jun 2026)
 
-Resumen de validación en sandbox (`npm run qa:flujo` — **21/21 OK**):
+Resumen de validación en **local dev** (última corrida documentada 18/06):
+
+| Script | Resultado |
+|--------|-----------|
+| `qa:smoke` | **20/20 OK** |
+| `qa:flujo` | **30/30 OK** (flujos A, B, C + cierre) |
+| `qa:negativos` | **5/5 OK** |
+| `qa:pedidos` | **18/18 OK** |
+| `qa:operaciones` | **OK** |
+| `npm run build` | **OK** (api + panel + landing) |
 
 | Flujo | Correo | Resultado |
 |-------|--------|-----------|
-| A (landing → envío WA) | germanhuaytalla22@gmail.com | Solicitud + cotización enviada |
-| B (manual → E2E completo) | germanhuaytalla23@gmail.com | Solicitud → cotización → evento realizado + 5 tareas checklist |
-| C (cierre) | lead @example.test | Cerrada `sin_respuesta` |
+| A (landing → WA) | germanhuaytalla22@gmail.com | Cotización `COT-00001` enviada |
+| B (manual E2E) | germanhuaytalla23@gmail.com | Evento realizado + checklist + pedidos |
+| C (landing + contrato público) | refugiogastronomico8222@gmail.com | Contrato público consultable |
+| Cierre | lead descartable | Cerrada `sin_respuesta` |
 
-Operaciones demo en sandbox: evento `3e93e6ce-cf03-4f3a-9e57-967572e52737` con 1 pedido SHOW-MIMO + 5 tareas.
+**Celular unificado en pruebas:** `910139973` (`QA_CELULAR`).
 
-Detalle completo: [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md)
+Detalle completo, comandos y hallazgos: [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md).
 
 ---
 
@@ -404,9 +422,10 @@ Detalle completo: [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md)
 ### 13.1 Uso inmediato del sandbox
 
 1. Asignar 2–3 personas del equipo comercial para el **checklist manual** en [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md).
-2. **Demo para gerencia:** guion integral [04-EJEMPLO-REAL-GERMAN22-GERENCIA.md](./04-EJEMPLO-REAL-GERMAN22-GERENCIA.md) con `germanhuaytalla22@gmail.com`.
-3. Simular caso real: landing → cotización → aceptar → confirmar → **pedidos + checklist** → contrato.
-4. Recoger feedback sobre textos, tiempos y campos faltantes antes del go-live.
+2. **Demo para gerencia (flujo A):** [04-EJEMPLO-REAL-GERMAN22-GERENCIA.md](./04-EJEMPLO-REAL-GERMAN22-GERENCIA.md) con `germanhuaytalla22@gmail.com`.
+3. **Demo contrato público (flujo C):** [05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md](./05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md) con `refugiogastronomico8222@gmail.com`.
+4. Ejecutar batería local antes de reunión: `npm run db:cleanup:operativo` + scripts `qa:*` (ver §6 de QA).
+5. Recoger feedback sobre textos, tiempos y campos faltantes antes del go-live.
 
 ### 13.2 Orden operativo sugerido
 
@@ -429,17 +448,30 @@ Detalle completo: [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md)
 
 ---
 
-## 14. Referencias
+## 14. Temas en seguimiento (post-QA 17/06)
+
+| Tema | Estado | Nota |
+|------|--------|------|
+| Código cotización `COT-00NaN` en algún test | 🔍 En revisión | Verificar secuencia tras limpiezas |
+| Modal **+ Pedido** en detalle de evento | 🔍 En revisión | Reportado: no abre modal |
+| Caracteres corruptos en nombres de pedido | 🔍 En revisión | Posible encoding en seed o input |
+| Notificación automática a proveedores | ⬜ Pendiente | Hoy contacto manual vía WA/correo |
+| Adelanto referencial si cotización &lt; S/ 500 | ⬜ Decisión negocio | Regla en contrato por confirmar |
+
+---
+
+## 15. Referencias
 
 | Documento | Ubicación |
 |-----------|-----------|
-| Manual operario (detalle paso a paso) | `.docs/entrega-2026-06-16/02-MANUAL-OPERARIO.md` |
-| **Demo gerencia (caso german22)** | `.docs/entrega-2026-06-16/04-EJEMPLO-REAL-GERMAN22-GERENCIA.md` |
-| Pruebas y QA | `.docs/entrega-2026-06-16/03-PRUEBAS-Y-QA.md` |
+| Manual operario (detalle paso a paso) | `.docs/entrega-2026-06-17/02-MANUAL-OPERARIO.md` |
+| **Demo gerencia (caso german22)** | `.docs/entrega-2026-06-17/04-EJEMPLO-REAL-GERMAN22-GERENCIA.md` |
+| **Demo flujo C (contrato público)** | `.docs/entrega-2026-06-17/05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md` |
+| Pruebas y QA | `.docs/entrega-2026-06-17/03-PRUEBAS-Y-QA.md` |
 | Flujos y guía operativa base | `.docs/BOSQUE_FLUJOS_Y_GUIA_USO.md` |
 | Estado por módulo | `.docs/MODULOS_ESTADO.md` |
 | Bitácora QA junio | `.docs/PRUEBAS_FLUJO_JUNIO_2026.md` |
 
 ---
 
-*Documento preparado para comunicación interna de avance. Versión 1.3 — 2026-06-16.*
+*Documento preparado para comunicación interna de avance. Versión 1.4 — 2026-06-17.*

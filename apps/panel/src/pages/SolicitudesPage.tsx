@@ -164,7 +164,7 @@ export function SolicitudesPage() {
         ),
       }),
       columnHelper.accessor('nombreContacto', {
-        header: 'Contacto',
+        header: 'Cliente',
         cell: (info) => (
           <button
             type="button"
@@ -175,7 +175,21 @@ export function SolicitudesPage() {
           </button>
         ),
       }),
-      columnHelper.accessor('celular', { header: 'Celular' }),
+      columnHelper.display({
+        id: 'contacto',
+        header: 'Contacto',
+        cell: (info) => {
+          const { celular, correo } = info.row.original;
+          return (
+            <>
+              <p>{celular}</p>
+              {correo && (
+                <p className="text-xs text-on-surface-variant">{correo}</p>
+              )}
+            </>
+          );
+        },
+      }),
       columnHelper.accessor('canal', {
         header: 'Canal',
         cell: (info) => CANAL_LABEL[info.getValue()] ?? info.getValue(),

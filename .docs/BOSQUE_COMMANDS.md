@@ -16,7 +16,8 @@
 
 | [MEJORAS_PANEL_FASE8.md](./MEJORAS_PANEL_FASE8.md) | **Puntos de mejora panel** (tablas, WS, usuario, modales, roles, config) |
 | [PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md](./PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md) | Guía de pruebas con mock data (local + sandbox) |
-| [entrega-2026-06-16/](./entrega-2026-06-16/README.md) | **Entrega vigente**: informe gerencia + manual operario + QA + demo german22 (16 jun 2026) |
+| [entrega-2026-06-17/](./entrega-2026-06-17/README.md) | **Entrega vigente (17 jun 2026):** informe + manual + QA evidenciado + demos german22 y flujo C |
+| [entrega-2026-06-16/](./entrega-2026-06-16/README.md) | Entrega previa (16 jun 2026) |
 | [entrega-2026-06-15/](./entrega-2026-06-15/README.md) | Entrega previa (15 jun 2026) |
 | [entrega-junio-2026/](./entrega-junio-2026/README.md) | Entrega anterior (11 jun 2026) |
 
@@ -265,11 +266,20 @@ Consultas
 - Detectemos problemas de renderización, por ejemplo como usuario percibo que en le siguiente modal lo percibo un poco lento al scrollear dentro de este modal "/agenda?dia=2026-06-30&detalle=17f57a7f-6b96-45f8-8582-faecd7ca2be7", de paso revisemos otros modal
 
 al último
-() Para gestión de usuario también cosnsideramos filtros y actualizar lista de permisos acorda al sistema 
+(X) Para gestión de usuario también cosnsideramos filtros y actualizar lista de permisos acorda al sistema 
 
-()
+(x)
 procedemos a desplegar 
 - commmit / push a git
 - los últimos cambios al sandbox en vps paso a paso
 
 
+()
+Observaciones
+- he detectado que sobre el último test en cotización sale "COT-00NaN"
+- En "Pedidos operativos" al presionar "+pedido" me aparece no me saleel modal como tál
+- En Pedidos operativos también me aparece este formato "Verificaci�n deploy"
+a qué se debe?
+
+
+()

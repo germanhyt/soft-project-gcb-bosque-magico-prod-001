@@ -1,6 +1,7 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
+  IsDefined,
   IsEmail,
   IsEnum,
   IsInt,
@@ -83,6 +84,7 @@ export class EventoSolicitudDto {
 
 export class CrearSolicitudPublicaDto {
   @ApiProperty({ type: ClienteSolicitudDto })
+  @IsDefined()
   @ValidateNested()
   @Type(() => ClienteSolicitudDto)
   cliente!: ClienteSolicitudDto;

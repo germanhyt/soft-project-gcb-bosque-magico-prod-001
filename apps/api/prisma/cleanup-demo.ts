@@ -6,14 +6,19 @@ import { PrismaClient } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
+/** Datos del flujo paso a paso (`qa:flujo`) — no borrar al limpiar demo/mock. */
+const CORREOS_FLUJO_QA = [
+  'germanhuaytalla22@gmail.com',
+  'germanhuaytalla23@gmail.com',
+  'refugiogastronomico8222@gmail.com',
+];
+
 const PATRONES_CORREO = [
   '@example.test',
   '@test.com',
   'ana.demo@',
   'cotizacion.demo@',
   'ops.demo@',
-  'qa.',
-  'qa.manual.',
 ];
 
 const PATRONES_NOMBRE = [
@@ -23,6 +28,11 @@ const PATRONES_NOMBRE = [
   'seed_demo',
 ];
 
+function esFlujoQAPersistente(correo?: string | null): boolean {
+  const c = correo?.trim().toLowerCase();
+  return !!c && CORREOS_FLUJO_QA.includes(c);
+}
+
 function esDatoPrueba(s: {
   nombreContacto?: string | null;
   correo?: string | null;
@@ -31,22 +41,20 @@ function esDatoPrueba(s: {
   codigo?: string | null;
   observaciones?: string | null;
 }) {
-  const texto = [
-    s.nombreContacto,
-    s.correo,
-    s.detalleOrigen,
-    s.notas,
-    s.codigo,
-    s.observaciones,
-  ]
-    .filter(Boolean)
-    .join(' ')
-    .toLowerCase();
+  if (esFlujoQAPersistente(s.correo)) return false;
 
   if (s.detalleOrigen === 'seed_demo') return true;
   if (s.codigo?.startsWith('COT-DEMO')) return true;
-  if (PATRONES_CORREO.some((p) => texto.includes(p.toLowerCase()))) return true;
-  if (PATRONES_NOMBRE.some((p) => texto.includes(p.toLowerCase()))) return true;
+
+  const correo = s.correo?.toLowerCase() ?? '';
+  if (PATRONES_CORREO.some((p) => correo.includes(p.toLowerCase()))) return true;
+
+  const nombre = (s.nombreContacto ?? '').toLowerCase();
+  if (PATRONES_NOMBRE.some((p) => nombre.includes(p.toLowerCase()))) return true;
+
+  const notas = (s.notas ?? s.observaciones ?? '').toLowerCase();
+  if (notas.includes('smoke test')) return true;
+
   return false;
 }
 
@@ -91,15 +99,17 @@ async function main() {
   });
 
   const cotizacionIdsBorrar = cotizaciones
-    .filter(
-      (c) =>
+    .filter((c) => {
+      if (esFlujoQAPersistente(c.cliente.correo)) return false;
+      return (
         esDatoPrueba({ codigo: c.codigo, notas: c.notas }) ||
-        (c.solicitudId && solicitudIdsBorrar.includes(c.solicitudId)) ||
+        (c.solicitudId != null && solicitudIdsBorrar.includes(c.solicitudId)) ||
         esDatoPrueba({
           nombreContacto: c.cliente.nombreCompleto,
           correo: c.cliente.correo ?? undefined,
-        }),
-    )
+        })
+      );
+    })
     .map((c) => c.id);
 
   // Cotizaciones huérfanas de demo sin solicitud vinculada
@@ -131,10 +141,13 @@ async function main() {
     where: {
       OR: [
         { correo: { contains: 'demo' } },
-        { correo: { contains: 'qa.' } },
+        { correo: { contains: '@test.com' } },
         { nombreCompleto: { contains: 'Demo' } },
         { nombreCompleto: { contains: 'QA ' } },
       ],
+      NOT: {
+        correo: { in: CORREOS_FLUJO_QA },
+      },
       cotizaciones: { none: {} },
       eventos: { none: {} },
     },

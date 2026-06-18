@@ -1,5 +1,6 @@
 import { BrowserRouter, Route, Routes } from 'react-router-dom';
 import { ContratoPublicaPage } from './pages/ContratoPublicaPage';
+import { ContratoPdfPublicaPage } from './pages/ContratoPdfPublicaPage';
 import { CotizacionPdfPublicaPage } from './pages/CotizacionPdfPublicaPage';
 import { CotizacionPublicaPage } from './pages/CotizacionPublicaPage';
 import { HomePage } from './pages/HomePage';
@@ -12,6 +13,7 @@ function App() {
         <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
         <Route path="/cotizacion/:token/pdf" element={<CotizacionPdfPublicaPage />} />
         <Route path="/contrato/:token" element={<ContratoPublicaPage />} />
+        <Route path="/contrato/:token/pdf" element={<ContratoPdfPublicaPage />} />
       </Routes>
     </BrowserRouter>
   );

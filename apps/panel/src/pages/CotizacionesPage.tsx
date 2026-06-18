@@ -207,6 +207,7 @@ export function CotizacionesPage() {
             <tr>
               <th className="px-4 py-3">Código</th>
               <th className="px-4 py-3">Cliente</th>
+              <th className="px-4 py-3">Contacto</th>
               <th className="px-4 py-3">Evento</th>
               <th className="px-4 py-3">Total</th>
               <th className="px-4 py-3">Estado</th>
@@ -216,13 +217,13 @@ export function CotizacionesPage() {
           <tbody className="text-on-surface">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-outline">
+                <td colSpan={7} className="px-4 py-8 text-center text-outline">
                   Cargando…
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6" />
+                <td colSpan={7} className="px-4 py-6" />
               </tr>
             ) : (
               data.map((c) => (
@@ -249,7 +250,12 @@ export function CotizacionesPage() {
                     >
                       {c.cliente.nombreCompleto}
                     </button>
-                    <p className="text-on-surface-variant">{c.cliente.celular}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <p>{c.cliente.celular}</p>
+                    {c.cliente.correo && (
+                      <p className="text-xs text-on-surface-variant">{c.cliente.correo}</p>
+                    )}
                   </td>
                   <td className="px-4 py-3">
                     {formatFecha(c.fechaEvento)} · {c.cantidadNinos} niños

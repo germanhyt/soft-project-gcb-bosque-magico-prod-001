@@ -18,8 +18,11 @@
     "db:seed": "npm run prisma:seed -w @bosque/api",
     "db:seed:demo": "npm run prisma:seed:demo -w @bosque/api",
     "db:cleanup": "npm run prisma:cleanup -w @bosque/api",
+    "db:cleanup:operativo": "npm run prisma:cleanup:operativo -w @bosque/api",
     "qa:smoke": "node scripts/qa-smoke-use-cases.mjs",
     "qa:flujo": "node scripts/qa-flujo-paso-a-paso.mjs",
+    "qa:negativos": "node scripts/qa-negativos.mjs",
+    "qa:pedidos": "node scripts/qa-pedidos.mjs",
     "qa:operaciones": "node scripts/qa-operaciones-demo.mjs"
   },
   "devDependencies": {

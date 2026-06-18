@@ -27,8 +27,15 @@ const TAREAS_DEFECTO = [
 ] as const;
 
 const DEMO_PROVEEDOR_ID = '00000000-0000-4000-8000-000000000001';
+const ZONA_NEGOCIO = 'America/Lima';
 
 const prisma = new PrismaClient();
+
+function fechaCalendarioHoyUtc(): Date {
+  const hoy = new Date().toLocaleDateString('en-CA', { timeZone: ZONA_NEGOCIO });
+  const [y, m, d] = hoy.split('-').map(Number);
+  return new Date(Date.UTC(y, m - 1, d));
+}
 
 async function seedSolicitudesBasicas() {
   const existeNueva = await prisma.bosqueMagicoSolicitud.findFirst({
@@ -145,6 +152,19 @@ async function seedOperacionesDemo() {
     return { eventoOps: eventoExistente, proveedor, reused: true };
   }
 
+  const CODIGO_COT_OPS = 'COT-DEMO-OPS-001';
+  const cotOpsExiste = await prisma.bosqueMagicoCotizacion.findUnique({
+    where: { codigo: CODIGO_COT_OPS },
+  });
+  if (cotOpsExiste) {
+    const eventoDeCot = await prisma.bosqueMagicoEvento.findFirst({
+      where: { cotizacionId: cotOpsExiste.id },
+    });
+    if (eventoDeCot) {
+      return { eventoOps: eventoDeCot, proveedor, reused: true };
+    }
+  }
+
   const clienteOps = await prisma.bosqueMagicoCliente.create({
     data: {
       nombreCompleto: 'Demo Operaciones — Familia López',
@@ -157,11 +177,11 @@ async function seedOperacionesDemo() {
     data: { nombre: 'Sofía', edad: 7, clienteId: clienteOps.id },
   });
 
-  const fechaEventoOps = new Date(Date.now() + 10 * 86400000);
+  const fechaEventoOps = fechaCalendarioHoyUtc();
 
   const cotizacionOps = await prisma.bosqueMagicoCotizacion.create({
     data: {
-      codigo: `COT-DEMO-OPS-${Date.now()}`,
+      codigo: CODIGO_COT_OPS,
       tokenPublico: 'demo-token-ops-' + Date.now(),
       etapa: EtapaCotizacion.aceptada,
       clienteId: clienteOps.id,

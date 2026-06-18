@@ -27,8 +27,17 @@ async function apiGet(path, token) {
   return JSON.parse(text);
 }
 
-function iso(d) {
-  return d.toISOString().slice(0, 10);
+const ZONA_NEGOCIO = 'America/Lima';
+
+function isoLocal(d = new Date()) {
+  return d.toLocaleDateString('en-CA', { timeZone: ZONA_NEGOCIO });
+}
+
+/** Inicio de mes calendario (Lima) hasta hoy — mismo criterio que /operaciones en panel. */
+function rangoMesHastaHoy() {
+  const hoy = isoLocal();
+  const [y, m] = hoy.split('-');
+  return { desde: `${y}-${m}-01`, hasta: hoy };
 }
 
 async function main() {
@@ -41,13 +50,12 @@ async function main() {
   const demoProv = proveedores.find((p) => p.nombre.includes('Show Magic'));
   if (!demoProv) throw new Error('Falta proveedor demo (ejecuta db:seed:demo)');
 
-  const desde = iso(new Date());
-  const hasta = iso(new Date(Date.now() + 30 * 86400000));
+  const { desde, hasta } = rangoMesHastaHoy();
   const pedidos = await apiGet(
     `/bosque-magico/pedidos?desde=${desde}&hasta=${hasta}`,
     token,
   );
-  console.log(`✓ Pedidos operaciones (${desde}…${hasta}): ${pedidos.length}`);
+  console.log(`✓ Pedidos operaciones (mes actual ${desde}…${hasta}): ${pedidos.length}`);
   if (pedidos.length === 0) throw new Error('Sin pedidos demo en rango');
 
   const eventoId = pedidos[0].evento?.id ?? pedidos[0].eventoId;

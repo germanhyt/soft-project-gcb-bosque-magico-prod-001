@@ -63,7 +63,7 @@ export function EnviarContratoActions({
       await Swal.fire({
         icon: 'success',
         title: contrato.etapa === 'borrador' ? 'Contrato enviado' : 'WhatsApp abierto',
-        html: '<p class="text-sm">WhatsApp abierto con el resumen y el link público del contrato.</p>',
+        html: '<p class="text-sm">WhatsApp abierto con links de resumen y PDF del contrato.</p>',
         timer: 2400,
         showConfirmButton: false,
       });

@@ -424,7 +424,7 @@ async function main() {
   // ── Caso adicional: cerrar solicitud huérfana ─────────────
   console.log('\n── Caso adicional: Cerrar solicitud ──');
 
-  const celularCierre = '910139974';
+  const celularCierre = CELULAR_QA;
   n++;
   const crearCerrar = await call('/bosque-magico/solicitudes', {
     method: 'POST',

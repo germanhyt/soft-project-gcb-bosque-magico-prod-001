@@ -50,6 +50,7 @@ export type Contrato = {
   numero: string;
   tokenPublico: string;
   linkPublico: string;
+  linkPdfPublico?: string;
   fechaEmision: string;
   montoTotal: number;
   montoAdelanto: number;
@@ -144,5 +145,18 @@ export function linkPublicoContratoCompleto(tokenOrLink: string) {
   const path = tokenOrLink.startsWith('/contrato/')
     ? tokenOrLink
     : `/contrato/${tokenOrLink}`;
+  return `${base}${path}`;
+}
+
+export function linkPdfPublicoContratoCompleto(tokenOrLink: string) {
+  const base = import.meta.env.VITE_PUBLIC_SITE_URL ?? 'http://localhost:5173';
+  if (tokenOrLink.startsWith('http')) {
+    return tokenOrLink.includes('/pdf') ? tokenOrLink : `${tokenOrLink}/pdf`;
+  }
+  const path = tokenOrLink.startsWith('/contrato/')
+    ? tokenOrLink.includes('/pdf')
+      ? tokenOrLink
+      : `${tokenOrLink}/pdf`
+    : `/contrato/${tokenOrLink}/pdf`;
   return `${base}${path}`;
 }

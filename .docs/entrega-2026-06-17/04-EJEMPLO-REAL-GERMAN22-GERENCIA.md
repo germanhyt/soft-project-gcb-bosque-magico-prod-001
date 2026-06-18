@@ -2,7 +2,7 @@
 
 **Para:** Gerencia y equipo comercial (demo en sandbox)  
 **Versión:** 1.1  
-**Fecha:** 2026-06-16  
+**Fecha:** 2026-06-17  
 **Duración estimada:** 45–60 minutos (recorrido completo en vivo)
 
 Este documento es un **guion de demostración** con datos coherentes de un cliente real de prueba. Cubre el flujo **de punta a punta**: captación en la web → gestión comercial → aceptación → agenda → operaciones → contrato → cierre.
@@ -15,17 +15,17 @@ Este documento es un **guion de demostración** con datos coherentes de un clien
 |-------|------------------|
 | **Contacto (padre/madre)** | Germán Huaytalla |
 | **Correo** | `germanhuaytalla22@gmail.com` |
-| **Celular** | Un número peruano válido (ej. `987654321`) — usar uno distinto si repites la demo |
+| **Celular** | `910139973` (celular unificado de pruebas QA; usar uno distinto si repites la demo en producción) |
 | **Cumpleañera** | Sofía, 6 años |
 | **Temática** | Princesas |
 | **Paquete** | Premium |
-| **Fecha tentativa** | ~2 semanas desde hoy (ej. si hoy es 16/06/2026 → **30/06/2026**) |
+| **Fecha tentativa** | ~2 semanas desde hoy (ej. si hoy es 17/06/2026 → **01/07/2026**) |
 | **Turno** | Turno 2 — 2:00 p.m. a 5:00 p.m. |
 | **Niños** | 22 |
 | **Extras landing** | Pintacaritas (`EXT-PINTA`), Show de magia (`SHOW-MAGIA`), Popcorn (`CAT-POPCORN`) |
 | **Canal de entrada** | Landing pública (cotizador web) |
 
-**Por qué este correo:** está reservado para pruebas. El script `npm run db:cleanup` **no lo borra**, así que gerencia puede repetir la demo sin perder el historial si lo desea.
+**Por qué este correo:** está reservado para pruebas (`db:cleanup` no lo borra). Con celular `910139973` compartido en QA, **Clientes** puede fusionar identidad; en **Solicitudes** busca siempre por **correo** para verificar el lead correcto.
 
 ---
 
@@ -94,7 +94,7 @@ flowchart TD
 | Campo | Valor |
 |-------|-------|
 | Nombre contacto | Germán Huaytalla |
-| Celular | `987654321` (o similar) |
+| Celular | `910139973` |
 | Correo | `germanhuaytalla22@gmail.com` |
 | Nombre cumpleañero/a | Sofía |
 | Edad | 6 |
@@ -161,7 +161,7 @@ flowchart TD
 
 1. En sección **Seguimiento**, escribe notas de ejemplo:
 
-   > *«16/06 — Llamada inicial. Confirma fecha tentativa y paquete Premium. Interesado en show de magia. Envío cotización por WhatsApp.»*
+   > *«17/06 — Llamada inicial. Confirma fecha tentativa y paquete Premium. Interesado en show de magia. Envío cotización por WhatsApp.»*
 
 2. Opcional: **Próximo seguimiento** → mañana 10:00.
 3. Guarda.
@@ -477,7 +477,8 @@ Marca al terminar la sesión con gerencia:
 |-----------|-----|
 | [02-MANUAL-OPERARIO.md](./02-MANUAL-OPERARIO.md) | Detalle de cada botón del panel |
 | [01-INFORME-GERENCIA.md](./01-INFORME-GERENCIA.md) | Visión ejecutiva y roadmap |
-| [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md) | Scripts y resultados 21/21 |
+| [05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md](./05-EJEMPLO-FLUJO-C-CONTRATO-PUBLICO.md) | Demo alternativa con contrato público |
+| [03-PRUEBAS-Y-QA.md](./03-PRUEBAS-Y-QA.md) | Scripts y resultados 30/30 |
 | `.docs/PRUEBAS_FLUJO_JUNIO_2026.md` | Bitácora técnica del flujo A en API |
 
 ---

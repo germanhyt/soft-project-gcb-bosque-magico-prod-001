@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { Seo } from '../components/Seo';
 import { BTN_PRIMARY, CARD_CLASS } from '../constants/design';
 import { api } from '../lib/api';
@@ -19,6 +19,7 @@ type ContratoPublico = {
   etapa: string;
   snapshotJson: ContratoSnapshot;
   linkPublico: string;
+  linkPdfPublico?: string;
 };
 
 async function fetchPublica(token: string) {
@@ -79,9 +80,11 @@ export function ContratoPublicaPage() {
                 Emisión: {formatFecha(data.fechaEmision)} · Cotización {snap.codigoCotizacion}
               </p>
             </div>
-            <button type="button" className={`${BTN_PRIMARY} print:hidden`} onClick={() => window.print()}>
-              Imprimir / guardar PDF
-            </button>
+            <div className="flex flex-wrap gap-2 print:hidden">
+              <Link to={`/contrato/${token}/pdf`} className={BTN_PRIMARY}>
+                Imprimir / guardar PDF
+              </Link>
+            </div>
           </div>
 
           <section className="mb-6 space-y-2 text-body-sm">

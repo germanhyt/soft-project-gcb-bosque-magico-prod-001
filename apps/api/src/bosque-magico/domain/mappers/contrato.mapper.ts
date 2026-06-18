@@ -5,6 +5,7 @@ export function mapContratoResponse(contrato: Record<string, unknown>) {
   return {
     ...contrato,
     linkPublico: tokenPublico ? `/contrato/${tokenPublico}` : '',
+    linkPdfPublico: tokenPublico ? `/contrato/${tokenPublico}/pdf` : '',
     montoTotal: fromDecimal(contrato.montoTotal as never),
     montoAdelanto: fromDecimal(contrato.montoAdelanto as never),
     montoPendiente: fromDecimal(contrato.montoPendiente as never),

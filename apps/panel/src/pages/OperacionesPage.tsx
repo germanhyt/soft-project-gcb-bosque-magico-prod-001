@@ -9,7 +9,7 @@ import {
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
-import { isoFechaLocal } from '../lib/fecha-calendario';
+import { fechaCalendarioHoy } from '../lib/fecha-calendario';
 import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
 import { fetchPedidosOperaciones } from '../lib/tareas-api';
 import { formatFecha } from '../lib/format';
@@ -20,13 +20,10 @@ import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { Button } from '../components/ui/Button';
 
-function rangoSemana() {
-  const hoy = new Date();
-  const desde = new Date(hoy);
-  desde.setDate(hoy.getDate() - hoy.getDay());
-  const hasta = new Date(desde);
-  hasta.setDate(desde.getDate() + 13);
-  return { desde: isoFechaLocal(desde), hasta: isoFechaLocal(hasta) };
+function rangoMesHastaHoy() {
+  const hoy = fechaCalendarioHoy();
+  const [y, m] = hoy.split('-');
+  return { desde: `${y}-${m}-01`, hasta: hoy };
 }
 
 function coincideBusqueda(
@@ -47,7 +44,7 @@ function coincideBusqueda(
 
 export function OperacionesPage() {
   const navigate = useNavigate();
-  const def = rangoSemana();
+  const def = rangoMesHastaHoy();
   const [desde, setDesde] = useState(def.desde);
   const [hasta, setHasta] = useState(def.hasta);
   const [busqueda, setBusqueda] = useState('');
