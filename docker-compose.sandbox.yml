@@ -34,6 +34,8 @@ services:
       PUBLIC_SITE_URL: https://sandbox-landing-bosque.gcbprojects.site
       ADMIN_EMAIL: admin@bosquemagico.test
       ADMIN_PASSWORD: BosqueDev123!
+      # false = no resetear catálogo/admin ni contraseña en cada deploy
+      API_RUN_DB_SEED: "false"
     depends_on:
       postgres:
         condition: service_healthy

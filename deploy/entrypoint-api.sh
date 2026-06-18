@@ -16,10 +16,14 @@ until npm exec --workspace=@bosque/api prisma migrate deploy --schema apps/api/p
   sleep 3
 done
 
-echo "[api] Ejecutando seed (idempotente)..."
-npm exec --workspace=@bosque/api prisma db seed --schema apps/api/prisma/schema.prisma || {
-  echo "[api] AVISO: seed falló o ya estaba aplicado; continuando..."
-}
+if [ "${API_RUN_DB_SEED}" = "true" ] || [ "${API_RUN_DB_SEED}" = "1" ]; then
+  echo "[api] Ejecutando seed base (idempotente)..."
+  npm exec --workspace=@bosque/api prisma db seed --schema apps/api/prisma/schema.prisma || {
+    echo "[api] AVISO: seed falló o ya estaba aplicado; continuando..."
+  }
+else
+  echo "[api] Seed base omitido (API_RUN_DB_SEED=${API_RUN_DB_SEED:-false}). Migraciones aplicadas."
+fi
 
 echo "[api] Iniciando servidor..."
 exec node apps/api/dist/src/main.js
