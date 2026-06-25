@@ -32,7 +32,7 @@ export const ETAPA_PEDIDO_BADGE: Record<EtapaPedido, string> = {
   solicitado: 'bg-secondary-container/40 text-secondary',
   confirmado: 'bg-primary-fixed/30 text-primary',
   en_proceso: 'bg-tertiary-fixed/40 text-on-surface',
-  entregado: 'bg-primary-container/50 text-primary',
+  entregado: 'bg-primary-fixed/60 text-primary',
   cerrado: 'bg-surface-container-high text-outline',
   cancelado: 'bg-error-container/40 text-error',
 };

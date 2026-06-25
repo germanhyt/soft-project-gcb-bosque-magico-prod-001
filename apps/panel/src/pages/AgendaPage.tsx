@@ -211,10 +211,10 @@ export function AgendaPage() {
     for (const dia of data?.agenda ?? []) {
 
       const filtrados = etapaFiltro
-
         ? dia.eventos.filter((e) => e.etapa === etapaFiltro)
-
-        : dia.eventos;
+        : vista === 'mes'
+          ? dia.eventos.filter((e) => e.etapa === 'confirmado' || e.etapa === 'realizado')
+          : dia.eventos;
 
       if (filtrados.length) map.set(dia.fecha, filtrados);
 
@@ -222,7 +222,7 @@ export function AgendaPage() {
 
     return map;
 
-  }, [data, etapaFiltro]);
+  }, [data, etapaFiltro, vista]);
 
 
 

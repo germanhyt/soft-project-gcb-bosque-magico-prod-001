@@ -25,6 +25,8 @@ export type ConfigPanelResponse = {
   cotizador: ConfigItem[];
   calendario: ConfigItem[];
   smtp: ConfigItem[];
+  postventa: ConfigItem[];
+  pedidosProveedor: ConfigItem[];
   otras: ConfigItem[];
   todas: ConfigItem[];
   meta?: {
@@ -63,6 +65,8 @@ export async function crearProducto(payload: {
   precioLunesViernes: number;
   precioFinSemana: number;
   cantidadMinima?: number;
+  subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
+  unidadesPack?: number;
   descripcion?: string;
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
@@ -80,6 +84,8 @@ export async function actualizarProducto(
     precioLunesViernes: number;
     precioFinSemana: number;
     cantidadMinima: number;
+    subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
+    unidadesPack?: number | null;
     descripcion: string;
     etapa: 'activo' | 'inactivo';
     origen: 'propio' | 'proveedor';
@@ -100,5 +106,35 @@ export async function subirImagenProducto(id: string, file: File) {
 
 export async function eliminarImagenProducto(id: string) {
   const { data } = await api.delete<Producto>(`/bosque-magico/productos/${id}/imagen`);
+  return data;
+}
+
+export async function eliminarMediaProducto(productoId: string, mediaId: string) {
+  const { data } = await api.delete<Producto>(
+    `/bosque-magico/productos/${productoId}/medios/${mediaId}`,
+  );
+  return data;
+}
+
+export async function guardarVideoUrlProducto(productoId: string, url: string) {
+  const { data } = await api.post<Producto>(
+    `/bosque-magico/productos/${productoId}/video/url`,
+    { url },
+  );
+  return data;
+}
+
+export async function subirVideoProducto(productoId: string, file: File) {
+  const form = new FormData();
+  form.append('video', file);
+  const { data } = await api.post<Producto>(
+    `/bosque-magico/productos/${productoId}/video`,
+    form,
+  );
+  return data;
+}
+
+export async function eliminarVideoProducto(productoId: string) {
+  const { data } = await api.delete<Producto>(`/bosque-magico/productos/${productoId}/video`);
   return data;
 }

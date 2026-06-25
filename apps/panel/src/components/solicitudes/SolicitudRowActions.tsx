@@ -120,9 +120,23 @@ export function SolicitudRowActions({
 
   const refCopiar = `Solicitud ${solicitud.id.slice(0, 8)} · ${solicitud.nombreContacto}`;
 
+  const mostrarTomar = !esCerrada && solicitud.etapa === 'nueva';
+  const mostrarGenerarBorrador = !esCerrada && puedeGenerarBorradorDesdePayload(solicitud);
+  const mostrarCrearCotizacion = !esCerrada && puedeCrearCotizacionManual(solicitud);
+  const mostrarRevisarCotizacion = !esCerrada && !!cotizacionActiva;
+  const mostrarEditarCotizacion =
+    !esCerrada && cotizacionActiva?.etapa === 'borrador';
+  const tieneFlujo =
+    mostrarTomar ||
+    mostrarGenerarBorrador ||
+    mostrarCrearCotizacion ||
+    mostrarRevisarCotizacion ||
+    mostrarEditarCotizacion;
+
   return (
     <>
       <RowActionsToolbar>
+        {/* Contacto: WA · correo · referencia */}
         <ContactoInlineActions
           nombre={solicitud.nombreContacto}
           celular={solicitud.celular}
@@ -130,6 +144,8 @@ export function SolicitudRowActions({
           enlaceCopiar={refCopiar}
           enlaceTitulo="Copiar referencia de solicitud"
         />
+
+        {/* Registro: ver · editar */}
         <RowActionDivider />
         <RowIconButton
           icon="visibility"
@@ -145,66 +161,67 @@ export function SolicitudRowActions({
             onClick={() => onEditarSolicitud(solicitud.id)}
           />
         )}
-        {(!esCerrada &&
-          (onEditarSolicitud ||
-            cotizacionActiva?.etapa === 'borrador' ||
-            cotizacionActiva ||
-            puedeGenerarBorradorDesdePayload(solicitud) ||
-            puedeCrearCotizacionManual(solicitud))) && <RowActionDivider />}
 
-        {solicitud.etapa === 'nueva' && (
-          <RowIconButton
-            icon="how_to_reg"
-            title="Tomar solicitud"
-            aria-label="Tomar solicitud"
-            disabled={pending}
-            onClick={() => tomarMut.mutate()}
-          />
+        {/* Flujo: tomar · cotización */}
+        {tieneFlujo && (
+          <>
+            <RowActionDivider />
+            {mostrarTomar && (
+              <RowIconButton
+                icon="how_to_reg"
+                title="Tomar solicitud"
+                aria-label="Tomar solicitud"
+                disabled={pending}
+                onClick={() => tomarMut.mutate()}
+              />
+            )}
+            {mostrarGenerarBorrador && (
+              <RowIconButton
+                icon="auto_fix_high"
+                title="Generar borrador desde landing"
+                aria-label="Generar borrador"
+                disabled={pending}
+                onClick={() => generarBorradorMut.mutate()}
+              />
+            )}
+            {/* {mostrarCrearCotizacion && (
+              <RowIconButton
+                icon="add_circle"
+                title={
+                  esSolicitudDesdeLanding(solicitud) ? 'Completar cotización' : 'Crear cotización'
+                }
+                aria-label="Crear cotización"
+                onClick={() =>
+                  onAbrirCotizacionForm
+                    ? onAbrirCotizacionForm({ mode: 'create', solicitudId: solicitud.id })
+                    : navigate(`/cotizaciones?form=nueva&solicitudId=${solicitud.id}`)
+                }
+              />
+            )} */}
+            {mostrarRevisarCotizacion && (
+              <RowIconButton
+                icon="receipt_long"
+                title="Revisar cotización"
+                aria-label="Revisar cotización"
+                onClick={() => navigate(`/cotizaciones?detalle=${cotizacionActiva!.id}`)}
+              />
+            )}
+            {/* {mostrarEditarCotizacion && (
+              <RowIconButton
+                icon="edit"
+                title="Editar cotización en borrador"
+                aria-label="Editar cotización en borrador"
+                onClick={() =>
+                  onAbrirCotizacionForm
+                    ? onAbrirCotizacionForm({ mode: 'edit', cotizacionId: cotizacionActiva!.id })
+                    : navigate(`/cotizaciones?editar=${cotizacionActiva!.id}`)
+                }
+              />
+            )} */}
+          </>
         )}
 
-        {!esCerrada && cotizacionActiva && (
-          <RowIconButton
-            icon="receipt_long"
-            title="Revisar cotización"
-            aria-label="Revisar cotización"
-            onClick={() => navigate(`/cotizaciones?detalle=${cotizacionActiva.id}`)}
-          />
-        )}
-        {!esCerrada && cotizacionActiva?.etapa === 'borrador' && (
-          <RowIconButton
-            icon="edit"
-            title="Editar cotización en borrador"
-            aria-label="Editar cotización en borrador"
-            onClick={() =>
-              onAbrirCotizacionForm
-                ? onAbrirCotizacionForm({ mode: 'edit', cotizacionId: cotizacionActiva.id })
-                : navigate(`/cotizaciones?editar=${cotizacionActiva.id}`)
-            }
-          />
-        )}
-        {!esCerrada && puedeGenerarBorradorDesdePayload(solicitud) && (
-          <RowIconButton
-            icon="auto_fix_high"
-            title="Generar borrador desde landing"
-            aria-label="Generar borrador"
-            disabled={pending}
-            onClick={() => generarBorradorMut.mutate()}
-          />
-        )}
-        {!esCerrada && puedeCrearCotizacionManual(solicitud) && (
-          <RowIconButton
-            icon="add_circle"
-            title={
-              esSolicitudDesdeLanding(solicitud) ? 'Completar cotización' : 'Crear cotización'
-            }
-            aria-label="Crear cotización"
-            onClick={() =>
-              onAbrirCotizacionForm
-                ? onAbrirCotizacionForm({ mode: 'create', solicitudId: solicitud.id })
-                : navigate(`/cotizaciones?form=nueva&solicitudId=${solicitud.id}`)
-            }
-          />
-        )}
+        {/* Cierre */}
         {!esCerrada && (
           <>
             <RowActionDivider />

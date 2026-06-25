@@ -4,6 +4,18 @@ import type { TipoComprobante } from './contrato';
 
 export type EtapaContrato = 'borrador' | 'enviado' | 'firmado' | 'anulado';
 
+export type TipoAdjuntoContrato = 'comprobante_pago' | 'documento_contabilidad';
+
+export type ContratoAdjunto = {
+  id: string;
+  tipo: TipoAdjuntoContrato;
+  nombreOriginal: string;
+  url: string;
+  mimeType: string | null;
+  tamanoBytes: number;
+  creadoEn: string;
+};
+
 export type ContratoSnapshot = {
   codigoCotizacion: string;
   evento: {
@@ -71,6 +83,8 @@ export type Contrato = {
   enviadoEn: string | null;
   firmadoEn: string | null;
   reimpresion?: boolean;
+  creadoEn: string;
+  actualizadoEn: string;
   evento?: {
     id: string;
     fechaEvento: string;
@@ -79,6 +93,7 @@ export type Contrato = {
     cliente: { nombreCompleto: string; celular: string };
   };
   cotizacion?: { id: string; codigo: string };
+  adjuntos?: ContratoAdjunto[];
 };
 
 export type GenerarContratoPayload = {
@@ -159,4 +174,23 @@ export function linkPdfPublicoContratoCompleto(tokenOrLink: string) {
       : `${tokenOrLink}/pdf`
     : `/contrato/${tokenOrLink}/pdf`;
   return `${base}${path}`;
+}
+
+export async function subirAdjuntoContrato(
+  contratoId: string,
+  tipo: TipoAdjuntoContrato,
+  file: File,
+) {
+  const form = new FormData();
+  form.append('archivo', file);
+  const { data } = await api.post<ContratoAdjunto>(
+    `/bosque-magico/contratos/${contratoId}/adjuntos/${tipo}`,
+    form,
+    { headers: { 'Content-Type': 'multipart/form-data' } },
+  );
+  return data;
+}
+
+export async function eliminarAdjuntoContrato(contratoId: string, tipo: TipoAdjuntoContrato) {
+  await api.delete(`/bosque-magico/contratos/${contratoId}/adjuntos/${tipo}`);
 }

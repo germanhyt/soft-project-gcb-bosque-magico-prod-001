@@ -6,6 +6,7 @@ import {
   IsEmail,
   IsEnum,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
@@ -16,6 +17,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ItemCotizacionDto } from './item-cotizacion.dto';
+import { SeleccionPaqueteDto } from './seleccion-paquete.dto';
 
 export class ClienteCotizacionDto {
   @ApiProperty()
@@ -90,16 +92,23 @@ export class CrearCotizacionDto {
   @IsString()
   tematica?: string;
 
-  @ApiPropertyOptional({ example: 'Estándar' })
-  @IsOptional()
+  @ApiProperty({ example: 'Estándar' })
   @IsString()
-  paquete?: string;
+  @IsNotEmpty({ message: 'Debe elegir un paquete' })
+  paquete!: string;
+
+  @ApiPropertyOptional({ type: SeleccionPaqueteDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SeleccionPaqueteDto)
+  seleccion?: SeleccionPaqueteDto;
 
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()
   notas?: string;
 
+  /** Ítems manuales adicionales (legacy); preferir seleccion.adicionales */
   @ApiPropertyOptional({ type: [ItemCotizacionDto] })
   @IsOptional()
   @IsArray()

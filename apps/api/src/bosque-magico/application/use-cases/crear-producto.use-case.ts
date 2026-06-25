@@ -24,6 +24,8 @@ export class CrearProductoUseCase {
       precioLunesViernes: dto.precioLunesViernes,
       precioFinSemana: dto.precioFinSemana,
       cantidadMinima: dto.cantidadMinima,
+      subtipo: dto.subtipo,
+      unidadesPack: dto.unidadesPack,
       descripcion: dto.descripcion?.trim(),
       origen: dto.origen,
       costoInterno: dto.costoInterno,

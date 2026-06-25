@@ -29,6 +29,10 @@ export class ActualizarProductoUseCase {
       ...(dto.cantidadMinima !== undefined
         ? { cantidadMinima: dto.cantidadMinima }
         : {}),
+      ...(dto.subtipo !== undefined ? { subtipo: dto.subtipo } : {}),
+      ...(dto.unidadesPack !== undefined
+        ? { unidadesPack: dto.unidadesPack }
+        : {}),
       ...(dto.descripcion !== undefined
         ? { descripcion: dto.descripcion }
         : {}),

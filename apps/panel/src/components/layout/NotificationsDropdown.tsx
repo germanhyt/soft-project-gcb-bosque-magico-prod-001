@@ -40,7 +40,7 @@ function NotificationItem({
           <p className="font-semibold text-sm leading-snug text-on-surface">{notification.titulo}</p>
           {!notification.leida && (
             <span
-              className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-primary"
+              className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-secondary"
               aria-label="No leída"
             />
           )}
@@ -56,7 +56,7 @@ function NotificationItem({
   );
 
   const itemClass = `border-b border-surface-variant/50 px-4 py-3 last:border-0 transition-colors ${
-    !notification.leida ? 'bg-primary-fixed/10 hover:bg-primary-fixed/20' : 'hover:bg-surface-container-low'
+    !notification.leida ? 'bg-secondary-fixed/15 hover:bg-secondary-fixed/25' : 'hover:bg-surface-container-low'
   }`;
 
   if (href) {
@@ -132,32 +132,46 @@ export function NotificationsDropdown() {
         ? '1 sin leer'
         : `${unreadCount} sin leer`;
 
+  const hasUnread = unreadCount > 0;
+
   return (
     <div className="relative" ref={ref}>
       <button
         type="button"
         onClick={() => setOpen((v) => !v)}
-        className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-surface-variant text-primary transition hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary"
+        className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border transition hover:bg-surface-container-low focus-visible:outline-2 focus-visible:outline-primary ${
+          open ? 'bg-surface-container-low' : ''
+        } ${
+          hasUnread
+            ? 'border-secondary/45 bg-secondary-fixed/10 text-secondary'
+            : 'border-surface-variant text-primary'
+        }`}
         aria-expanded={open}
         aria-haspopup="true"
         aria-controls={open ? panelId : undefined}
         aria-label={
-          unreadCount > 0
+          hasUnread
             ? `Notificaciones, ${unreadCount} sin leer`
             : 'Notificaciones'
         }
       >
-        <Icon name="notifications" filled={unreadCount > 0} size={22} />
-        {unreadCount > 0 && (
-          <>
-            <span className="absolute -top-1 -right-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold text-on-error">
+        <Icon
+          name="notifications"
+          filled={hasUnread}
+          size={22}
+          className={hasUnread ? 'animate-notifications-bell' : undefined}
+        />
+        {hasUnread && (
+          <span
+            className="pointer-events-none absolute -top-0.5 -right-0.5 flex h-[18px] min-w-[18px] items-center justify-center"
+            aria-hidden
+          >
+            <span className="absolute inset-0 rounded-full border-2 border-error/50 animate-notifications-badge-halo" />
+            <span className="absolute inset-0 rounded-full bg-error/30 animate-notifications-badge-halo" />
+            <span className="relative z-10 flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-error px-1 text-[10px] font-bold leading-none text-on-primary shadow-sm ring-2 ring-surface-container-lowest">
               {unreadCount > 9 ? '9+' : unreadCount}
             </span>
-            <span
-              className="absolute inset-0 rounded-lg ring-2 ring-error/30 ring-offset-1 ring-offset-surface"
-              aria-hidden
-            />
-          </>
+          </span>
         )}
       </button>
 

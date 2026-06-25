@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
@@ -10,7 +11,15 @@ import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { TURNO_LABEL } from '../../constants/solicitudes';
-import { fetchCotizacion, linkPdfPublicoCompleto, linkPublicoCompleto, type Cotizacion } from '../../lib/cotizaciones';
+import { fetchProductosCatalogo } from '../../lib/configuracion';
+import {
+  fetchCotizacion,
+  linkPdfPublicoCompleto,
+  linkPublicoCompleto,
+  type Cotizacion,
+  type Producto,
+} from '../../lib/cotizaciones';
+import { descripcionCantidadProducto, etiquetaOrigenItem } from '../../lib/origen-item';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
@@ -47,6 +56,15 @@ export function CotizacionDetalle({
     enabled: open && !!cotizacionId,
     initialData: listItem,
   });
+
+  const { data: productos = [] } = useQuery({
+    queryKey: ['productos-catalogo'],
+    queryFn: () => fetchProductosCatalogo(),
+    enabled: open,
+    staleTime: 1000 * 60 * 10,
+  });
+
+  const productosById = useMemo(() => new Map(productos.map((p) => [p.id, p])), [productos]);
 
   const copiarLink = async () => {
     if (!cot) return;
@@ -235,7 +253,7 @@ export function CotizacionDetalle({
             </dl>
             <dl className={`space-y-2 p-4 ${CARD_CLASS}`}>
               <div className="flex justify-between">
-                <dt>Tarifa base</dt>
+                <dt>Paquete base</dt>
                 <dd>S/ {cot.montoBase.toFixed(2)}</dd>
               </div>
               {cot.montoNinosExtra > 0 && (
@@ -259,16 +277,48 @@ export function CotizacionDetalle({
 
           {cot.items && cot.items.length > 0 && (
             <div className={`p-4 ${CARD_CLASS}`}>
-              <h3 className="font-bold text-primary">Servicios</h3>
+              <h3 className="font-bold text-primary">Detalle de servicios</h3>
+              <p className="mt-1 text-xs text-on-surface-variant">
+                En piqueos, la cantidad indica packs; el tamaño del pack está en catálogo.
+              </p>
               <ul className="mt-3 space-y-2">
-                {cot.items.map((i) => (
-                  <li key={i.id} className="flex justify-between">
-                    <span>
-                      {i.nombre} × {i.cantidad}
-                    </span>
-                    <span>S/ {i.subtotal.toFixed(2)}</span>
-                  </li>
-                ))}
+                {cot.items.map((i) => {
+                  const producto: Producto | undefined = i.productoId
+                    ? productosById.get(i.productoId)
+                    : undefined;
+                  const origen = etiquetaOrigenItem(i.origenItem);
+                  const cantidadTexto = descripcionCantidadProducto(producto, i.cantidad);
+
+                  return (
+                    <li key={i.id ?? `${i.nombre}-${i.origenItem}-${i.cantidad}`} className="flex justify-between gap-3">
+                      <span className="min-w-0">
+                        <span className="font-medium">{i.nombre}</span>{' '}
+                        <span className="text-sm text-on-surface-variant">{cantidadTexto}</span>
+                        {origen && (
+                          <span
+                            className={`ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
+                              i.origenItem === 'incluido_paquete'
+                                ? 'bg-primary-fixed/40 text-primary'
+                                : i.origenItem === 'excedente_paquete'
+                                  ? 'bg-tertiary-fixed/50 text-tertiary'
+                                  : 'bg-surface-container-high text-outline'
+                            }`}
+                          >
+                            {origen}
+                          </span>
+                        )}
+                        {i.creditoAplicado != null && i.creditoAplicado > 0 && (
+                          <span className="ml-1 text-xs text-outline">
+                            (crédito S/ {i.creditoAplicado.toFixed(2)})
+                          </span>
+                        )}
+                      </span>
+                      <span className="shrink-0 font-semibold">
+                        {i.precioUnitario <= 0 ? 'Incluido' : `S/ ${i.subtotal.toFixed(2)}`}
+                      </span>
+                    </li>
+                  );
+                })}
               </ul>
             </div>
           )}

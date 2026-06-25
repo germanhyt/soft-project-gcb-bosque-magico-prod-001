@@ -24,10 +24,7 @@ export function esTarifaFinSemana(fecha: Date | string, feriados: ReadonlySet<st
 
   if (feriados.has(clave)) return true;
 
-  const d =
-    typeof fecha === 'string'
-      ? new Date(`${clave}T12:00:00`)
-      : fecha;
+  const d = new Date(`${clave}T12:00:00`);
   const day = d.getDay();
   return day === 0 || day === 6;
 }

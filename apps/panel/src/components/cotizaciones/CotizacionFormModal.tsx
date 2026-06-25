@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useFormik } from 'formik';
 import Swal from 'sweetalert2';
 import * as Yup from 'yup';
-import { CatalogoSection } from './CatalogoSection';
+import { CotizacionPaqueteEditor } from './CotizacionPaqueteEditor';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { SolicitudPreferenciasLanding } from '../solicitudes/SolicitudPreferenciasLanding';
 import { Button } from '../ui/Button';
@@ -17,13 +17,17 @@ import {
   crearCotizacion,
   fetchCotizacion,
   fetchProductos,
-  type TipoItem,
 } from '../../lib/cotizaciones';
 import {
-  cantidadItemProducto,
   productosParaCotizacion,
-  tipoItemDesdeProducto,
 } from '../../lib/producto-cotizacion';
+import {
+  INITIAL_SELECCION_PAQUETE,
+  seleccionDesdeItemsCotizacion,
+  seleccionDesdePreferenciasLanding,
+  seleccionToPayload,
+  type SeleccionPaqueteState,
+} from '../../lib/seleccion-paquete';
 import {
   cotizacionActivaDeSolicitud,
   datosLandingDesdePayload,
@@ -115,8 +119,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
   });
 
   const catalogo = useMemo(() => productosParaCotizacion(productos), [productos]);
-  const [selectedProducts, setSelectedProducts] = useState<string[]>([]);
-  const [cantidades, setCantidades] = useState<Record<string, number>>({});
+  const [seleccion, setSeleccion] = useState<SeleccionPaqueteState>(INITIAL_SELECCION_PAQUETE);
   const [mostrarFormularioManual, setMostrarFormularioManual] = useState(false);
 
   const solicitudActiva =
@@ -130,25 +133,14 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
     if (!open) return;
     setMostrarFormularioManual(false);
     if (activeEsEdicion && cot?.items?.length) {
-      const ids: string[] = [];
-      const qty: Record<string, number> = {};
-      for (const item of cot.items) {
-        if (item.productoId) {
-          ids.push(item.productoId);
-          qty[item.productoId] = item.cantidad;
-        }
-      }
-      setSelectedProducts(ids);
-      setCantidades(qty);
+      setSeleccion(seleccionDesdeItemsCotizacion(cot.items, productos));
     } else if (!activeEsEdicion && solicitudActiva) {
       const data = datosLandingDesdePayload(solicitudActiva);
-      setSelectedProducts(data.productoIds);
-      setCantidades(data.cantidades);
+      setSeleccion(seleccionDesdePreferenciasLanding(data.seleccion));
     } else {
-      setSelectedProducts([]);
-      setCantidades({});
+      setSeleccion({ ...INITIAL_SELECCION_PAQUETE });
     }
-  }, [open, activeEsEdicion, cot?.id, cot?.items, solicitudActiva?.id]);
+  }, [open, activeEsEdicion, cot?.id, cot?.items, solicitudActiva?.id, productos]);
 
   const paqueteDefault = useMemo(() => {
     if (activeEsEdicion) return cot?.paquete ?? '';
@@ -183,15 +175,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
         },
     validationSchema: activeEsEdicion ? schemaEditar : schemaCrear,
     onSubmit: (values) => {
-      const items = productos
-        .filter((p) => selectedProducts.includes(p.id))
-        .map((p) => ({
-          productoId: p.id,
-          tipo: tipoItemDesdeProducto(p.categoria) as TipoItem,
-          nombre: p.nombre,
-          cantidad: cantidadItemProducto(p, cantidades),
-          precioUnitario: 0,
-        }));
+      const seleccionPayload = seleccionToPayload(seleccion);
 
       if (activeEsEdicion) {
         actualizarMut.mutate({
@@ -201,7 +185,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           tematica: (values as { tematica?: string }).tematica?.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: (values as { notas?: string }).notas?.trim() || undefined,
-          items: items.length ? items : undefined,
+          seleccion: seleccionPayload,
         });
       } else {
         const v = values as {
@@ -231,7 +215,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           tematica: v.tematica.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: v.notas.trim() || undefined,
-          items: items.length ? items : undefined,
+          seleccion: seleccionPayload,
         });
       }
     },
@@ -305,20 +289,6 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
       });
     },
   });
-
-  const toggleProducto = (productId: string) => {
-    setSelectedProducts((prev) => {
-      if (prev.includes(productId)) return prev.filter((x) => x !== productId);
-      const producto = productos.find((p) => p.id === productId);
-      if (producto) {
-        setCantidades((c) => ({
-          ...c,
-          [productId]: cantidadItemProducto(producto, c),
-        }));
-      }
-      return [...prev, productId];
-    });
-  };
 
   if (!open || !activeTarget) return null;
 
@@ -511,7 +481,14 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                     name="paquete"
                     className={INPUT_CLASS}
                     value={formik.values.paquete}
-                    onChange={formik.handleChange}
+                    onChange={(e) => {
+                      formik.handleChange(e);
+                      setSeleccion({
+                        ...INITIAL_SELECCION_PAQUETE,
+                        showIds: seleccion.showIds,
+                        extraIds: seleccion.extraIds,
+                      });
+                    }}
                   >
                     <option value="">Seleccionar…</option>
                     {catalogo.paquetes.map((p) => (
@@ -552,31 +529,19 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           </fieldset>
 
           <fieldset className="rounded-xl border border-surface-variant bg-surface-container-low/50 p-4">
-            <legend className="text-body-md font-semibold text-primary">Servicios del catálogo</legend>
-            <CatalogoSection
-              titulo="Shows"
-              productos={catalogo.shows}
-              selectedIds={selectedProducts}
-              cantidades={cantidades}
-              onToggle={toggleProducto}
-              onCantidad={(pid, qty) => setCantidades((c) => ({ ...c, [pid]: qty }))}
-            />
-            <CatalogoSection
-              titulo="Catering"
-              productos={catalogo.catering}
-              selectedIds={selectedProducts}
-              cantidades={cantidades}
-              onToggle={toggleProducto}
-              onCantidad={(pid, qty) => setCantidades((c) => ({ ...c, [pid]: qty }))}
-            />
-            <CatalogoSection
-              titulo="Extras"
-              productos={catalogo.extras}
-              selectedIds={selectedProducts}
-              cantidades={cantidades}
-              onToggle={toggleProducto}
-              onCantidad={(pid, qty) => setCantidades((c) => ({ ...c, [pid]: qty }))}
-            />
+            <legend className="text-body-md font-semibold text-primary">
+              Composición del paquete
+            </legend>
+            <div className="mt-3">
+              <CotizacionPaqueteEditor
+                paquete={formik.values.paquete}
+                fechaEvento={formik.values.fechaEvento}
+                cantidadNinos={Number(formik.values.cantidadNinos) || 25}
+                seleccion={seleccion}
+                onChange={setSeleccion}
+                catalogo={catalogo}
+              />
+            </div>
           </fieldset>
 
           <div className="flex flex-col gap-3 border-t border-outline-variant/30 pt-4">

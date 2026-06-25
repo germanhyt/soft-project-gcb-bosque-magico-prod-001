@@ -22,6 +22,7 @@
     "qa:smoke": "node scripts/qa-smoke-use-cases.mjs",
     "qa:flujo": "node scripts/qa-flujo-paso-a-paso.mjs",
     "qa:negativos": "node scripts/qa-negativos.mjs",
+    "qa:fases": "node scripts/qa-fases-recientes.mjs",
     "qa:pedidos": "node scripts/qa-pedidos.mjs",
     "qa:operaciones": "node scripts/qa-operaciones-demo.mjs"
   },

@@ -16,8 +16,8 @@
 
 | [MEJORAS_PANEL_FASE8.md](./MEJORAS_PANEL_FASE8.md) | **Puntos de mejora panel** (tablas, WS, usuario, modales, roles, config) |
 | [PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md](./PRUEBAS_CASOS_USO_LOCAL_SANDBOX.md) | Guía de pruebas con mock data (local + sandbox) |
-| [entrega-2026-06-17/](./entrega-2026-06-17/README.md) | **Entrega vigente (17 jun 2026):** informe + manual + QA evidenciado + demos german22 y flujo C |
-| [entrega-2026-06-16/](./entrega-2026-06-16/README.md) | Entrega previa (16 jun 2026) |
+| [entrega-2026-06-24/](./entrega-2026-06-24/README.md) | **Entrega vigente (24 jun 2026):** F1–F5, QA `qa:fases` 27/27, roadmap n8n |
+| [entrega-2026-06-17/](./entrega-2026-06-17/README.md) | Entrega previa (17 jun 2026) |
 | [entrega-2026-06-15/](./entrega-2026-06-15/README.md) | Entrega previa (15 jun 2026) |
 | [entrega-junio-2026/](./entrega-junio-2026/README.md) | Entrega anterior (11 jun 2026) |
 
@@ -274,12 +274,65 @@ procedemos a desplegar
 - los últimos cambios al sandbox en vps paso a paso
 
 
-()
+(x)
 Observaciones
 - he detectado que sobre el último test en cotización sale "COT-00NaN"
 - En "Pedidos operativos" al presionar "+pedido" me aparece no me saleel modal como tál
 - En Pedidos operativos también me aparece este formato "Verificaci�n deploy"
 a qué se debe?
 
+----------------------------------------------------------
+----------------------------------------------------------
+24/06/2026
 
 ()
+- Para el caso de los paquetes hay un caso específico y es que dentro de los paquetes viene incluido un algún servicio extra / show / catering, te comparto el detalle "
+BÁSICO:
+Servicio extra (1)
+Cajitas Bosque mágico (10)
+Alquiler (3 horas)
+
+ESTÁNDAR:
+Show (1)
+Servicio extra (1)
+Cajitas Bosque mágico (10)
+Alquiler (3 horas)
+
+PREMIUM:
+Show (1)
+Servicio extra (1)
+Cajitas Bosque mágico (10)
+Pop corn o Algodón de azúcar
+Piqueos (Importe: S/200 soles)
+Asistente de evento
+Alquiler (3 horas)", 
+ahora cómo sería la propuesta para el rediseño de la lógica?
+
+-----------
+
+- Para solicitar un evento se debe realziar con un aticipación de 7 días o una semana (configurable)
+
+- En la landing para cada producto de catálogo podrá tener un carousel de imágenes que se configurar desde el panel que que pueda ir pasando de img en img en su mismo card, este mismo en caso de haber pueda tener 2 opciones en un lado no invasivo del expandir en un modal lightbox el carousel y el de ver el video en modal también (estos se agregan desde el panel)
+
+- En el flujo considerar que previamente a programarse el evento en el calendar se tiene que generar el contrato.  Además antes de programarse el evento también tiene un flujo con el proveedor donde tiene que confirmar el evento para que luego recién se pueda programar en el calendar, sin estos no se procederá al evento
+
+- Al generar el contrato permitir poder cargar el comprobante de pago y también luego el documento de contabilidad (con drag and dro), y poder gestionar al editar el contrato
+
+- Configurar la postventa para que luego de cerrar el flujo se pueda enviar un formulario por correo de forma automática (opcion de activar / desactivar con toggle switches)
+
+-----------
+- la generación de códigos sea atomático por correlativo y prefijo, en los casos donde se hace uso
+- en la tabla de cotización consideramos el campo de registro
+- en la tabla de catalogo campo imagen poder previaulizar la lista en un modal y el carusel de la landing no está funcionando que pase uno a otro de forma automática, y agregamos el campo de origen
+
+-----------
+
+- La campana de notificaciones al activar le damos color marrón del sistema
+- Campo registro en tablas de clientes/operaciones/contratos/usuarios en primera posición
+- Podemos permitir aparte de pagindo también cambiar el limite de filas o rows (20, 40, 60, 100, 200) para seleccionar de forma directa desde el backend, esto para todos los módulos que tiene tabla de datos
+
+-----------
+- de nueva cuenta vamos a realizar los test completo de todos los casos de uso posibles, detectar error y corregir de ser necesario
+
+------------
+

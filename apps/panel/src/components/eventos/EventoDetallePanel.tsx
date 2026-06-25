@@ -176,9 +176,16 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
           </>
         )}
         {ev.etapa !== 'realizado' && ev.etapa === 'por_confirmar' && (
-          <Button className="w-full" disabled={confirmarMut.isPending} onClick={() => confirmarMut.mutate()}>
-            Confirmar evento
-          </Button>
+          <>
+            {(!contrato || (contrato.etapa !== 'enviado' && contrato.etapa !== 'firmado')) && (
+              <p className="text-center text-xs text-tertiary">
+                Genera y envía el contrato antes de confirmar en la agenda.
+              </p>
+            )}
+            <Button className="w-full" disabled={confirmarMut.isPending} onClick={() => confirmarMut.mutate()}>
+              Confirmar evento (programar en agenda)
+            </Button>
+          </>
         )}
         {ev.etapa !== 'realizado' && ev.etapa === 'confirmado' && (
           <Button

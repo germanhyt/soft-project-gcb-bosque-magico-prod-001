@@ -27,7 +27,7 @@ import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { useListPagination } from '../hooks/useListPagination';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Icon } from '../components/ui/Icon';
 import {
@@ -54,7 +54,7 @@ export function SolicitudesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const etapaFiltro = (searchParams.get('etapa') ?? '') as '' | EtapaSolicitud;
   const qParam = searchParams.get('q') ?? '';
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const { page, pageSize, setPage, setPageSize } = useListPagination();
   const detalleParam = searchParams.get('detalle');
   const [busqueda, setBusqueda] = useState(qParam);
   const [modalOpen, setModalOpen] = useState(false);
@@ -108,11 +108,11 @@ export function SolicitudesPage() {
   }, [busqueda, searchParams, setSearchParams]);
 
   const { data: paginated, isLoading, isError } = useQuery({
-    queryKey: ['solicitudes', etapaFiltro || 'todas', qParam, page],
+    queryKey: ['solicitudes', etapaFiltro || 'todas', qParam, page, pageSize],
     queryFn: () =>
       fetchSolicitudes(etapaFiltro || undefined, {
         page,
-        pageSize: DEFAULT_PAGE_SIZE,
+        pageSize,
         q: qParam || undefined,
       }),
   });
@@ -145,13 +145,6 @@ export function SolicitudesPage() {
       });
     },
   });
-
-  const setPage = (p: number) => {
-    const next = new URLSearchParams(searchParams);
-    if (p <= 1) next.delete('page');
-    else next.set('page', String(p));
-    setSearchParams(next);
-  };
 
   const columns = useMemo(
     () => [
@@ -257,8 +250,9 @@ export function SolicitudesPage() {
       page={meta?.page ?? page}
       totalPages={meta?.totalPages ?? 1}
       total={meta?.total ?? 0}
-      pageSize={meta?.pageSize ?? DEFAULT_PAGE_SIZE}
+      pageSize={meta?.pageSize ?? pageSize}
       onPageChange={setPage}
+      onPageSizeChange={setPageSize}
     />
   );
 

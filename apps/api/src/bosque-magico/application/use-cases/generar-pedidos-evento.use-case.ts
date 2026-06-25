@@ -3,6 +3,7 @@ import { OrigenProducto, TipoPedido } from '@prisma/client';
 import { areaDesdeCategoria } from '../../domain/utils/area-pedido';
 import { fromDecimal } from '../../domain/utils/decimal';
 import { mapPedidoResponse } from '../../domain/mappers/pedido.mapper';
+import { NotificacionProveedorService } from '../../domain/services/notificacion-proveedor.service';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
@@ -13,6 +14,7 @@ export class GenerarPedidosEventoUseCase {
     private readonly prisma: PrismaService,
     private readonly eventos: EventosRepository,
     private readonly pedidos: PedidosRepository,
+    private readonly notificacionProveedor: NotificacionProveedorService,
   ) {}
 
   async ejecutar(eventoId: string) {
@@ -57,6 +59,11 @@ export class GenerarPedidosEventoUseCase {
     if (aCrear.length === 0) return [];
 
     const rows = await this.pedidos.crearMuchos(aCrear);
+    const idsProveedor = rows
+      .filter((r) => r.tipo === TipoPedido.proveedor)
+      .map((r) => r.id);
+    await this.notificacionProveedor.notificarPedidosCreados(idsProveedor);
+
     return rows.map(mapPedidoResponse);
   }
 }

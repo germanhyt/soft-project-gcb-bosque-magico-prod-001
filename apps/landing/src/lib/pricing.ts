@@ -1,4 +1,4 @@
-import type { ConfiguracionItem } from './api';
+import type { ConfiguracionItem, ProductoCatalogo } from './api';
 
 export type TarifasConfig = {
   baseLunesViernes: number;
@@ -54,18 +54,75 @@ export function isWeekend(dateStr: string, feriados: readonly string[] = []): bo
   return day === 0 || day === 6;
 }
 
+export const PRECIOS_PAQUETE_FALLBACK: Record<string, { lv: number; fds: number }> = {
+  basico: { lv: 380, fds: 580 },
+  estandar: { lv: 480, fds: 680 },
+  premium: { lv: 580, fds: 780 },
+};
+
+function normalizarNombrePaquete(nombre: string): string {
+  return nombre
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function preciosPaqueteFallback(nombrePaquete: string): { lv: number; fds: number } {
+  const key = normalizarNombrePaquete(nombrePaquete);
+  if (key.includes('premium')) return PRECIOS_PAQUETE_FALLBACK.premium;
+  if (key.includes('estandar') || key.includes('standard')) return PRECIOS_PAQUETE_FALLBACK.estandar;
+  return PRECIOS_PAQUETE_FALLBACK.basico;
+}
+
+export function precioPaqueteDesdeCatalogo(
+  paquetes: readonly ProductoCatalogo[] | undefined,
+  nombrePaquete: string,
+  esFinSemana: boolean,
+): number | null {
+  if (!paquetes?.length || !nombrePaquete.trim()) return null;
+  const target = normalizarNombrePaquete(nombrePaquete);
+  const match = paquetes.find((p) => {
+    const n = normalizarNombrePaquete(p.nombre);
+    return n === target || n.includes(target) || target.includes(n);
+  });
+  if (!match) return null;
+  return esFinSemana ? match.precioFinSemana : match.precioLunesViernes;
+}
+
+/** Precio del paquete según catálogo, fallback estático o tarifa global si no hay paquete. */
+export function resolverMontoBasePaquete(
+  nombrePaquete: string | undefined,
+  paquetes: readonly ProductoCatalogo[] | undefined,
+  fecha: string,
+  feriados: readonly string[],
+  tarifas: TarifasConfig,
+): number {
+  const esFinSemana = isWeekend(fecha, feriados);
+  if (nombrePaquete) {
+    const fromCatalog = precioPaqueteDesdeCatalogo(paquetes, nombrePaquete, esFinSemana);
+    if (fromCatalog != null) return fromCatalog;
+    const fb = preciosPaqueteFallback(nombrePaquete);
+    return esFinSemana ? fb.fds : fb.lv;
+  }
+  return esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes;
+}
+
 export function calcularEstimado(
   tarifas: TarifasConfig,
   fecha: string,
   cantidadNinos: number,
   feriados: readonly string[] = [],
+  options?: { montoBasePaquete?: number },
 ): { base: number; extraNinos: number; total: number; esFinSemana: boolean; advertencia?: string } {
   let advertencia: string | undefined;
   if (cantidadNinos > tarifas.maximoPermitido) {
     advertencia = `Más de ${tarifas.maximoPermitido} niños requiere confirmación con el equipo.`;
   }
   const esFinSemana = isWeekend(fecha, feriados);
-  const base = esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes;
+  const base =
+    options?.montoBasePaquete ??
+    (esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes);
   const extraCount = Math.max(Math.min(cantidadNinos, tarifas.maximoPermitido) - tarifas.maximoBase, 0);
   const extraNinos = extraCount * tarifas.precioNinoExtra;
   return { base, extraNinos, total: base + extraNinos, esFinSemana, advertencia };

@@ -10,9 +10,9 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
 import { fechaCalendarioHoy } from '../lib/fecha-calendario';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
 import { fetchPedidosOperaciones } from '../lib/tareas-api';
-import { formatFecha } from '../lib/format';
+import { formatFecha, formatFechaHora } from '../lib/format';
 import { PageHeader } from '../components/ui/PageHeader';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
@@ -49,6 +49,7 @@ export function OperacionesPage() {
   const [hasta, setHasta] = useState(def.hasta);
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
   const { data: pedidos = [], isLoading, isError } = useQuery({
     queryKey: ['pedidos-operaciones', desde, hasta],
@@ -62,13 +63,13 @@ export function OperacionesPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [desde, hasta, busqueda]);
+  }, [desde, hasta, busqueda, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(pedidosFiltrados.length / DEFAULT_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(pedidosFiltrados.length / pageSize));
   const pedidosPaginados = useMemo(() => {
-    const start = (page - 1) * DEFAULT_PAGE_SIZE;
-    return pedidosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
-  }, [pedidosFiltrados, page]);
+    const start = (page - 1) * pageSize;
+    return pedidosFiltrados.slice(start, start + pageSize);
+  }, [pedidosFiltrados, page, pageSize]);
 
   const totalCosto = useMemo(
     () => pedidosFiltrados.reduce((n, p) => n + p.costo, 0),
@@ -128,8 +129,12 @@ export function OperacionesPage() {
               page={page}
               totalPages={totalPages}
               total={pedidosFiltrados.length}
-              pageSize={DEFAULT_PAGE_SIZE}
+              pageSize={pageSize}
               onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
             />
           ) : undefined
         }
@@ -137,6 +142,7 @@ export function OperacionesPage() {
         <table className="w-full text-left text-body-sm">
           <thead>
             <tr className={TABLE_HEAD_CLASS}>
+              <th className="px-4 py-3">Registro</th>
               <th className="px-4 py-3">Fecha evento</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Pedido</th>
@@ -149,7 +155,7 @@ export function OperacionesPage() {
           <tbody>
             {isLoading && (
               <tr>
-                <td colSpan={7} className="px-4 py-6 text-outline">
+                <td colSpan={8} className="px-4 py-6 text-outline">
                   Cargando…
                 </td>
               </tr>
@@ -157,6 +163,9 @@ export function OperacionesPage() {
             {!isLoading &&
               pedidosPaginados.map((p) => (
                 <tr key={p.id} className={TABLE_ROW_CLASS}>
+                  <td className="px-4 py-3 text-xs text-outline whitespace-nowrap">
+                    {p.creadoEn ? formatFechaHora(p.creadoEn) : '—'}
+                  </td>
                   <td className="px-4 py-3 whitespace-nowrap">
                     {formatFecha(p.evento.fechaEvento)}
                     <span className="block text-xs text-outline">
@@ -194,7 +203,7 @@ export function OperacionesPage() {
               ))}
             {!isLoading && pedidosFiltrados.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-outline">
+                <td colSpan={8} className="px-4 py-8 text-center text-outline">
                   {pedidos.length === 0
                     ? 'No hay pedidos pendientes en el rango seleccionado.'
                     : 'Ningún pedido coincide con la búsqueda.'}

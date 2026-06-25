@@ -162,3 +162,42 @@ html[data-sidebar='collapsed'] {
     --width-sidebar-current: 0px;
   }
 }
+
+@keyframes notifications-bell-pulse {
+  0%,
+  100% {
+    color: var(--color-secondary);
+    filter: drop-shadow(0 0 0 transparent);
+  }
+  50% {
+    color: var(--color-on-secondary-container);
+    filter: drop-shadow(0 0 5px color-mix(in srgb, var(--color-secondary) 45%, transparent));
+  }
+}
+
+@keyframes notifications-badge-halo {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.55;
+    transform: scale(1.1);
+  }
+}
+
+@utility animate-notifications-bell {
+  animation: notifications-bell-pulse 2.2s ease-in-out infinite;
+}
+
+@utility animate-notifications-badge-halo {
+  animation: notifications-badge-halo 2.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-notifications-bell,
+  .animate-notifications-badge-halo {
+    animation: none;
+  }
+}

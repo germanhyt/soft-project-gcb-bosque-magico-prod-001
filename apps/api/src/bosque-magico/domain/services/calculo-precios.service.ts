@@ -61,21 +61,38 @@ export class CalculoPreciosService {
     return esTarifaFinSemana(fecha, feriados);
   }
 
+  async obtenerReglasPaquete(): Promise<{
+    cajitasIncluidas: number;
+    cajitasPrecioExcedente: number;
+  }> {
+    const items = await this.configuracion.listarPublicas();
+    const map = new Map(items.map((i) => [i.clave, i.valor]));
+    const num = (k: string, d: number) => {
+      const v = map.get(k);
+      return typeof v === 'number' && !Number.isNaN(v) ? v : d;
+    };
+    return {
+      cajitasIncluidas: num('paquetes.cajitas_incluidas', 10),
+      cajitasPrecioExcedente: num('paquetes.cajitas_precio_excedente', 20.9),
+    };
+  }
+
   calcular(
     tarifas: TarifasNegocio,
     fechaEvento: Date,
     cantidadNinos: number,
     items: ItemCalculoInput[],
     feriados: ReadonlySet<string> = new Set(),
+    options?: { montoBasePaquete?: number },
   ): ResultadoCalculo {
     let advertencia: string | undefined;
     if (cantidadNinos > tarifas.maximoPermitido) {
       advertencia = `Más de ${tarifas.maximoPermitido} niños requiere aprobación manual.`;
     }
     const esFinSemana = esTarifaFinSemana(fechaEvento, feriados);
-    const montoBase = esFinSemana
-      ? tarifas.baseFinSemana
-      : tarifas.baseLunesViernes;
+    const montoBase =
+      options?.montoBasePaquete ??
+      (esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes);
     const ninosParaExtra = Math.min(cantidadNinos, tarifas.maximoPermitido);
     const extraCount = Math.max(ninosParaExtra - tarifas.maximoBase, 0);
     const montoNinosExtra = extraCount * tarifas.precioNinoExtra;

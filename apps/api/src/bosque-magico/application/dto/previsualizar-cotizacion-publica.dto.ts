@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   IsArray,
   IsInt,
+  IsNotEmpty,
   IsOptional,
   IsString,
   IsUUID,
@@ -11,6 +12,7 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
+import { SeleccionPaqueteDto } from './seleccion-paquete.dto';
 
 export class ItemPreviewCotizacionPublicaDto {
   @ApiProperty()
@@ -34,12 +36,19 @@ export class PrevisualizarCotizacionPublicaDto {
   @Max(50)
   cantidadNinos!: number;
 
-  @ApiPropertyOptional({ example: 'Estándar' })
-  @IsOptional()
+  @ApiProperty({ example: 'Estándar' })
   @IsString()
+  @IsNotEmpty({ message: 'Debe elegir un paquete' })
   @MaxLength(120)
-  paquete?: string;
+  paquete!: string;
 
+  @ApiPropertyOptional({ type: SeleccionPaqueteDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SeleccionPaqueteDto)
+  seleccion?: SeleccionPaqueteDto;
+
+  /** @deprecated Usar seleccion; se tratan como adicionales fuera del paquete */
   @ApiPropertyOptional({ type: [ItemPreviewCotizacionPublicaDto] })
   @IsOptional()
   @IsArray()

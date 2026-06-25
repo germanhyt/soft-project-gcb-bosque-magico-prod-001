@@ -188,6 +188,7 @@ async function main() {
         fechaEvento,
         turno: 'turno_2',
         cantidadNinos: 22,
+        paquete: 'Premium',
         items: [],
       },
     });
@@ -260,6 +261,7 @@ async function main() {
       fechaEvento: fechaEventoB,
       turno: 'turno_1',
       cantidadNinos: 25,
+      paquete: 'Premium',
       items: itemsB,
     },
   });
@@ -281,30 +283,68 @@ async function main() {
     token,
   });
   const eventoBId = aceptarB.data?.eventoId;
-  if (!paso(n, 'B5 — Aceptar cotización (genera evento en agenda)', aceptarB, [200, 201], { id: eventoBId }))
+  if (!paso(n, 'B5 — Aceptar cotización (evento por_confirmar)', aceptarB, [200, 201], { id: eventoBId }))
     process.exit(1);
+
+  n++;
+  const contratoB = await call(`/bosque-magico/eventos/${eventoBId}/contrato`, {
+    method: 'POST',
+    token,
+    body: {
+      numeroDocumento: '70998877',
+      tipoComprobante: 'boleta',
+      documentoTributario: '70998877',
+      horarioInicio: '15:00',
+      horarioFin: '18:00',
+      adelanto1Monto: 300,
+      adelanto1Fecha: fechaEventoB,
+    },
+  });
+  const contratoBId = contratoB.data?.id;
+  if (!paso(n, 'B6 — Generar contrato', contratoB, [200, 201], { id: contratoBId }))
+    process.exit(1);
+
+  n++;
+  const enviarContratoB = await call(`/bosque-magico/contratos/${contratoBId}/enviar`, {
+    method: 'POST',
+    token,
+  });
+  if (!paso(n, 'B7 — Enviar contrato', enviarContratoB, [200, 201])) process.exit(1);
+
+  n++;
+  const pedidosPreB = await call(`/bosque-magico/eventos/${eventoBId}/pedidos`, { token });
+  const pedidosProvB = (pedidosPreB.data ?? []).filter((p) => p.tipo === 'proveedor');
+  for (const p of pedidosProvB) {
+    await call(`/bosque-magico/pedidos/${p.id}`, {
+      method: 'PATCH',
+      token,
+      body: { etapa: 'confirmado' },
+    });
+  }
+  console.log(`✅ Paso ${n}: B8 — Confirmar pedidos proveedor (${pedidosProvB.length} pedido(s))`);
+  resultados.push({ paso: n, titulo: 'B8 — Confirmar pedidos proveedor', status: 200, ok: true });
 
   n++;
   const confirmarB = await call(`/bosque-magico/eventos/${eventoBId}/confirmar`, {
     method: 'POST',
     token,
   });
-  if (!paso(n, 'B6 — Confirmar evento (genera pedidos/tareas si aplica)', confirmarB, [200, 201]))
+  if (!paso(n, 'B9 — Confirmar evento en agenda', confirmarB, [200, 201]))
     process.exit(1);
 
   n++;
   const tareasB = await call(`/bosque-magico/eventos/${eventoBId}/tareas`, { token });
-  if (!paso(n, 'B7 — Ver checklist de tareas del evento', tareasB)) process.exit(1);
+  if (!paso(n, 'B10 — Ver checklist de tareas del evento', tareasB)) process.exit(1);
 
   n++;
   const pedidosB = await call(`/bosque-magico/eventos/${eventoBId}/pedidos`, { token });
-  if (!paso(n, 'B8 — Ver pedidos a proveedores del evento', pedidosB)) process.exit(1);
+  if (!paso(n, 'B11 — Ver pedidos a proveedores del evento', pedidosB)) process.exit(1);
 
   n++;
   const resumenEvt = await call('/bosque-magico/eventos/resumen', { token });
   const proximos = resumenEvt.data?.proximos ?? [];
   const enResumen = proximos.some((e) => e.id === eventoBId);
-  if (!paso(n, 'B9 — Dashboard: evento en próximos eventos', resumenEvt)) process.exit(1);
+  if (!paso(n, 'B12 — Dashboard: evento en próximos eventos', resumenEvt)) process.exit(1);
   if (enResumen) {
     console.log(`   → Evento ${eventoBId} visible en próximos (${proximos.length} total)`);
     const ev = proximos.find((e) => e.id === eventoBId);
@@ -318,7 +358,7 @@ async function main() {
     method: 'POST',
     token,
   });
-  if (!paso(n, 'B10 — Marcar evento como realizado', realizarB, [200, 201])) process.exit(1);
+  if (!paso(n, 'B13 — Marcar evento como realizado', realizarB, [200, 201])) process.exit(1);
 
   // ── FLUJO C: Landing refugiogastronomico8222 + contrato público ──
   console.log('\n── Flujo C: Solicitud landing (refugiogastronomico8222) ──');
@@ -339,7 +379,7 @@ async function main() {
         turno: 'turno_3',
         cantidadNinos: 18,
         tematica: 'Jardín',
-        paquete: 'Clásico',
+        paquete: 'Básico',
       },
       observaciones: `Prueba flujo refugio ${suffix}`,
     },
@@ -379,15 +419,8 @@ async function main() {
     token,
   });
   const eventoCId = aceptarC.data?.eventoId;
-  if (!paso(n, 'C3 — Aceptar cotización (evento agenda)', aceptarC, [200, 201], { id: eventoCId }))
+  if (!paso(n, 'C3 — Aceptar cotización (evento por_confirmar)', aceptarC, [200, 201], { id: eventoCId }))
     process.exit(1);
-
-  n++;
-  const confirmarC = await call(`/bosque-magico/eventos/${eventoCId}/confirmar`, {
-    method: 'POST',
-    token,
-  });
-  if (!paso(n, 'C4 — Confirmar evento (checklist auto)', confirmarC, [200, 201])) process.exit(1);
 
   n++;
   const contratoC = await call(`/bosque-magico/eventos/${eventoCId}/contrato`, {
@@ -403,9 +436,17 @@ async function main() {
       adelanto1Fecha: fechaEventoC,
     },
   });
+  const contratoCId = contratoC.data?.id;
   const contratoToken = contratoC.data?.tokenPublico;
-  if (!paso(n, 'C5 — Generar contrato', contratoC, [200, 201], { extra: contratoToken ? `token ${contratoToken.slice(0, 8)}…` : undefined }))
+  if (!paso(n, 'C4 — Generar contrato', contratoC, [200, 201], { extra: contratoToken ? `token ${contratoToken.slice(0, 8)}…` : undefined }))
     process.exit(1);
+
+  n++;
+  const enviarContratoC = await call(`/bosque-magico/contratos/${contratoCId}/enviar`, {
+    method: 'POST',
+    token,
+  });
+  if (!paso(n, 'C5 — Enviar contrato', enviarContratoC, [200, 201])) process.exit(1);
 
   if (contratoToken) {
     n++;
@@ -414,12 +455,32 @@ async function main() {
   }
 
   n++;
+  const pedidosPreC = await call(`/bosque-magico/eventos/${eventoCId}/pedidos`, { token });
+  const pedidosProvC = (pedidosPreC.data ?? []).filter((p) => p.tipo === 'proveedor');
+  for (const p of pedidosProvC) {
+    await call(`/bosque-magico/pedidos/${p.id}`, {
+      method: 'PATCH',
+      token,
+      body: { etapa: 'confirmado' },
+    });
+  }
+  console.log(`✅ Paso ${n}: C7 — Confirmar pedidos proveedor (${pedidosProvC.length} pedido(s))`);
+  resultados.push({ paso: n, titulo: 'C7 — Confirmar pedidos proveedor', status: 200, ok: true });
+
+  n++;
+  const confirmarC = await call(`/bosque-magico/eventos/${eventoCId}/confirmar`, {
+    method: 'POST',
+    token,
+  });
+  if (!paso(n, 'C8 — Confirmar evento (checklist auto)', confirmarC, [200, 201])) process.exit(1);
+
+  n++;
   const tareasC = await call(`/bosque-magico/eventos/${eventoCId}/tareas`, { token });
-  if (!paso(n, 'C7 — Checklist del evento', tareasC)) process.exit(1);
+  if (!paso(n, 'C9 — Checklist del evento', tareasC)) process.exit(1);
 
   n++;
   const pedidosC = await call(`/bosque-magico/eventos/${eventoCId}/pedidos`, { token });
-  if (!paso(n, 'C8 — Pedidos del evento', pedidosC)) process.exit(1);
+  if (!paso(n, 'C10 — Pedidos del evento', pedidosC)) process.exit(1);
 
   // ── Caso adicional: cerrar solicitud huérfana ─────────────
   console.log('\n── Caso adicional: Cerrar solicitud ──');

@@ -3,6 +3,7 @@ import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { ContratoBadge } from './ContratoBadge';
 import { ContratoFormModal } from './ContratoFormModal';
+import { ContratoAdjuntosSection } from './ContratoAdjuntosSection';
 import { EnviarContratoActions } from './EnviarContratoActions';
 import { DetalleModal } from '../ui/DetalleModal';
 import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
@@ -201,6 +202,8 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
                 <dd>S/ {c.montoGarantia.toFixed(2)}</dd>
               </div>
             </dl>
+
+            <ContratoAdjuntosSection contrato={c} />
 
             {(c.enviadoEn || c.firmadoEn) && (
               <dl className={`grid gap-2 p-4 text-body-sm ${CARD_CLASS}`}>

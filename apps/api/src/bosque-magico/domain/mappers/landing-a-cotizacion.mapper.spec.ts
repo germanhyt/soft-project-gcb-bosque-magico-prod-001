@@ -14,7 +14,17 @@ describe('landing-a-cotizacion.mapper', () => {
     },
     preferencias: {
       origen: 'landing_cotizador',
-      items: [{ productoId: 'prod-1', cantidad: 18 }],
+      seleccion: {
+        paquete: 'Premium',
+        cajitasCantidad: 12,
+        piqueos: [
+          { productoId: 'piq-1', cantidad: 1 },
+          { productoId: 'piq-2', cantidad: 2 },
+        ],
+        showIds: ['show-1'],
+        extraIds: ['extra-1'],
+        snackId: 'snack-1',
+      },
     },
   };
 
@@ -34,11 +44,16 @@ describe('landing-a-cotizacion.mapper', () => {
     ).toBe(false);
   });
 
-  it('mapearSolicitudLandingACotizacion incluye items y solicitudId', () => {
+  it('mapearSolicitudLandingACotizacion incluye seleccion de paquete y solicitudId', () => {
     const mapped = mapearSolicitudLandingACotizacion('sol-99', dtoBase);
     expect(mapped.solicitudId).toBe('sol-99');
-    expect(mapped.items).toHaveLength(1);
-    expect(mapped.items?.[0].productoId).toBe('prod-1');
+    expect(mapped.paquete).toBe('Premium');
+    expect(mapped.seleccion?.cajitasCantidad).toBe(12);
+    expect(mapped.seleccion?.piqueos).toEqual([
+      { productoId: 'piq-1', cantidad: 1 },
+      { productoId: 'piq-2', cantidad: 2 },
+    ]);
+    expect(mapped.seleccion?.showIds).toEqual(['show-1']);
     expect(mapped.cumpleanero.nombre).toBe('Por confirmar');
   });
 });

@@ -484,3 +484,8 @@ Marca al terminar la sesión con gerencia:
 ---
 
 *Caso de demostración — Bosque Mágico. Correo de prueba reservado: `germanhuaytalla22@gmail.com`. No usar para clientes reales en producción.*
+
+
+===============================================================================
+
+

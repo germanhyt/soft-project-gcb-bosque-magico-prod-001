@@ -30,6 +30,9 @@ type PayloadOrigen = {
         cateringCantidades?: Record<string, number>;
         extraIds?: string[];
         extraCantidades?: Record<string, number>;
+        snackId?: string;
+        cajitasCantidad?: number;
+        piqueos?: Array<{ productoId: string; cantidad: number }>;
       };
       items?: Array<{ productoId?: string; nombre?: string; cantidad?: number }>;
     };
@@ -47,6 +50,9 @@ type PayloadOrigen = {
 export type ItemPreferenciaLanding = {
   nombre: string;
   cantidad: number;
+  productoId?: string;
+  /** Cantidad expresada en packs (piqueos Premium). */
+  esPack?: boolean;
 };
 
 export type ResumenPreferenciasLanding = {
@@ -76,6 +82,37 @@ export function resumenPreferenciasLanding(solicitud: Solicitud): ResumenPrefere
         nombre: item.nombre,
         cantidad: item.cantidad ?? 1,
       });
+    }
+  }
+
+  const sel = pref?.seleccion;
+  if (sel?.cajitasCantidad != null && sel.cajitasCantidad > 0) {
+    items.push({
+      nombre: 'Cajitas Bosque Mágico',
+      cantidad: sel.cajitasCantidad,
+    });
+  }
+  for (const p of sel?.piqueos ?? []) {
+    items.push({
+      nombre: 'Piqueo Premium',
+      cantidad: Math.max(p.cantidad, 1),
+      productoId: p.productoId,
+      esPack: true,
+    });
+  }
+  for (const id of sel?.showIds ?? []) {
+    items.push({ nombre: 'Show', cantidad: 1, productoId: id });
+  }
+  for (const id of sel?.extraIds ?? []) {
+    items.push({ nombre: 'Extra', cantidad: 1, productoId: id });
+  }
+  if (sel?.snackId) {
+    items.push({ nombre: 'Snack Premium', cantidad: 1, productoId: sel.snackId });
+  }
+  if (sel?.cateringIds) {
+    for (const id of sel.cateringIds) {
+      const qty = Math.max(sel.cateringCantidades?.[id] ?? 1, 1);
+      items.push({ nombre: 'Catering adicional', cantidad: qty, productoId: id });
     }
   }
 
@@ -159,8 +196,10 @@ export function productoIdsDesdePayloadLanding(solicitud: Solicitud): string[] {
   const sel = pref.seleccion;
   if (sel) {
     for (const id of sel.showIds ?? []) ids.add(id);
-    for (const id of sel.cateringIds ?? []) ids.add(id);
     for (const id of sel.extraIds ?? []) ids.add(id);
+    for (const id of sel.cateringIds ?? []) ids.add(id);
+    if (sel.snackId) ids.add(sel.snackId);
+    for (const p of sel.piqueos ?? []) ids.add(p.productoId);
   }
   return [...ids];
 }
@@ -180,6 +219,11 @@ export function cantidadesDesdePayloadLanding(solicitud: Solicitud): Record<stri
   if (sel?.cateringCantidades) {
     for (const [id, qty] of Object.entries(sel.cateringCantidades)) {
       out[id] = Math.max(qty, 1);
+    }
+  }
+  if (sel?.piqueos) {
+    for (const p of sel.piqueos) {
+      out[p.productoId] = Math.max(p.cantidad, 1);
     }
   }
   if (sel?.extraCantidades) {
@@ -206,6 +250,7 @@ export function datosLandingDesdePayload(solicitud: Solicitud) {
     cumpleaneroEdad: dto?.cumpleanero?.edad != null ? String(dto.cumpleanero.edad) : '',
     tematica: dto?.evento?.tematica ?? '',
     paquete: dto?.evento?.paquete ?? '',
+    seleccion: dto?.preferencias?.seleccion,
     productoIds: productoIdsDesdePayloadLanding(solicitud),
     cantidades: cantidadesDesdePayloadLanding(solicitud),
   };

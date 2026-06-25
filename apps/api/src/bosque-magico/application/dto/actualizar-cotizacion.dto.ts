@@ -12,6 +12,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { ItemCotizacionDto } from './item-cotizacion.dto';
+import { SeleccionPaqueteDto } from './seleccion-paquete.dto';
 
 export class ActualizarCotizacionDto {
   @ApiPropertyOptional()
@@ -40,6 +41,12 @@ export class ActualizarCotizacionDto {
   @IsOptional()
   @IsString()
   paquete?: string;
+
+  @ApiPropertyOptional({ type: SeleccionPaqueteDto })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => SeleccionPaqueteDto)
+  seleccion?: SeleccionPaqueteDto;
 
   @ApiPropertyOptional()
   @IsOptional()

@@ -10,13 +10,11 @@ import {
   previewCotizacionPublica,
   type ConfiguracionItem,
   type CrearSolicitudPayload,
-  type PreviewCotizacionItemPayload,
-  type ProductoCatalogo,
 } from '../../lib/api';
 import {
   calcularEstimado,
   formatSoles,
-  isWeekend,
+  resolverMontoBasePaquete,
   TARIFAS_DEFAULT,
   type TarifasConfig,
 } from '../../lib/pricing';
@@ -37,7 +35,9 @@ import { CatalogConnectionAlert } from '../ui/CatalogConnectionAlert';
 import { MotionReveal } from '../ui/MotionReveal';
 import { SectionTitle } from '../ui/SectionTitle';
 import type { QuoteBuilderSelection } from '../../types/quote-builder';
+import { buildSeleccionPaquete } from '../../lib/build-seleccion-paquete';
 import { consultarIdentidad } from '../../lib/identidad';
+import { fechaMinimaEvento, mensajeAnticipacion } from '../../lib/anticipacion';
 
 type FormValues = {
   nombre: string;
@@ -65,7 +65,8 @@ const initialValues: FormValues = {
   observaciones: '',
 };
 
-function buildSchema(tarifas: TarifasConfig) {
+function buildSchema(tarifas: TarifasConfig, minDiasAnticipacion: number) {
+  const fechaMin = fechaMinimaEvento(minDiasAnticipacion);
   return Yup.object({
     nombre: Yup.string().trim().min(2, 'Mínimo 2 caracteres').max(150).required('Requerido'),
     celular: Yup.string().trim().min(9, 'Celular inválido').max(40).required('Requerido'),
@@ -78,30 +79,18 @@ function buildSchema(tarifas: TarifasConfig) {
       const n = Number(v);
       return Number.isInteger(n) && n >= 1 && n <= 15;
     }),
-    fechaTentativa: Yup.string().optional(),
+    fechaTentativa: Yup.string()
+      .optional()
+      .test('anticipacion', `Fecha mínima: ${fechaMin}`, (v) => {
+        if (!v) return true;
+        return v >= fechaMin;
+      }),
     turno: Yup.string().oneOf(['', 'turno_1', 'turno_2', 'turno_3']).optional(),
     cantidadNinos: Yup.number()
       .min(tarifas.minimoNinos, `Mínimo ${tarifas.minimoNinos} niños`)
       .max(50, 'Máximo 50 — confirma con el equipo')
       .required('Requerido'),
   });
-}
-
-function buildProductoById(productos?: {
-  paquetes: ProductoCatalogo[];
-  shows: ProductoCatalogo[];
-  catering: ProductoCatalogo[];
-  extras: ProductoCatalogo[];
-  espacios: ProductoCatalogo[];
-}) {
-  const all = [
-    ...(productos?.paquetes ?? []),
-    ...(productos?.shows ?? []),
-    ...(productos?.catering ?? []),
-    ...(productos?.extras ?? []),
-    ...(productos?.espacios ?? []),
-  ];
-  return new Map(all.map((p) => [p.id, p]));
 }
 
 function getTurnos(items: ConfiguracionItem[] | undefined) {
@@ -124,45 +113,11 @@ function getTurnos(items: ConfiguracionItem[] | undefined) {
   return turnos.length ? turnos : TURNOS;
 }
 
-function getMinimoCatering(items: ConfiguracionItem[] | undefined) {
-  const minimo = items?.find((item) => item.clave === 'catering.minimo_unidades')?.valor;
-  return typeof minimo === 'number' && minimo > 0 ? minimo : 18;
-}
-
-function getMinCantidadCatering(producto: ProductoCatalogo | undefined, minimoGlobal: number) {
-  return Math.max(producto?.cantidadMinima ?? 1, minimoGlobal);
-}
-
-function buildPreviewItems(
-  selection: QuoteBuilderSelection,
-  minimoCatering: number,
-  productoById: Map<string, ProductoCatalogo>,
-): PreviewCotizacionItemPayload[] {
-  const items: PreviewCotizacionItemPayload[] = [];
-  for (const showId of selection.showIds) {
-    items.push({ productoId: showId, cantidad: 1 });
-  }
-  for (const cateringId of selection.cateringIds) {
-    const producto = productoById.get(cateringId);
-    const minQty = getMinCantidadCatering(producto, minimoCatering);
-    items.push({
-      productoId: cateringId,
-      cantidad: Math.max(selection.cateringCantidades[cateringId] ?? minQty, minQty),
-    });
-  }
-  for (const extraId of selection.extraIds) {
-    const cantidad = Math.max(selection.extraCantidades[extraId] ?? 1, 1);
-    items.push({ productoId: extraId, cantidad });
-  }
-  return items;
-}
-
 function toPayload(
   values: FormValues,
   selection: QuoteBuilderSelection,
-  previewItems: PreviewCotizacionItemPayload[],
-  productoById: Map<string, ProductoCatalogo>,
 ): CrearSolicitudPayload {
+  const seleccion = buildSeleccionPaquete(selection);
   const payload: CrearSolicitudPayload = {
     cliente: {
       nombre: values.nombre.trim(),
@@ -189,16 +144,14 @@ function toPayload(
       paquete: selection.paquete || undefined,
       showIds: selection.showIds,
       showCantidades: selection.showCantidades,
-      cateringIds: selection.cateringIds,
-      cateringCantidades: selection.cateringCantidades,
       extraIds: selection.extraIds,
       extraCantidades: selection.extraCantidades,
+      snackId: selection.snackId || undefined,
+      cajitasCantidad: selection.cajitasCantidad,
+      piqueos: seleccion.piqueos,
+      cateringIds: selection.cateringIds,
+      cateringCantidades: selection.cateringCantidades,
     },
-    items: previewItems.map((item) => ({
-      productoId: item.productoId,
-      nombre: productoById.get(item.productoId)?.nombre ?? item.productoId,
-      cantidad: item.cantidad,
-    })),
   };
   payload.preferencias = preferencias;
   return payload;
@@ -211,16 +164,20 @@ function fieldClass(error?: string) {
 type Props = {
   selection: QuoteBuilderSelection;
   onSelectionChange: (next: QuoteBuilderSelection | ((prev: QuoteBuilderSelection) => QuoteBuilderSelection)) => void;
+  onFechaChange?: (fecha: string) => void;
 };
 
-export function QuoteForm({ selection, onSelectionChange }: Props) {
+export function QuoteForm({ selection, onFechaChange }: Props) {
   const [identidadHint, setIdentidadHint] = useState<string | null>(null);
   const { data, isLoading, isError } = useConfiguracion();
   const tarifas = data?.tarifas ?? TARIFAS_DEFAULT;
   const feriados = data?.feriados ?? [];
+  const minDiasAnticipacion = data?.minDiasAnticipacion ?? 7;
+  const fechaMinEvento = useMemo(
+    () => fechaMinimaEvento(minDiasAnticipacion),
+    [minDiasAnticipacion],
+  );
   const turnos = useMemo(() => getTurnos(data?.items), [data?.items]);
-  const minimoCatering = useMemo(() => getMinimoCatering(data?.items), [data?.items]);
-  const productoById = useMemo(() => buildProductoById(data?.productos), [data?.productos]);
 
   const revisarIdentidad = useCallback(async (celular: string, correo?: string) => {
     if (celular.replace(/\D/g, '').length < 9) {
@@ -248,7 +205,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
   const formik = useFormik<FormValues>({
     enableReinitialize: true,
     initialValues,
-    validationSchema: buildSchema(tarifas),
+    validationSchema: buildSchema(tarifas, minDiasAnticipacion),
     onSubmit: async (values, { resetForm, setSubmitting }) => {
       try {
         if (!selection.paquete) {
@@ -261,8 +218,7 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
           return;
         }
 
-        const previewItems = buildPreviewItems(selection, minimoCatering, productoById);
-        const res = await crearSolicitudPublica(toPayload(values, selection, previewItems, productoById));
+        const res = await crearSolicitudPublica(toPayload(values, selection));
         const estimado = preview.data
           ? {
               total: preview.data.montos.total,
@@ -271,7 +227,15 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
               items: preview.data.montos.items,
             }
           : {
-              ...calcularEstimado(tarifas, values.fechaTentativa, values.cantidadNinos, feriados),
+              ...calcularEstimado(tarifas, values.fechaTentativa, values.cantidadNinos, feriados, {
+                montoBasePaquete: resolverMontoBasePaquete(
+                  selection.paquete,
+                  data?.productos.paquetes,
+                  values.fechaTentativa,
+                  feriados,
+                  tarifas,
+                ),
+              }),
               items: 0,
             };
         await Swal.fire({
@@ -310,34 +274,53 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
     },
   });
 
-  const previewItems = useMemo(
-    () => buildPreviewItems(selection, minimoCatering, productoById),
-    [selection, minimoCatering, productoById],
-  );
+  const seleccionPreview = useMemo(() => buildSeleccionPaquete(selection), [selection]);
 
-  const canPreview = Boolean(formik.values.fechaTentativa);
+  const canPreview = Boolean(formik.values.fechaTentativa && selection.paquete);
   const preview = useQuery({
     queryKey: [
       'preview-cotizacion-publica',
       formik.values.fechaTentativa,
       formik.values.cantidadNinos,
       selection.paquete,
-      ...previewItems.flatMap((item) => [item.productoId, item.cantidad]),
+      JSON.stringify(seleccionPreview),
     ],
     queryFn: () =>
       previewCotizacionPublica({
         fechaEvento: formik.values.fechaTentativa,
         cantidadNinos: Number(formik.values.cantidadNinos) || tarifas.minimoNinos,
-        paquete: selection.paquete || undefined,
-        items: previewItems,
+        paquete: selection.paquete,
+        seleccion: seleccionPreview,
       }),
     enabled: canPreview,
     retry: 0,
   });
 
+  const montoBasePaquete = useMemo(
+    () =>
+      resolverMontoBasePaquete(
+        selection.paquete,
+        data?.productos.paquetes,
+        formik.values.fechaTentativa,
+        feriados,
+        tarifas,
+      ),
+    [selection.paquete, data?.productos.paquetes, formik.values.fechaTentativa, feriados, tarifas],
+  );
+
   const estimadoFallback = useMemo(
-    () => calcularEstimado(tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados),
-    [tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados],
+    () =>
+      calcularEstimado(tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados, {
+        montoBasePaquete: selection.paquete ? montoBasePaquete : undefined,
+      }),
+    [
+      tarifas,
+      formik.values.fechaTentativa,
+      formik.values.cantidadNinos,
+      feriados,
+      selection.paquete,
+      montoBasePaquete,
+    ],
   );
 
   const estimado: {
@@ -369,30 +352,20 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
   }, [preview.data, estimadoFallback]);
 
   const cartItems = useMemo(() => {
-    const esFds = isWeekend(formik.values.fechaTentativa, feriados);
-    return previewItems
-      .map((item) => {
-        const producto = productoById.get(item.productoId);
-        if (!producto) return null;
-        const precioUnitario = esFds ? producto.precioFinSemana : producto.precioLunesViernes;
-        return {
-          productoId: item.productoId,
-          nombre: producto.nombre,
-          cantidad: item.cantidad,
-          precioUnitario,
-          subtotal: precioUnitario * item.cantidad,
-          tipo: producto.categoria,
-        };
-      })
-      .filter(Boolean) as Array<{
-      productoId: string;
-      nombre: string;
-      cantidad: number;
-      precioUnitario: number;
-      subtotal: number;
-      tipo: ProductoCatalogo['categoria'];
-    }>;
-  }, [previewItems, productoById, formik.values.fechaTentativa, feriados]);
+    if (preview.data?.items?.length) {
+      return preview.data.items.map((item) => ({
+        productoId: item.productoId ?? item.nombre,
+        nombre: item.nombre,
+        cantidad: item.cantidad,
+        precioUnitario: item.precioUnitario,
+        subtotal: item.subtotal,
+        tipo: item.categoria,
+        origenItem: item.origenItem,
+        notas: item.notas,
+      }));
+    }
+    return [];
+  }, [preview.data?.items]);
 
   const wa = import.meta.env.VITE_WHATSAPP_NUMBER;
   const waLink = wa
@@ -509,10 +482,23 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
                   <input
                     name="fechaTentativa"
                     type="date"
-                    className={fieldClass()}
+                    min={fechaMinEvento}
+                    className={fieldClass(formik.errors.fechaTentativa)}
                     value={formik.values.fechaTentativa}
-                    onChange={formik.handleChange}
+                    onChange={(e) => {
+                      formik.handleChange(e);
+                      onFechaChange?.(e.target.value);
+                    }}
+                    onBlur={formik.handleBlur}
                   />
+                  <span className="mt-1 block text-xs text-outline">
+                    {mensajeAnticipacion(minDiasAnticipacion)} Mínimo: {fechaMinEvento}.
+                  </span>
+                  {formik.touched.fechaTentativa && formik.errors.fechaTentativa && (
+                    <span className="mt-1 block text-xs text-red-600">
+                      {formik.errors.fechaTentativa}
+                    </span>
+                  )}
                 </label>
                 <label className="block">
                   <span className="text-sm font-medium">Turno</span>
@@ -563,11 +549,11 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
                         ? `${selection.showIds.length} show${selection.showIds.length > 1 ? 's' : ''}`
                         : 'Sin show'}
                     </span>
-                    <span className={chip(selection.cateringIds.length > 0)}>
-                      Catering:{' '}
-                      {selection.cateringIds.length > 0
-                        ? `${selection.cateringIds.length} snack${selection.cateringIds.length > 1 ? 's' : ''}`
-                        : 'Sin catering'}
+                    <span className={chip(selection.cajitasCantidad >= 10)}>
+                      Cajitas: {selection.cajitasCantidad}
+                    </span>
+                    <span className={chip(selection.piqueoIds.length > 0)}>
+                      Piqueos: {selection.piqueoIds.length || '—'}
                     </span>
                     <span className={chip(selection.extraIds.length > 0)}>
                       Extras: {selection.extraIds.length > 0 ? selection.extraIds.length : 'Ninguno'}
@@ -612,7 +598,9 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
               <h3 className="font-display text-headline-md text-primary">Carrito de cotización</h3>
               {cartItems.length === 0 ? (
                 <p className="mt-4 rounded-xl border border-dashed border-outline-variant bg-surface-container-low/60 px-4 py-4 text-sm leading-relaxed text-on-surface-variant">
-                  Aún no agregaste complementos. Elige show, catering o extras en las secciones anteriores.
+                  {!selection.paquete
+                    ? 'Elige un paquete y una fecha para ver el detalle incluido y cobrable.'
+                    : 'Elige una fecha para calcular el desglose de tu paquete.'}
                 </p>
               ) : (
                 <ul className="mt-5 space-y-3">
@@ -624,125 +612,16 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
                       <div className="flex items-start justify-between gap-2">
                         <div>
                           <p className="text-sm font-semibold text-on-surface">{item.nombre}</p>
-                          <p className="text-xs capitalize text-outline">{item.tipo}</p>
+                          <p className="text-xs capitalize text-outline">
+                            {item.origenItem === 'incluido_paquete' ? 'Incluido' : item.tipo}
+                          </p>
                         </div>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (item.tipo === 'show') {
-                              onSelectionChange((prev) => {
-                                const nextCantidades = { ...prev.showCantidades };
-                                delete nextCantidades[item.productoId];
-                                return {
-                                  ...prev,
-                                  showIds: prev.showIds.filter((id) => id !== item.productoId),
-                                  showCantidades: nextCantidades,
-                                };
-                              });
-                            }
-                            if (item.tipo === 'catering') {
-                              onSelectionChange((prev) => {
-                                const nextCantidades = { ...prev.cateringCantidades };
-                                delete nextCantidades[item.productoId];
-                                return {
-                                  ...prev,
-                                  cateringIds: prev.cateringIds.filter((id) => id !== item.productoId),
-                                  cateringCantidades: nextCantidades,
-                                };
-                              });
-                            }
-                            if (item.tipo === 'extra') {
-                              onSelectionChange((prev) => {
-                                const nextCantidades = { ...prev.extraCantidades };
-                                delete nextCantidades[item.productoId];
-                                return {
-                                  ...prev,
-                                  extraIds: prev.extraIds.filter((id) => id !== item.productoId),
-                                  extraCantidades: nextCantidades,
-                                };
-                              });
-                            }
-                          }}
-                          className="text-xs font-semibold text-tertiary hover:text-tertiary-fixed-dim"
-                        >
-                          Quitar
-                        </button>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <button
-                            type="button"
-                            className="h-7 w-7 rounded-full border border-surface-variant text-sm"
-                            onClick={() => {
-                              if (item.tipo === 'catering') {
-                                const producto = productoById.get(item.productoId);
-                                const minQty = getMinCantidadCatering(producto, minimoCatering);
-                                onSelectionChange((prev) => {
-                                  const current = prev.cateringCantidades[item.productoId] ?? minQty;
-                                  return {
-                                    ...prev,
-                                    cateringCantidades: {
-                                      ...prev.cateringCantidades,
-                                      [item.productoId]: Math.max(minQty, current - 1),
-                                    },
-                                  };
-                                });
-                              }
-                              if (item.tipo === 'extra') {
-                                onSelectionChange((prev) => {
-                                  const current = prev.extraCantidades[item.productoId] ?? 1;
-                                  return {
-                                    ...prev,
-                                    extraCantidades: {
-                                      ...prev.extraCantidades,
-                                      [item.productoId]: Math.max(1, current - 1),
-                                    },
-                                  };
-                                });
-                              }
-                            }}
-                            disabled={item.tipo === 'show'}
-                          >
-                            -
-                          </button>
-                          <span className="text-sm font-semibold">x{item.cantidad}</span>
-                          <button
-                            type="button"
-                            className="h-7 w-7 rounded-full border border-surface-variant text-sm"
-                            onClick={() => {
-                              if (item.tipo === 'catering') {
-                                const producto = productoById.get(item.productoId);
-                                const minQty = getMinCantidadCatering(producto, minimoCatering);
-                                onSelectionChange((prev) => {
-                                  const current = prev.cateringCantidades[item.productoId] ?? minQty;
-                                  return {
-                                    ...prev,
-                                    cateringCantidades: {
-                                      ...prev.cateringCantidades,
-                                      [item.productoId]: Math.min(200, current + 1),
-                                    },
-                                  };
-                                });
-                              }
-                              if (item.tipo === 'extra') {
-                                onSelectionChange((prev) => {
-                                  const current = prev.extraCantidades[item.productoId] ?? 1;
-                                  return {
-                                    ...prev,
-                                    extraCantidades: {
-                                      ...prev.extraCantidades,
-                                      [item.productoId]: Math.min(50, current + 1),
-                                    },
-                                  };
-                                });
-                              }
-                            }}
-                            disabled={item.tipo === 'show'}
-                          >
-                            +
-                          </button>
-                        </div>
-                        <p className="text-sm font-semibold text-primary">{formatSoles(item.subtotal)}</p>
+                        <span className="text-sm font-semibold">x{item.cantidad}</span>
+                        <p className="text-sm font-semibold text-primary">
+                          {item.precioUnitario <= 0 ? 'Incluido' : formatSoles(item.subtotal)}
+                        </p>
                       </div>
                     </li>
                   ))}
@@ -755,18 +634,21 @@ export function QuoteForm({ selection, onSelectionChange }: Props) {
               {isLoading && <p className="mt-4 text-sm text-on-surface-variant">Cargando tarifas…</p>}
               {!formik.values.fechaTentativa && (
                 <p className="mt-4 text-sm text-on-surface-variant">
-                  Elige una fecha para calcular una estimación más precisa.
+                  Elige paquete y fecha para calcular una estimación con composición incluida.
                 </p>
               )}
               {preview.isError && formik.values.fechaTentativa && (
                 <p className="mt-4 rounded-lg bg-tertiary-fixed/40 px-3 py-2 text-xs text-tertiary">
-                  No pudimos previsualizar complementos en este momento. Mostramos tarifa base referencial.
+                  No pudimos previsualizar complementos en este momento. Mostramos el paquete seleccionado sin complementos.
                 </p>
               )}
               {estimado && tarifas && (
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
-                    <dt>Tarifa base ({estimado.esFinSemana ? 'fin de semana' : 'L-V'})</dt>
+                    <dt>
+                      {selection.paquete ? `Paquete ${selection.paquete}` : 'Tarifa base'} (
+                      {estimado.esFinSemana ? 'fin de semana' : 'L-V'})
+                    </dt>
                     <dd className="font-semibold">{formatSoles(estimado.base)}</dd>
                   </div>
                   {estimado.extraNinos > 0 && (

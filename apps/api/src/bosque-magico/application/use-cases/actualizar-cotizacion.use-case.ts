@@ -6,20 +6,27 @@ import {
 import {
   CategoriaProducto,
   EtapaCotizacion,
+  OrigenItemCotizacion,
   Prisma,
   TipoItemCotizacion,
 } from '@prisma/client';
-import {
-  mapCotizacionResponse,
-  type CotizacionConItems,
-} from '../../domain/mappers/cotizacion.mapper';
+import { mapCotizacionResponse } from '../../domain/mappers/cotizacion.mapper';
 import { CalculoPreciosService } from '../../domain/services/calculo-precios.service';
+import { ComposicionPaqueteService } from '../../domain/services/composicion-paquete.service';
+import type {
+  ItemPaqueteResuelto,
+  SeleccionPaqueteInput,
+} from '../../domain/services/composicion-paquete.types';
 import { fromDecimal } from '../../domain/utils/decimal';
-import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
+import {
+  CotizacionesRepository,
+  type ItemCotizacionInput,
+} from '../../infrastructure/repositories/cotizaciones.repository';
 import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { ActualizarCotizacionDto } from '../dto/actualizar-cotizacion.dto';
 import { ItemCotizacionDto } from '../dto/item-cotizacion.dto';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 
 @Injectable()
 export class ActualizarCotizacionUseCase {
@@ -27,7 +34,9 @@ export class ActualizarCotizacionUseCase {
     private readonly cotizaciones: CotizacionesRepository,
     private readonly productos: ProductosRepository,
     private readonly calculo: CalculoPreciosService,
+    private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly auditoria: AuditoriaRepository,
+    private readonly anticipacion: AnticipacionEventoService,
   ) {}
 
   private categoriaATipo(cat: CategoriaProducto): TipoItemCotizacion {
@@ -36,13 +45,49 @@ export class ActualizarCotizacionUseCase {
     return TipoItemCotizacion.extra;
   }
 
-  private async resolverItems(
+  private itemsDesdeComposicion(
+    resueltos: ItemPaqueteResuelto[],
+  ): ItemCotizacionInput[] {
+    return resueltos.map((item) => ({
+      productoId: item.productoId,
+      tipo: item.tipo,
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+      precioUnitario: item.precioUnitario,
+      notas: item.notas,
+      origenItem: item.origenItem,
+      creditoAplicado: item.creditoAplicado,
+    }));
+  }
+
+  private mapearSeleccion(
+    dto: ActualizarCotizacionDto,
+  ): SeleccionPaqueteInput | undefined {
+    if (!dto.seleccion) return undefined;
+    const adicionalesManuales =
+      dto.items
+        ?.filter((i) => i.productoId)
+        .map((i) => ({
+          productoId: i.productoId!,
+          cantidad: i.cantidad,
+        })) ?? [];
+    return {
+      showIds: dto.seleccion.showIds,
+      extraIds: dto.seleccion.extraIds,
+      snackId: dto.seleccion.snackId,
+      cajitasCantidad: dto.seleccion.cajitasCantidad,
+      piqueos: dto.seleccion.piqueos,
+      adicionales: [...(dto.seleccion.adicionales ?? []), ...adicionalesManuales],
+    };
+  }
+
+  private async resolverItemsManuales(
     items: ItemCotizacionDto[],
     fecha: Date,
     feriados: ReadonlySet<string>,
   ) {
     const esFin = this.calculo.esTarifaFinSemana(fecha, feriados);
-    const resolved = [];
+    const resolved: ItemCotizacionInput[] = [];
     for (const item of items) {
       if (item.productoId) {
         const producto = await this.productos.obtenerPorId(item.productoId);
@@ -60,6 +105,7 @@ export class ActualizarCotizacionUseCase {
           cantidad: item.cantidad,
           precioUnitario: precio,
           notas: item.notas,
+          origenItem: OrigenItemCotizacion.manual,
         });
       } else {
         resolved.push({
@@ -69,6 +115,7 @@ export class ActualizarCotizacionUseCase {
           cantidad: item.cantidad,
           precioUnitario: item.precioUnitario,
           notas: item.notas,
+          origenItem: OrigenItemCotizacion.manual,
         });
       }
     }
@@ -87,48 +134,80 @@ export class ActualizarCotizacionUseCase {
     const fechaEvento = dto.fechaEvento
       ? new Date(dto.fechaEvento)
       : antes.fechaEvento;
+    if (dto.fechaEvento) {
+      await this.anticipacion.validar(dto.fechaEvento);
+    }
     const feriados = await this.calculo.obtenerFeriados();
     const turno = dto.turno ?? antes.turno;
     const cantidadNinos = dto.cantidadNinos ?? antes.cantidadNinos;
-    const itemsInput =
-      dto.items ??
-      antes.items.map((i) => ({
-        productoId: i.productoId ?? undefined,
-        tipo: i.tipo,
-        nombre: i.nombre,
-        cantidad: i.cantidad,
-        precioUnitario: fromDecimal(i.precioUnitario),
-        notas: i.notas ?? undefined,
-      }));
+    const paquete = dto.paquete ?? antes.paquete;
+    if (!paquete?.trim()) {
+      throw new BadRequestException('Debe elegir un paquete');
+    }
 
-    const items = await this.resolverItems(itemsInput, fechaEvento, feriados);
-    const tarifas = await this.calculo.obtenerTarifas();
-    const resultado = this.calculo.calcular(
-      tarifas,
-      fechaEvento,
-      cantidadNinos,
-      items.map((i) => ({
-        cantidad: i.cantidad,
-        precioUnitario: i.precioUnitario,
-      })),
-      feriados,
-    );
+    const seleccion = this.mapearSeleccion(dto);
+    let items: ItemCotizacionInput[];
+    let montos;
+    let resumenPaquete;
+
+    if (seleccion) {
+      const resultado = await this.composicionPaquete.armarCotizacionConPaquete({
+        paquete,
+        fechaEvento,
+        cantidadNinos,
+        seleccion,
+      });
+      items = this.itemsDesdeComposicion(resultado.composicion.items);
+      montos = resultado.montos;
+      resumenPaquete = resultado.composicion.resumen;
+    } else {
+      const itemsInput =
+        dto.items ??
+        antes.items.map((i) => ({
+          productoId: i.productoId ?? undefined,
+          tipo: i.tipo,
+          nombre: i.nombre,
+          cantidad: i.cantidad,
+          precioUnitario: fromDecimal(i.precioUnitario),
+          notas: i.notas ?? undefined,
+        }));
+
+      items = await this.resolverItemsManuales(itemsInput, fechaEvento, feriados);
+      const tarifas = await this.calculo.obtenerTarifas();
+      const paqueteProducto =
+        await this.composicionPaquete.resolverPaquetePorNombreOCodigo(paquete);
+      const esFin = this.calculo.esTarifaFinSemana(fechaEvento, feriados);
+      const montoBasePaquete = esFin
+        ? fromDecimal(paqueteProducto.precioFinSemana)
+        : fromDecimal(paqueteProducto.precioLunesViernes);
+      montos = this.calculo.calcular(
+        tarifas,
+        fechaEvento,
+        cantidadNinos,
+        items.map((i) => ({
+          cantidad: i.cantidad,
+          precioUnitario: i.precioUnitario,
+        })),
+        feriados,
+        { montoBasePaquete },
+      );
+    }
 
     const despues = await this.cotizaciones.reemplazarItems(
       id,
       items,
       {
-        montoBase: resultado.montoBase,
-        montoNinosExtra: resultado.montoNinosExtra,
-        montoItems: resultado.montoItems,
-        montoTotal: resultado.montoTotal,
+        montoBase: montos.montoBase,
+        montoNinosExtra: montos.montoNinosExtra,
+        montoItems: montos.montoItems,
+        montoTotal: montos.montoTotal,
       },
       {
         fechaEvento,
         turno,
         cantidadNinos,
         tematica: dto.tematica ?? antes.tematica,
-        paquete: dto.paquete ?? antes.paquete,
+        paquete,
         notas: dto.notas ?? antes.notas,
       },
     );
@@ -144,7 +223,8 @@ export class ActualizarCotizacionUseCase {
 
     return {
       ...mapCotizacionResponse(despues),
-      advertencia: resultado.advertencia,
+      advertencia: montos.advertencia,
+      resumenPaquete,
     };
   }
 }

@@ -1,0 +1,102 @@
+import {
+  CategoriaProducto,
+  ModoComposicionPaquete,
+  OrigenItemCotizacion,
+  SubtipoProducto,
+  TipoItemCotizacion,
+} from '@prisma/client';
+
+export type ProductoCotizacionRef = {
+  id: string;
+  codigo: string;
+  nombre: string;
+  categoria: CategoriaProducto;
+  subtipo: SubtipoProducto;
+  precioLunesViernes: number;
+  precioFinSemana: number;
+  cantidadMinima: number;
+};
+
+export type ComposicionRegla = {
+  modo: ModoComposicionPaquete;
+  cantidad: number;
+  montoCredito: number | null;
+  componenteId: string | null;
+  metadata: Record<string, unknown> | null;
+};
+
+export type ItemCantidadInput = {
+  productoId: string;
+  cantidad: number;
+};
+
+export type SeleccionPaqueteInput = {
+  showIds?: string[];
+  extraIds?: string[];
+  snackId?: string;
+  cajitasCantidad?: number;
+  piqueos?: ItemCantidadInput[];
+  adicionales?: ItemCantidadInput[];
+};
+
+export type ItemPaqueteResuelto = {
+  productoId?: string;
+  tipo: TipoItemCotizacion;
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  precioCatalogo: number;
+  origenItem: OrigenItemCotizacion;
+  creditoAplicado?: number;
+  notas?: string;
+};
+
+export type ResumenPaquete = {
+  cajitasIncluidas: number;
+  cajitasSolicitadas: number;
+  cajitasExcedente: number;
+  piqueosCreditoIncluido: number;
+  piqueosValorSeleccionado: number;
+  piqueosExcedente: number;
+};
+
+export type ResultadoComposicionPaquete = {
+  paqueteId: string;
+  paqueteNombre: string;
+  montoBasePaquete: number;
+  items: ItemPaqueteResuelto[];
+  itemsCobrables: Array<{ cantidad: number; precioUnitario: number }>;
+  resumen: ResumenPaquete;
+};
+
+export function precioProducto(
+  producto: ProductoCotizacionRef,
+  esFinSemana: boolean,
+): number {
+  return esFinSemana ? producto.precioFinSemana : producto.precioLunesViernes;
+}
+
+export function categoriaATipoItem(
+  categoria: CategoriaProducto,
+): TipoItemCotizacion {
+  if (categoria === CategoriaProducto.catering) return TipoItemCotizacion.catering;
+  if (categoria === CategoriaProducto.show) return TipoItemCotizacion.show;
+  return TipoItemCotizacion.extra;
+}
+
+export function normalizarNombrePaquete(paquete: string): string {
+  return paquete
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .trim();
+}
+
+export function coincidePaquete(
+  productoNombre: string,
+  paqueteInput: string,
+): boolean {
+  const a = normalizarNombrePaquete(productoNombre);
+  const b = normalizarNombrePaquete(paqueteInput);
+  return a === b || a.includes(b) || b.includes(a);
+}

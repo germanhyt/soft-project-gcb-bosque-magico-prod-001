@@ -19,6 +19,8 @@ export type CotizacionConItems = {
     subtotal: unknown;
     productoId: string | null;
     notas: string | null;
+    origenItem?: string;
+    creditoAplicado?: unknown;
   }>;
   [key: string]: unknown;
 };
@@ -39,6 +41,8 @@ export type CotizacionResponse = CotizacionConItems & {
     subtotal: number;
     productoId: string | null;
     notas: string | null;
+    origenItem?: string;
+    creditoAplicado?: unknown;
   }>;
 };
 
@@ -54,6 +58,11 @@ export function mapCotizacionResponse(
     subtotal: fromDecimal(item.subtotal as never),
     productoId: item.productoId,
     notas: item.notas,
+    origenItem: (item as { origenItem?: string }).origenItem,
+    creditoAplicado:
+      (item as { creditoAplicado?: unknown }).creditoAplicado != null
+        ? fromDecimal((item as { creditoAplicado: unknown }).creditoAplicado as never)
+        : null,
   }));
 
   return {

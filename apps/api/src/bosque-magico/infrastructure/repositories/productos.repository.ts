@@ -18,11 +18,23 @@ export class ProductosRepository {
         ...(params?.categoria ? { categoria: params.categoria } : {}),
       },
       orderBy: [{ categoria: 'asc' }, { nombre: 'asc' }],
+      include: {
+        medios: {
+          orderBy: [{ tipo: 'asc' }, { orden: 'asc' }, { creadoEn: 'asc' }],
+        },
+      },
     });
   }
 
   obtenerPorId(id: string) {
-    return this.prisma.bosqueMagicoProducto.findUnique({ where: { id } });
+    return this.prisma.bosqueMagicoProducto.findUnique({
+      where: { id },
+      include: {
+        medios: {
+          orderBy: [{ tipo: 'asc' }, { orden: 'asc' }, { creadoEn: 'asc' }],
+        },
+      },
+    });
   }
 
   obtenerPorCodigo(codigo: string) {
@@ -36,6 +48,8 @@ export class ProductosRepository {
     precioLunesViernes: number;
     precioFinSemana: number;
     cantidadMinima?: number;
+    subtipo?: import('@prisma/client').SubtipoProducto;
+    unidadesPack?: number;
     descripcion?: string;
     origen?: import('@prisma/client').OrigenProducto;
     costoInterno?: number;
@@ -49,6 +63,8 @@ export class ProductosRepository {
         precioLunesViernes: toDecimal(data.precioLunesViernes),
         precioFinSemana: toDecimal(data.precioFinSemana),
         cantidadMinima: data.cantidadMinima ?? 1,
+        subtipo: data.subtipo,
+        unidadesPack: data.unidadesPack,
         descripcion: data.descripcion,
         origen: data.origen,
         costoInterno:

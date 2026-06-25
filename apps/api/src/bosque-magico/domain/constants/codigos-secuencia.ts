@@ -1,0 +1,3 @@
+export const PREFIJO_CODIGO_COTIZACION = 'COT-';
+export const PREFIJO_NUMERO_CONTRATO = 'BM-CT-';
+export const PADDING_CODIGO_DEFAULT = 5;

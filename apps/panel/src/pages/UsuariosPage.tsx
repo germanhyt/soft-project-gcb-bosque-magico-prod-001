@@ -12,7 +12,8 @@ import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
+import { formatFechaHora } from '../lib/format';
 import {
   TABLE_HEAD_CLASS,
   TABLE_ROW_CLASS,
@@ -49,6 +50,7 @@ export function UsuariosPage() {
   const [estadoFiltro, setEstadoFiltro] = useState<EstadoFiltro>('');
   const [permisoFiltro, setPermisoFiltro] = useState<PermisoFiltro>('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
   const { data = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['usuarios-panel'],
@@ -67,13 +69,13 @@ export function UsuariosPage() {
 
   useEffect(() => {
     setPage(1);
-  }, [busqueda, estadoFiltro, permisoFiltro]);
+  }, [busqueda, estadoFiltro, permisoFiltro, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(usuariosFiltrados.length / DEFAULT_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(usuariosFiltrados.length / pageSize));
   const usuariosPaginados = useMemo(() => {
-    const start = (page - 1) * DEFAULT_PAGE_SIZE;
-    return usuariosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
-  }, [usuariosFiltrados, page]);
+    const start = (page - 1) * pageSize;
+    return usuariosFiltrados.slice(start, start + pageSize);
+  }, [usuariosFiltrados, page, pageSize]);
 
   const crearMut = useMutation({
     mutationFn: crearUsuario,
@@ -183,8 +185,12 @@ export function UsuariosPage() {
               page={page}
               totalPages={totalPages}
               total={usuariosFiltrados.length}
-              pageSize={DEFAULT_PAGE_SIZE}
+              pageSize={pageSize}
               onPageChange={setPage}
+              onPageSizeChange={(size) => {
+                setPageSize(size);
+                setPage(1);
+              }}
             />
           ) : undefined
         }
@@ -192,6 +198,7 @@ export function UsuariosPage() {
         <table className="w-full text-left text-body-sm">
           <thead className={TABLE_HEAD_CLASS}>
             <tr>
+              <th className="px-4 py-3">Registro</th>
               <th className="px-4 py-3">Usuario</th>
               <th className="px-4 py-3">Permisos</th>
               <th className="px-4 py-3">Estado</th>
@@ -201,17 +208,20 @@ export function UsuariosPage() {
           <tbody>
             {isLoading ? (
               <tr>
-                <td colSpan={4} className="px-4 py-8 text-center text-outline">
+                <td colSpan={5} className="px-4 py-8 text-center text-outline">
                   Cargando…
                 </td>
               </tr>
             ) : usuariosPaginados.length === 0 ? (
               <tr>
-                <td colSpan={4} className="px-4 py-6" />
+                <td colSpan={5} className="px-4 py-6" />
               </tr>
             ) : (
               usuariosPaginados.map((u) => (
                 <tr key={u.id} className={TABLE_ROW_CLASS}>
+                  <td className="px-4 py-3 text-xs text-outline">
+                    {formatFechaHora(u.creadoEn)}
+                  </td>
                   <td className="px-4 py-3">
                     <p className="font-medium">{u.nombre}</p>
                     <p className="text-xs text-outline">{u.email}</p>

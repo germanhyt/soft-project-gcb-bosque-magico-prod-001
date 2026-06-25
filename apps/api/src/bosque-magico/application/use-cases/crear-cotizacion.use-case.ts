@@ -3,27 +3,24 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import {
-  CategoriaProducto,
-  EtapaSolicitud,
-  Prisma,
-  TipoItemCotizacion,
-} from '@prisma/client';
-import {
-  mapCotizacionResponse,
-  type CotizacionConItems,
-} from '../../domain/mappers/cotizacion.mapper';
-import { CalculoPreciosService } from '../../domain/services/calculo-precios.service';
-import { fromDecimal } from '../../domain/utils/decimal';
+import { EtapaSolicitud, Prisma } from '@prisma/client';
+import { mapCotizacionResponse } from '../../domain/mappers/cotizacion.mapper';
+import { ComposicionPaqueteService } from '../../domain/services/composicion-paquete.service';
+import type {
+  ItemPaqueteResuelto,
+  SeleccionPaqueteInput,
+} from '../../domain/services/composicion-paquete.types';
 import { ClientesRepository } from '../../infrastructure/repositories/clientes.repository';
-import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
+import {
+  CotizacionesRepository,
+  type ItemCotizacionInput,
+} from '../../infrastructure/repositories/cotizaciones.repository';
 import { CumpleanerosRepository } from '../../infrastructure/repositories/cumpleaneros.repository';
-import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-cotizacion-sync.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { CrearCotizacionDto } from '../dto/crear-cotizacion.dto';
-import { ItemCotizacionDto } from '../dto/item-cotizacion.dto';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 
 @Injectable()
 export class CrearCotizacionUseCase {
@@ -31,56 +28,45 @@ export class CrearCotizacionUseCase {
     private readonly clientes: ClientesRepository,
     private readonly cumpleaneros: CumpleanerosRepository,
     private readonly cotizaciones: CotizacionesRepository,
-    private readonly productos: ProductosRepository,
     private readonly solicitudes: SolicitudesRepository,
     private readonly solicitudSync: SolicitudCotizacionSyncService,
-    private readonly calculo: CalculoPreciosService,
+    private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly auditoria: AuditoriaRepository,
+    private readonly anticipacion: AnticipacionEventoService,
   ) {}
 
-  private categoriaATipo(cat: CategoriaProducto): TipoItemCotizacion {
-    if (cat === CategoriaProducto.catering) return TipoItemCotizacion.catering;
-    if (cat === CategoriaProducto.show) return TipoItemCotizacion.show;
-    return TipoItemCotizacion.extra;
+  private itemsDesdeComposicion(
+    resueltos: ItemPaqueteResuelto[],
+  ): ItemCotizacionInput[] {
+    return resueltos.map((item) => ({
+      productoId: item.productoId,
+      tipo: item.tipo,
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+      precioUnitario: item.precioUnitario,
+      notas: item.notas,
+      origenItem: item.origenItem,
+      creditoAplicado: item.creditoAplicado,
+    }));
   }
 
-  private async resolverItems(
-    items: ItemCotizacionDto[] | undefined,
-    fecha: Date,
-    feriados: ReadonlySet<string>,
-  ) {
-    const esFin = this.calculo.esTarifaFinSemana(fecha, feriados);
-    const resolved = [];
-    for (const item of items ?? []) {
-      if (item.productoId) {
-        const producto = await this.productos.obtenerPorId(item.productoId);
-        if (!producto)
-          throw new BadRequestException(
-            `Producto ${item.productoId} no encontrado`,
-          );
-        const precio = esFin
-          ? fromDecimal(producto.precioFinSemana)
-          : fromDecimal(producto.precioLunesViernes);
-        resolved.push({
-          productoId: producto.id,
-          tipo: this.categoriaATipo(producto.categoria),
-          nombre: producto.nombre,
-          cantidad: item.cantidad,
-          precioUnitario: precio,
-          notas: item.notas,
-        });
-      } else {
-        resolved.push({
-          productoId: undefined,
-          tipo: item.tipo,
-          nombre: item.nombre,
-          cantidad: item.cantidad,
-          precioUnitario: item.precioUnitario,
-          notas: item.notas,
-        });
-      }
-    }
-    return resolved;
+  private mapearSeleccion(dto: CrearCotizacionDto): SeleccionPaqueteInput {
+    const base = dto.seleccion ?? {};
+    const adicionalesManuales =
+      dto.items
+        ?.filter((i) => i.productoId)
+        .map((i) => ({
+          productoId: i.productoId!,
+          cantidad: i.cantidad,
+        })) ?? [];
+    return {
+      showIds: base.showIds,
+      extraIds: base.extraIds,
+      snackId: base.snackId,
+      cajitasCantidad: base.cajitasCantidad,
+      piqueos: base.piqueos,
+      adicionales: [...(base.adicionales ?? []), ...adicionalesManuales],
+    };
   }
 
   async ejecutar(dto: CrearCotizacionDto) {
@@ -94,8 +80,9 @@ export class CrearCotizacionUseCase {
       }
     }
 
+    await this.anticipacion.validar(dto.fechaEvento);
+
     const fechaEvento = new Date(dto.fechaEvento);
-    const feriados = await this.calculo.obtenerFeriados();
     let cliente = await this.clientes.buscarPorCelular(dto.cliente.celular);
     if (!cliente) {
       cliente = await this.clientes.crear({
@@ -117,18 +104,15 @@ export class CrearCotizacionUseCase {
       cliente: { connect: { id: cliente.id } },
     });
 
-    const items = await this.resolverItems(dto.items, fechaEvento, feriados);
-    const tarifas = await this.calculo.obtenerTarifas();
-    const resultado = this.calculo.calcular(
-      tarifas,
-      fechaEvento,
-      dto.cantidadNinos,
-      items.map((i) => ({
-        cantidad: i.cantidad,
-        precioUnitario: i.precioUnitario,
-      })),
-      feriados,
-    );
+    const { composicion, montos } =
+      await this.composicionPaquete.armarCotizacionConPaquete({
+        paquete: dto.paquete,
+        fechaEvento,
+        cantidadNinos: dto.cantidadNinos,
+        seleccion: this.mapearSeleccion(dto),
+      });
+
+    const items = this.itemsDesdeComposicion(composicion.items);
 
     const cotizacion = await this.cotizaciones.crearConItems({
       solicitudId: dto.solicitudId,
@@ -138,13 +122,13 @@ export class CrearCotizacionUseCase {
       turno: dto.turno,
       cantidadNinos: dto.cantidadNinos,
       tematica: dto.tematica,
-      paquete: dto.paquete,
+      paquete: composicion.paqueteNombre,
       notas: dto.notas,
       montos: {
-        montoBase: resultado.montoBase,
-        montoNinosExtra: resultado.montoNinosExtra,
-        montoItems: resultado.montoItems,
-        montoTotal: resultado.montoTotal,
+        montoBase: montos.montoBase,
+        montoNinosExtra: montos.montoNinosExtra,
+        montoItems: montos.montoItems,
+        montoTotal: montos.montoTotal,
       },
       items,
     });
@@ -161,7 +145,8 @@ export class CrearCotizacionUseCase {
 
     return {
       ...mapCotizacionResponse(cotizacion),
-      advertencia: resultado.advertencia,
+      advertencia: montos.advertencia,
+      resumenPaquete: composicion.resumen,
     };
   }
 }

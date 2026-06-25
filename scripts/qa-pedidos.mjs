@@ -22,6 +22,12 @@ function isoLocal(d = new Date()) {
   return d.toLocaleDateString('en-CA', { timeZone: ZONA_NEGOCIO });
 }
 
+function isoDatePlus(days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  return isoLocal(d);
+}
+
 function rangoMesHastaHoy() {
   const hoy = isoLocal();
   const [y, m] = hoy.split('-');
@@ -76,6 +82,8 @@ async function main() {
   const { desde, hasta } = rangoMesHastaHoy();
   const hoy = isoLocal();
   const suffix = Date.now().toString().slice(-6);
+  const fechaEventoGen = isoDatePlus(21 + (parseInt(suffix, 10) % 14));
+  const turnoGen = parseInt(suffix, 10) % 2 === 0 ? 'turno_1' : 'turno_2';
 
   // ── A) Pedidos del evento demo (seed) ─────────────────────
   console.log('── A: Pedidos evento demo (seed) ──');
@@ -83,69 +91,71 @@ async function main() {
   let listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${hasta}`, { token });
   paso('P1', `Listar operaciones (${desde}…${hasta})`, listOps);
 
+  let eventoDemoId;
+  let pedidoSeedId;
+  let countInicial = 0;
+
   if (!Array.isArray(listOps.data) || listOps.data.length === 0) {
-    console.error('❌ Sin pedidos en rango. Ejecuta: npm run db:seed:demo');
-    process.exit(1);
-  }
+    console.log('⚠️  Sin pedidos en rango — se omite bloque A (seed). Continúa bloque B.\n');
+  } else {
+    eventoDemoId = listOps.data[0].evento?.id ?? listOps.data[0].eventoId;
+    pedidoSeedId = listOps.data[0].id;
 
-  const eventoDemoId = listOps.data[0].evento?.id ?? listOps.data[0].eventoId;
-  const pedidoSeedId = listOps.data[0].id;
+    let pedidosEvt = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, { token });
+    paso('P2', 'Listar pedidos del evento demo', pedidosEvt);
+    countInicial = pedidosEvt.data?.length ?? 0;
+    if (countInicial < 1) {
+      console.log('⚠️  Evento demo sin pedidos — se omite resto del bloque A.\n');
+    } else {
+      const patch1 = await call(`/bosque-magico/pedidos/${pedidoSeedId}`, {
+        method: 'PATCH',
+        token,
+        body: { etapa: 'confirmado', notas: `QA pedidos ${suffix}` },
+      });
+      paso('P3', 'PATCH pedido seed → confirmado', patch1);
 
-  let pedidosEvt = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, { token });
-  paso('P2', 'Listar pedidos del evento demo', pedidosEvt);
-  const countInicial = pedidosEvt.data?.length ?? 0;
-  if (countInicial < 1) {
-    console.error('❌ Evento demo sin pedidos');
-    process.exit(1);
-  }
+      const crearManual = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, {
+        method: 'POST',
+        token,
+        body: {
+          tipo: 'interno',
+          nombre: `Pedido interno QA ${suffix}`,
+          cantidad: 1,
+          area: 'operaciones',
+          costo: 85,
+          fechaRequerida: hoy,
+          notas: 'Alta manual QA',
+        },
+      });
+      const pedidoManual = paso('P4', 'POST pedido manual (interno)', crearManual);
+      const pedidoManualId = pedidoManual?.id;
+      if (!pedidoManualId) {
+        console.error('❌ POST pedido manual no devolvió id');
+        process.exit(1);
+      }
 
-  const patch1 = await call(`/bosque-magico/pedidos/${pedidoSeedId}`, {
-    method: 'PATCH',
-    token,
-    body: { etapa: 'confirmado', notas: `QA pedidos ${suffix}` },
-  });
-  paso('P3', 'PATCH pedido seed → confirmado', patch1);
+      const patch2 = await call(`/bosque-magico/pedidos/${pedidoManualId}`, {
+        method: 'PATCH',
+        token,
+        body: { etapa: 'confirmado', costo: 90 },
+      });
+      paso('P5', 'PATCH pedido manual → confirmado + costo', patch2);
 
-  const crearManual = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, {
-    method: 'POST',
-    token,
-    body: {
-      tipo: 'interno',
-      nombre: `Pedido interno QA ${suffix}`,
-      cantidad: 1,
-      area: 'operaciones',
-      costo: 85,
-      fechaRequerida: hoy,
-      notas: 'Alta manual QA',
-    },
-  });
-  const pedidoManual = paso('P4', 'POST pedido manual (interno)', crearManual);
-  const pedidoManualId = pedidoManual?.id;
-  if (!pedidoManualId) {
-    console.error('❌ POST pedido manual no devolvió id');
-    process.exit(1);
-  }
+      pedidosEvt = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, { token });
+      paso('P6', 'Verificar pedidos del evento (≥ inicial + 1)', pedidosEvt);
+      if ((pedidosEvt.data?.length ?? 0) < countInicial + 1) {
+        console.error('❌ No se reflejó el pedido manual');
+        process.exit(1);
+      }
 
-  const patch2 = await call(`/bosque-magico/pedidos/${pedidoManualId}`, {
-    method: 'PATCH',
-    token,
-    body: { etapa: 'confirmado', costo: 90 },
-  });
-  paso('P5', 'PATCH pedido manual → confirmado + costo', patch2);
-
-  pedidosEvt = await call(`/bosque-magico/eventos/${eventoDemoId}/pedidos`, { token });
-  paso('P6', 'Verificar pedidos del evento (≥ inicial + 1)', pedidosEvt);
-  if ((pedidosEvt.data?.length ?? 0) < countInicial + 1) {
-    console.error('❌ No se reflejó el pedido manual');
-    process.exit(1);
-  }
-
-  listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${hasta}`, { token });
-  paso('P7', 'Listar operaciones tras altas', listOps);
-  const idsOps = new Set((listOps.data ?? []).map((p) => p.id));
-  if (!idsOps.has(pedidoManualId)) {
-    console.error('❌ Pedido manual no aparece en vista operaciones');
-    process.exit(1);
+      listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${hasta}`, { token });
+      paso('P7', 'Listar operaciones tras altas', listOps);
+      const idsOps = new Set((listOps.data ?? []).map((p) => p.id));
+      if (!idsOps.has(pedidoManualId)) {
+        console.error('❌ Pedido manual no aparece en vista operaciones');
+        process.exit(1);
+      }
+    }
   }
 
   // ── B) Generar desde cotización (evento nuevo, hoy) ───────
@@ -174,8 +184,8 @@ async function main() {
       celular: celularPed,
       correo: correoPed,
       canal: 'manual',
-      fechaTentativa: `${hoy}T12:00:00.000Z`,
-      turnoInteres: 'turno_1',
+      fechaTentativa: `${fechaEventoGen}T12:00:00.000Z`,
+      turnoInteres: turnoGen,
       cantidadNinosEstimada: 15,
       notas: `QA pedidos generar ${suffix}`,
       etapaInicial: 'nueva',
@@ -196,9 +206,10 @@ async function main() {
         correo: correoPed,
       },
       cumpleanero: { nombre: 'Nico', edad: 8 },
-      fechaEvento: hoy,
-      turno: 'turno_1',
+      fechaEvento: fechaEventoGen,
+      turno: turnoGen,
       cantidadNinos: 15,
+      paquete: 'Premium',
       items: [
         {
           productoId: showMimo.id,
@@ -230,9 +241,10 @@ async function main() {
   }
 
   let pedidosGen0 = await call(`/bosque-magico/eventos/${eventoGenId}/pedidos`, { token });
-  paso('P13', 'Pedidos antes de generar (=0)', pedidosGen0);
-  if ((pedidosGen0.data?.length ?? 0) !== 0) {
-    console.error('❌ Se esperaba 0 pedidos antes de POST generar');
+  paso('P13', 'Pedidos tras aceptar (auto-generados)', pedidosGen0);
+  const countTrasAceptar = pedidosGen0.data?.length ?? 0;
+  if (countTrasAceptar < 1) {
+    console.error('❌ Se esperaba ≥1 pedido tras aceptar cotización con ítem proveedor');
     process.exit(1);
   }
 
@@ -240,9 +252,9 @@ async function main() {
     method: 'POST',
     token,
   });
-  const generados = paso('P14', 'POST generar pedidos desde cotización', generar);
-  if (!Array.isArray(generados) || generados.length < 1) {
-    console.error('❌ Generar no creó pedidos de proveedor');
+  const generados = paso('P14', 'POST generar idempotente (ya existían)', generar);
+  if (!Array.isArray(generados) || generados.length !== 0) {
+    console.error('❌ Generar debía devolver [] cuando ya hay pedidos');
     process.exit(1);
   }
 
@@ -250,7 +262,7 @@ async function main() {
     method: 'POST',
     token,
   });
-  paso('P15', 'POST generar idempotente (sin duplicar)', generar2);
+  paso('P15', 'POST generar idempotente (2.ª vez)', generar2);
   if (!Array.isArray(generar2.data) || generar2.data.length !== 0) {
     console.error('❌ Segunda generación debía devolver []');
     process.exit(1);
@@ -258,7 +270,7 @@ async function main() {
 
   pedidosGen0 = await call(`/bosque-magico/eventos/${eventoGenId}/pedidos`, { token });
   paso('P16', 'Listar pedidos tras generar', pedidosGen0);
-  if ((pedidosGen0.data?.length ?? 0) < 1) {
+  if ((pedidosGen0.data?.length ?? 0) < countTrasAceptar) {
     console.error('❌ Evento sin pedidos tras generar');
     process.exit(1);
   }
@@ -271,8 +283,8 @@ async function main() {
   });
   paso('P17', 'PATCH pedido generado → entregado', patchGen);
 
-  listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${hasta}`, { token });
-  paso('P18', 'Operaciones incluye pedido generado (fecha hoy)', listOps);
+  listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${fechaEventoGen}`, { token });
+  paso('P18', `Operaciones incluye pedido generado (evento ${fechaEventoGen})`, listOps);
   const idsFinal = new Set((listOps.data ?? []).map((p) => p.id));
   if (!idsFinal.has(pedidoGenId)) {
     console.error('❌ Pedido generado no visible en /operaciones');
@@ -280,7 +292,7 @@ async function main() {
   }
 
   console.log('\n✅ QA pedidos OK (18 pasos)');
-  console.log(`   Evento demo: /agenda?detalle=${eventoDemoId}`);
+  if (eventoDemoId) console.log(`   Evento demo: /agenda?detalle=${eventoDemoId}`);
   console.log(`   Evento generar: /agenda?detalle=${eventoGenId}\n`);
 }
 

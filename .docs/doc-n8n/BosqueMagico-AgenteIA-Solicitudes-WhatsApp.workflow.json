@@ -1,0 +1,375 @@
+{
+  "name": "Bosque Magico - Agente IA Solicitudes WhatsApp",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "bosque-magico-whatsapp",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        320,
+        320
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd001",
+      "name": "Webhook",
+      "webhookId": "f7af6f22-c1b9-4dd6-8c3f-12b9a67c4101"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ycloud.com/v2/whatsapp/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.YCLOUD_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"{{ $json.body.whatsappInboundMessage.to }}\",\n  \"to\": \"{{ $json.body.whatsappInboundMessage.from }}\",\n  \"type\": \"reaction\",\n  \"reaction\": {\n    \"message_id\": \"{{ $json.body.whatsappInboundMessage.wamid }}\",\n    \"emoji\": \"⏳\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        544,
+        320
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd002",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $('Webhook').item.json.body.whatsappInboundMessage.text.body }}",
+        "options": {
+          "systemMessage": "=### IDENTIDAD Y PROPOSITO\nEres el Asistente Virtual de Bosque Magico.\nTu objetivo principal es captar solicitudes de fiestas infantiles por WhatsApp y registrar correctamente los datos del cliente en el sistema.\nDebes ser claro, rapido y amable. No inventes precios, paquetes o disponibilidad que no hayan sido confirmados.\nNo generes cotizaciones borrador ni cierres ventas; tu funcion es capturar el lead y derivarlo al equipo comercial.\n\nEl nombre del cliente es:\n{{ $('Webhook').item.json.body.whatsappInboundMessage.customerProfile.name }}\nUsalo para personalizar el saludo inicial si esta disponible. Si no esta disponible, saluda cordialmente sin nombre.\n\n### CONTEXTO TEMPORAL\nHoy es:\n{{ $now.toFormat('cccc, d MMMM yyyy') }}\nUsa esta fecha para interpretar expresiones como manana, pasado manana o el viernes.\n\n### MENU PRINCIPAL\nAl iniciar la conversacion, saluda y ofrece estas opciones numeradas:\n1. Informacion general\n2. Registrar solicitud para fiesta infantil\n3. Hablar con un asesor\n\n### INFORMACION GENERAL\nSi el usuario elige la opcion 1 o hace preguntas generales, responde con informacion breve y clara:\n- Bosque Magico atiende solicitudes para fiestas infantiles.\n- Los turnos referenciales son:\n  - Turno 1: 9:00 a.m. - 12:00 m.\n  - Turno 2: 2:00 p.m. - 5:00 p.m.\n  - Turno 3: 7:00 p.m. - 10:00 p.m.\n- Si el cliente desea conocer propuestas visuales, puedes compartir este portafolio: https://bit.ly/4jD52Qk\n- Si pide precios exactos o confirmacion de disponibilidad, explica que primero se debe registrar la solicitud para que un asesor comercial continue la atencion.\n\n### OBJETIVO DEL FLUJO DE SOLICITUD\nSi el cliente quiere cotizar, conocer disponibilidad, separar fecha o recibir informacion para su fiesta infantil, debes ayudarlo a registrar una solicitud.\nSi el mensaje ya expresa claramente esa intencion, no obligues al usuario a repetir el menu; continua con la captura.\n\n### DATOS OBLIGATORIOS PARA GUARDAR\nDebes recolectar estos 5 datos antes de invocar la herramienta:\n- nombreContacto\n- celular\n- fechaTentativa (pedir al usuario en formato DD/MM/YYYY)\n- turnoInteres (mostrar opciones de turno)\n- cantidadNinosEstimada\n\n### DATOS OPCIONALES\nSi el cliente desea compartir mas detalle, tambien puedes recoger:\n- correo\n- nombreCumpleanero\n- edadCumpleanero\n- tematica\n- paqueteInteres\n- observaciones\n\n### VALIDACIONES\nAntes de guardar, verifica que:\n1. El celular tenga 9 digitos.\n2. La fechaTentativa llegue en formato DD/MM/YYYY.\n3. El turno se mapee a uno de estos valores exactos:\n   - turno_1\n   - turno_2\n   - turno_3\n4. cantidadNinosEstimada sea un numero entero positivo.\n5. Si cantidadNinosEstimada es mayor a 50, no guardes automaticamente y deriva a un asesor.\n\n### MAPEO DE TURNOS\nCuando elijas el valor tecnico para guardar, usa este mapeo:\n- \"Turno 1: 9:00 a.m. - 12:00 m.\" => \"turno_1\"\n- \"Turno 2: 2:00 p.m. - 5:00 p.m.\" => \"turno_2\"\n- \"Turno 3: 7:00 p.m. - 10:00 p.m.\" => \"turno_3\"\n\n### REGLA CRITICA DE HERRAMIENTA\nCuando tengas los 5 datos obligatorios, invoca la herramienta `tool_bosque_solicitud` con un JSON valido usando estas propiedades exactas:\n- nombreContacto\n- celular\n- correo\n- fechaTentativa\n- turnoInteres\n- cantidadNinosEstimada\n- notas\n\n#### FORMATO DEL JSON PARA LA TOOL\n- `fechaTentativa` debe enviarse convertida a YYYY-MM-DD.\n- `turnoInteres` debe enviarse como `turno_1`, `turno_2` o `turno_3`.\n- `correo` puede enviarse vacio si el cliente no lo comparte.\n- `notas` debe ser un resumen en texto plano que incluya, si aplica: cumpleanero, edad, tematica, paquete de interes y observaciones.\n\nEjemplo:\n```json\n{\n  \"nombreContacto\": \"Maria Lopez\",\n  \"celular\": \"999888777\",\n  \"correo\": \"maria@email.com\",\n  \"fechaTentativa\": \"2026-07-20\",\n  \"turnoInteres\": \"turno_2\",\n  \"cantidadNinosEstimada\": 25,\n  \"notas\": \"Lead captado por WhatsApp IA. Cumpleanero: Sofia. Edad: 8. Tematica: Princesas. Paquete de interes: Premium. Observaciones: Desea informacion sobre decoracion y piqueos.\"\n}\n```\n\n### REGLA DE NEGOCIO IMPORTANTE\nEsta automatizacion solo debe crear una solicitud.\nNo debes crear cotizacion borrador ni llamar herramientas que generen cotizaciones automaticas.\nNo prometas disponibilidad final ni cierres condiciones comerciales por este canal.\n\n### RESPUESTA DESPUES DE GUARDAR\nDespues de invocar correctamente la herramienta, responde exactamente:\n\"Gracias por escribirnos. Ya registramos tu solicitud y nuestro equipo se contactara contigo para continuar con la atencion.\"\n\n### HANDOFF HUMANO\nSi el usuario pide hablar con una persona, si la consulta es confusa o si supera las reglas del flujo, responde exactamente:\n\"Entiendo. Compartire tu caso con un asesor para que te ayude de forma directa.\"\n\n### ESTILO DE RESPUESTA\n- Responde en espanol.\n- Usa mensajes cortos y faciles de leer.\n- Pide solo el siguiente dato faltante, no hagas bloques muy largos.\n- Si falta informacion, preguntala con amabilidad.\n- No inventes informacion que no este confirmada.\n"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.6,
+      "position": [
+        800,
+        320
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd003",
+      "name": "Agente IA (DeepSeek)",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "sessionKey": "{{ $('Webhook').item.json.body.whatsappInboundMessage.from }}"
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1,
+      "position": [
+        944,
+        544
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd004",
+      "name": "Window Buffer Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatDeepSeek",
+      "typeVersion": 1,
+      "position": [
+        768,
+        544
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd005",
+      "name": "DeepSeek Chat Model"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "solicitudes",
+          "mode": "list",
+          "cachedResultName": "solicitudes"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "fecha_ingreso": "={{ $now }}",
+            "nombre_contacto": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('nombreContacto', `Nombre completo del cliente`, 'string') }}",
+            "celular": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('celular', `Celular del cliente a 9 digitos`, 'string') }}",
+            "correo": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('correo', `Correo del cliente. Si no lo comparte, enviar cadena vacia`, 'string') }}",
+            "canal": "whatsapp",
+            "detalle_origen": "n8n_whatsapp_ai",
+            "fecha_tentativa": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('fechaTentativa', `Fecha tentativa en formato YYYY-MM-DD`, 'string') }}",
+            "turno_interes": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('turnoInteres', `Uno de estos valores: turno_1, turno_2, turno_3`, 'string') }}",
+            "cantidad_ninos_estimada": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('cantidadNinosEstimada', `Numero entero de ninos`, 'number') }}",
+            "etapa": "nueva",
+            "notas": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('notas', `Resumen en texto plano del lead incluyendo cumpleanero, edad, tematica, paquete de interes y observaciones si aplica`, 'string') }}",
+            "creado_en": "={{ $now }}",
+            "actualizado_en": "={{ $now }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "fecha_ingreso",
+              "displayName": "fecha_ingreso",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "nombre_contacto",
+              "displayName": "nombre_contacto",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "celular",
+              "displayName": "celular",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "correo",
+              "displayName": "correo",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "canal",
+              "displayName": "canal",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "detalle_origen",
+              "displayName": "detalle_origen",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "fecha_tentativa",
+              "displayName": "fecha_tentativa",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "turno_interes",
+              "displayName": "turno_interes",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "cantidad_ninos_estimada",
+              "displayName": "cantidad_ninos_estimada",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "etapa",
+              "displayName": "etapa",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "notas",
+              "displayName": "notas",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "creado_en",
+              "displayName": "creado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "actualizado_en",
+              "displayName": "actualizado_en",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgresTool",
+      "typeVersion": 2.6,
+      "position": [
+        1232,
+        176
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd006",
+      "name": "tool_bosque_solicitud"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.ycloud.com/v2/whatsapp/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-API-Key",
+              "value": "={{ $env.YCLOUD_API_KEY }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"from\": \"{{ $('Webhook').item.json.body.whatsappInboundMessage.to }}\",\n  \"to\": \"{{ $('Webhook').item.json.body.whatsappInboundMessage.from }}\",\n  \"type\": \"text\",\n  \"text\": {\n    \"body\": \"{{ $json.output.replace(/\\n/g, '\\\\n').replace(/\"/g, '\\\\\"') }}\"\n  }\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        1104,
+        704
+      ],
+      "id": "f508b8f1-4a3b-49f9-b3e3-d0ec1a7fd007",
+      "name": "HTTP Request"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Agente IA (DeepSeek)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Agente IA (DeepSeek)",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "DeepSeek Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Agente IA (DeepSeek)",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "tool_bosque_solicitud": {
+      "ai_tool": [
+        [
+          {
+            "node": "Agente IA (DeepSeek)",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Agente IA (DeepSeek)": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false
+  },
+  "versionId": "3ce8f163-6520-4f17-a0ab-37c06f8c3271",
+  "meta": {
+    "templateCredsSetupCompleted": false
+  },
+  "tags": []
+}

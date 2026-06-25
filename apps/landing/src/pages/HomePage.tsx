@@ -6,13 +6,20 @@ import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { QuoteForm } from '../components/cotizador/QuoteForm';
 import { Beneficios } from '../components/sections/Beneficios';
+import { CajitasSelector } from '../components/sections/CajitasSelector';
 import { Catering } from '../components/sections/Catering';
 import { Extras } from '../components/sections/Extras';
 import { Faq } from '../components/sections/Faq';
 import { Hero } from '../components/sections/Hero';
 import { Paquetes } from '../components/sections/Paquetes';
+import { PiqueosSelector } from '../components/sections/PiqueosSelector';
 import { Shows } from '../components/sections/Shows';
-import { INITIAL_QUOTE_SELECTION, type QuoteBuilderSelection } from '../types/quote-builder';
+import { SnackPremiumSelector } from '../components/sections/SnackPremiumSelector';
+import {
+  INITIAL_QUOTE_SELECTION,
+  type QuoteBuilderSelection,
+} from '../types/quote-builder';
+import { paquetesConfigDesdeItems } from '../lib/paquetes-config';
 import { getSelectionMode, SELECTION_MODE_KEYS } from '../lib/selection-mode';
 import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
 
@@ -23,8 +30,10 @@ function getMinimoCatering(items: { clave: string; valor: unknown }[] | undefine
 
 export function HomePage() {
   const [selection, setSelection] = useState<QuoteBuilderSelection>(INITIAL_QUOTE_SELECTION);
+  const [fechaPreview, setFechaPreview] = useState('');
   const { data } = useConfiguracion();
   const minimoCatering = useMemo(() => getMinimoCatering(data?.items), [data?.items]);
+  const paquetesConfig = useMemo(() => paquetesConfigDesdeItems(data?.items), [data?.items]);
   const selectionModes = useMemo(
     () => ({
       shows: getSelectionMode(data?.items, SELECTION_MODE_KEYS.shows, 'single'),
@@ -43,7 +52,55 @@ export function HomePage() {
         <Beneficios />
         <Paquetes
           selectedPaquete={selection.paquete}
-          onSelectPaquete={(paquete) => setSelection((prev) => ({ ...prev, paquete }))}
+          onSelectPaquete={(paquete) =>
+            setSelection((prev) => ({
+              ...prev,
+              paquete,
+              cajitasCantidad: paquetesConfig.cajitasIncluidas,
+              piqueoIds: [],
+              piqueosCantidades: {},
+              snackId: '',
+            }))
+          }
+        />
+        <CajitasSelector
+          selection={selection}
+          onChange={(cajitasCantidad) => setSelection((prev) => ({ ...prev, cajitasCantidad }))}
+        />
+        <SnackPremiumSelector
+          selection={selection}
+          onSelectSnack={(snackId) => setSelection((prev) => ({ ...prev, snackId }))}
+        />
+        <PiqueosSelector
+          selection={selection}
+          fechaReferencia={fechaPreview}
+          onTogglePiqueo={(productoId, checked) =>
+            setSelection((prev) => {
+              if (!checked) {
+                const nextQty = { ...prev.piqueosCantidades };
+                delete nextQty[productoId];
+                return {
+                  ...prev,
+                  piqueoIds: prev.piqueoIds.filter((id) => id !== productoId),
+                  piqueosCantidades: nextQty,
+                };
+              }
+              return {
+                ...prev,
+                piqueoIds: [...prev.piqueoIds, productoId],
+                piqueosCantidades: { ...prev.piqueosCantidades, [productoId]: 1 },
+              };
+            })
+          }
+          onCantidadPiqueo={(productoId, cantidad) =>
+            setSelection((prev) => ({
+              ...prev,
+              piqueosCantidades: {
+                ...prev.piqueosCantidades,
+                [productoId]: Math.max(1, cantidad),
+              },
+            }))
+          }
         />
         <Shows
           selectionMode={selectionModes.shows}
@@ -82,7 +139,11 @@ export function HomePage() {
             )
           }
         />
-        <QuoteForm selection={selection} onSelectionChange={setSelection} />
+        <QuoteForm
+          selection={selection}
+          onSelectionChange={setSelection}
+          onFechaChange={setFechaPreview}
+        />
         <Faq />
       </main>
       <Footer />

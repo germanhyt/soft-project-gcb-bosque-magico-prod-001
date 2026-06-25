@@ -1,17 +1,18 @@
 import { PAQUETES, TERMINOS } from '../../constants/content';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
+import { preciosPaqueteFallback } from '../../lib/pricing';
 import { CARD_CATALOG, GRID_CATALOG_3, cardCatalogState } from '../../constants/design';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SelectionHint } from '../ui/SelectionHint';
-import { CatalogProductImage } from '../ui/CatalogProductImage';
+import { CatalogProductMedia } from '../ui/CatalogProductMedia';
 import { StatusBadge } from '../ui/StatusBadge';
 
 const DETALLE: Record<(typeof PAQUETES)[number], string> = {
-  Básico: 'Espacio, mobiliario base y coordinación del turno.',
-  Estándar: 'Incluye show a elegir y catering básico.',
-  Premium: 'Show + catering ampliado + extras de ambientación.',
+  Básico: 'Alquiler 3 h, 1 extra a elegir y 10 cajitas incluidas.',
+  Estándar: 'Alquiler 3 h, 1 show incluido, 1 extra y 10 cajitas.',
+  Premium: 'Alquiler 3 h, asistente, show incluido, snack, crédito S/ 200 en piqueos y 10 cajitas.',
 };
 
 type Props = {
@@ -26,18 +27,27 @@ export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
     data?.productos.paquetes?.map((paquete) => ({
       nombre: paquete.nombre,
       imagenUrl: paquete.imagenUrl,
+      imagenes: paquete.imagenes,
+      videoUrl: paquete.videoUrl,
+      precioLv: paquete.precioLunesViernes,
+      precioFds: paquete.precioFinSemana,
       detalle:
         paquete.descripcion ||
         DETALLE[paquete.nombre as keyof typeof DETALLE] ||
         'Paquete configurable para tu celebración.',
     })) ??
-    PAQUETES.map((nombre) => ({
-      nombre,
-      imagenUrl: null as string | null,
-      detalle: DETALLE[nombre],
-    }));
-  const baseLv = data?.tarifas.baseLunesViernes ?? 380;
-  const baseFds = data?.tarifas.baseFinSemana ?? 580;
+    PAQUETES.map((nombre) => {
+      const fb = preciosPaqueteFallback(nombre);
+      return {
+        nombre,
+        imagenUrl: null as string | null,
+        imagenes: undefined as string[] | undefined,
+        videoUrl: null as string | null,
+        precioLv: fb.lv,
+        precioFds: fb.fds,
+        detalle: DETALLE[nombre],
+      };
+    });
 
   return (
     <SectionShell id="paquetes" tone="alt">
@@ -71,13 +81,18 @@ export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
                   Más elegido
                 </span>
               )}
-              <CatalogProductImage imagenUrl={paquete.imagenUrl} nombre={paquete.nombre} />
+              <CatalogProductMedia
+                imagenes={paquete.imagenes}
+                imagenUrl={paquete.imagenUrl}
+                videoUrl={paquete.videoUrl}
+                nombre={paquete.nombre}
+              />
               <h3 className="text-headline-md text-primary">{paquete.nombre}</h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-on-surface-variant">{paquete.detalle}</p>
               <p className="mt-5 text-price-tag text-primary">
-                Base L-V desde S/ {baseLv}
+                L-V desde S/ {paquete.precioLv}
                 <span className="mt-1 block text-sm font-normal text-on-surface-variant">
-                  Fines de semana desde S/ {baseFds}
+                  Fines de semana desde S/ {paquete.precioFds}
                 </span>
               </p>
               <div className="mt-5 flex justify-end">

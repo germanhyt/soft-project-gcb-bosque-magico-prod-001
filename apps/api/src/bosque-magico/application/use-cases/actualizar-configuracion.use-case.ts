@@ -15,6 +15,10 @@ const CLAVES_NUMERICAS_PERMITIDAS = new Set([
   'contrato.adelanto_referencial',
   'contrato.garantia_referencial',
   'catering.minimo_unidades',
+  'solicitud.min_dias_anticipacion',
+  'paquetes.cajitas_incluidas',
+  'paquetes.cajitas_precio_excedente',
+  'paquetes.piqueos_credito_premium',
   'smtp.port',
 ]);
 
@@ -39,6 +43,23 @@ const CLAVES_SMTP_TEXTO = new Set([
 ]);
 
 const CLAVES_SMTP_BOOLEAN = new Set(['smtp.secure', 'smtp.habilitado']);
+
+const CLAVES_POSTVENTA_TEXTO = new Set([
+  'postventa.url_formulario',
+  'postventa.asunto',
+  'postventa.cuerpo',
+]);
+
+const CLAVES_POSTVENTA_BOOLEAN = new Set(['postventa.habilitado']);
+
+const CLAVES_PEDIDOS_PROVEEDOR_TEXTO = new Set([
+  'pedidos_proveedor.asunto',
+  'pedidos_proveedor.cuerpo',
+]);
+
+const CLAVES_PEDIDOS_PROVEEDOR_BOOLEAN = new Set([
+  'pedidos_proveedor.notificar_correo',
+]);
 
 const CLAVES_FERIADOS = new Set(['calendario.feriados']);
 
@@ -148,6 +169,14 @@ export class ActualizarConfiguracionUseCase {
       } else if (CLAVES_SMTP_TEXTO.has(item.clave)) {
         valorGuardar = parseTexto(item.valor, item.clave);
       } else if (CLAVES_SMTP_BOOLEAN.has(item.clave)) {
+        valorGuardar = parseBoolean(item.valor, item.clave);
+      } else if (CLAVES_POSTVENTA_TEXTO.has(item.clave)) {
+        valorGuardar = parseTexto(item.valor, item.clave);
+      } else if (CLAVES_POSTVENTA_BOOLEAN.has(item.clave)) {
+        valorGuardar = parseBoolean(item.valor, item.clave);
+      } else if (CLAVES_PEDIDOS_PROVEEDOR_TEXTO.has(item.clave)) {
+        valorGuardar = parseTexto(item.valor, item.clave);
+      } else if (CLAVES_PEDIDOS_PROVEEDOR_BOOLEAN.has(item.clave)) {
         valorGuardar = parseBoolean(item.valor, item.clave);
       } else if (CLAVES_FERIADOS.has(item.clave)) {
         valorGuardar = parseFeriadosValor(item.valor);

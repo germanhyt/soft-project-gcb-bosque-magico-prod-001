@@ -1,5 +1,6 @@
 import type { Pedido } from './pedidos';
 import { linkMailto } from './contacto-links';
+import { linkPedidoProveedorCompleto } from './pedidos-links';
 import { waMeUrlCotizacion } from './whatsapp-cotizacion';
 
 type EventoResumen = {
@@ -20,6 +21,7 @@ Cantidad: ${pedido.cantidad}
 Costo referencial: S/ ${pedido.costo.toFixed(2)}
 ${pedido.fechaRequerida ? `Fecha requerida: ${pedido.fechaRequerida.slice(0, 10)}` : ''}
 ${pedido.notas ? `Notas: ${pedido.notas}` : ''}
+${pedido.linkPublico || pedido.tokenPublico ? `\nConfirmar o rechazar:\n${linkPedidoProveedorCompleto(pedido.linkPublico || pedido.tokenPublico!)}` : ''}
 
 Por favor confirmar disponibilidad. Gracias.`;
 }

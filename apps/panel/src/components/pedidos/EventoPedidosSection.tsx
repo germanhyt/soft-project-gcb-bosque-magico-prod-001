@@ -18,6 +18,7 @@ import { fetchProveedores } from '../../lib/proveedores-api';
 import type { EtapaPedido } from '../../lib/pedidos';
 import { formatFecha } from '../../lib/format';
 import { abrirWhatsApp } from '../../lib/whatsapp-cotizacion';
+import { linkPedidoProveedorCompleto } from '../../lib/pedidos-links';
 import { mailtoPedidoProveedor, waMeUrlPedidoProveedor } from '../../lib/whatsapp-pedido-proveedor';
 import { Button } from '../ui/Button';
 import { PedidoFormModal } from './PedidoFormModal';
@@ -39,7 +40,10 @@ export function EventoPedidosSection({
 }: Props) {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
-  const puedeOperar = etapaEvento === 'confirmado' || etapaEvento === 'realizado';
+  const puedeOperar =
+    etapaEvento === 'por_confirmar' ||
+    etapaEvento === 'confirmado' ||
+    etapaEvento === 'realizado';
 
   const { data: pedidos = [], isLoading } = useQuery({
     queryKey: ['pedidos-evento', eventoId],
@@ -120,7 +124,7 @@ export function EventoPedidosSection({
 
       {etapaEvento === 'por_confirmar' && (
         <p className="text-body-sm text-on-surface-variant">
-          Los pedidos se gestionan cuando el evento está confirmado.
+          Gestiona pedidos a proveedor y confírmalos antes de programar el evento en la agenda.
         </p>
       )}
 
@@ -171,6 +175,25 @@ export function EventoPedidosSection({
               </span>
               {puedeOperar && p.tipo === 'proveedor' && (p.proveedor?.celular || p.proveedor?.correo) && (
                 <div className="mt-2 flex flex-wrap gap-2">
+                  {(p.linkPublico || p.tokenPublico) && (
+                    <Button
+                      variant="ghost"
+                      className="!px-2 !py-1 text-xs"
+                      onClick={async () => {
+                        const url = linkPedidoProveedorCompleto(p.linkPublico || p.tokenPublico!);
+                        await navigator.clipboard.writeText(url);
+                        await Swal.fire({
+                          icon: 'success',
+                          title: 'Enlace copiado',
+                          text: 'Compártelo con el proveedor para confirmar o rechazar.',
+                          timer: 1600,
+                          showConfirmButton: false,
+                        });
+                      }}
+                    >
+                      Copiar enlace proveedor
+                    </Button>
+                  )}
                   {p.proveedor?.celular && (
                     <Button
                       variant="ghost"

@@ -1,3 +1,4 @@
+import { PAGE_SIZE_OPTIONS, type PageSize } from '../../lib/pagination';
 import { Icon } from './Icon';
 
 type Props = {
@@ -6,23 +7,44 @@ type Props = {
   total: number;
   pageSize: number;
   onPageChange: (page: number) => void;
+  onPageSizeChange?: (pageSize: PageSize) => void;
 };
 
 export function DataTablePagination({
   page,
   totalPages,
   total,
-  pageSize: _pageSize,
+  pageSize,
   onPageChange,
+  onPageSizeChange,
 }: Props) {
   const pages = Math.max(1, totalPages);
   const registroLabel = total === 1 ? 'registro' : 'registros';
 
   return (
     <div className="flex flex-wrap items-center justify-between gap-3 border-t border-surface-variant bg-surface-container-low/50 px-4 py-3 text-body-sm">
-      <p className="text-on-surface-variant">
-        Página {page} de {pages} ({total} {registroLabel})
-      </p>
+      <div className="flex flex-wrap items-center gap-3">
+        <p className="text-on-surface-variant">
+          Página {page} de {pages} ({total} {registroLabel})
+        </p>
+        {onPageSizeChange && (
+          <label className="flex items-center gap-2 text-on-surface-variant">
+            <span className="text-xs">Filas</span>
+            <select
+              value={pageSize}
+              onChange={(e) => onPageSizeChange(Number(e.target.value) as PageSize)}
+              className="h-9 rounded-lg border border-surface-variant bg-surface-container-lowest px-2 text-body-sm text-on-surface focus-visible:outline-2 focus-visible:outline-primary"
+              aria-label="Filas por página"
+            >
+              {PAGE_SIZE_OPTIONS.map((size) => (
+                <option key={size} value={size}>
+                  {size}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </div>
       <div className="flex items-center gap-1">
         <button
           type="button"

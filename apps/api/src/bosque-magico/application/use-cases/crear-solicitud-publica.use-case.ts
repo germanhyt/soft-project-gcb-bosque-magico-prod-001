@@ -10,6 +10,7 @@ import {
   puedeCrearCotizacionBorradorDesdeLanding,
 } from '../../domain/mappers/landing-a-cotizacion.mapper';
 import { IdentidadContactoService } from '../../domain/services/identidad-contacto.service';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 
 @Injectable()
 export class CrearSolicitudPublicaUseCase {
@@ -21,9 +22,13 @@ export class CrearSolicitudPublicaUseCase {
     private readonly events: EventsService,
     private readonly crearCotizacion: CrearCotizacionUseCase,
     private readonly identidad: IdentidadContactoService,
+    private readonly anticipacion: AnticipacionEventoService,
   ) {}
 
   async ejecutar(dto: CrearSolicitudPublicaDto) {
+    if (dto.evento?.fechaTentativa) {
+      await this.anticipacion.validar(dto.evento.fechaTentativa);
+    }
     const resumenIdentidad = await this.identidad.resolver(
       dto.cliente.celular,
       dto.cliente.correo,

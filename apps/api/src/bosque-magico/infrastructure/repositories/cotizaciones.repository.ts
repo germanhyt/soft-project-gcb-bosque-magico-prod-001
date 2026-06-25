@@ -4,13 +4,16 @@ import {
   EtapaCotizacion,
   EtapaEvento,
   MotivoCierreCotizacion,
+  OrigenItemCotizacion,
   Prisma,
   TipoItemCotizacion,
   TurnoInteres,
 } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { PREFIJO_CODIGO_COTIZACION } from '../../domain/constants/codigos-secuencia';
 import { toDecimal } from '../../domain/utils/decimal';
+import { SecuenciasRepository } from './secuencias.repository';
 
 export type ItemCotizacionInput = {
   productoId?: string;
@@ -19,6 +22,8 @@ export type ItemCotizacionInput = {
   cantidad: number;
   precioUnitario: number;
   notas?: string;
+  origenItem?: OrigenItemCotizacion;
+  creditoAplicado?: number;
 };
 
 export type MontosCotizacion = {
@@ -30,21 +35,13 @@ export type MontosCotizacion = {
 
 @Injectable()
 export class CotizacionesRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly secuencias: SecuenciasRepository,
+  ) {}
 
-  private async generarCodigo(): Promise<string> {
-    const rows = await this.prisma.bosqueMagicoCotizacion.findMany({
-      where: { codigo: { startsWith: 'COT-' } },
-      select: { codigo: true },
-    });
-    let secuencia = 1;
-    for (const row of rows) {
-      const match = row.codigo.match(/^COT-(\d+)$/);
-      if (match) {
-        secuencia = Math.max(secuencia, Number.parseInt(match[1], 10) + 1);
-      }
-    }
-    return `COT-${String(secuencia).padStart(5, '0')}`;
+  private generarCodigo(): Promise<string> {
+    return this.secuencias.siguiente(PREFIJO_CODIGO_COTIZACION);
   }
 
   private generarToken(): string {
@@ -191,6 +188,11 @@ export class CotizacionesRepository {
             precioUnitario: toDecimal(i.precioUnitario),
             subtotal: toDecimal(i.cantidad * i.precioUnitario),
             notas: i.notas,
+            origenItem: i.origenItem ?? OrigenItemCotizacion.manual,
+            creditoAplicado:
+              i.creditoAplicado != null
+                ? toDecimal(i.creditoAplicado)
+                : undefined,
           })),
         },
       },
@@ -228,6 +230,11 @@ export class CotizacionesRepository {
             precioUnitario: toDecimal(i.precioUnitario),
             subtotal: toDecimal(i.cantidad * i.precioUnitario),
             notas: i.notas,
+            origenItem: i.origenItem ?? OrigenItemCotizacion.manual,
+            creditoAplicado:
+              i.creditoAplicado != null
+                ? toDecimal(i.creditoAplicado)
+                : undefined,
           })),
         },
       },

@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
+import { apiErrorMessage } from '../lib/api-error';
 import {
   actualizarProducto,
   crearProducto,
@@ -8,14 +9,18 @@ import {
   fetchProductosCatalogo,
   guardarConfiguracion,
   eliminarImagenProducto,
+  eliminarMediaProducto,
+  eliminarVideoProducto,
+  guardarVideoUrlProducto,
   subirImagenProducto,
+  subirVideoProducto,
   type ConfigItem,
   type SelectionMode,
   type TurnoConfigValor,
 } from '../lib/configuracion';
 import { horarioDesdeRango, parseTurnoConfig, turnoParaGuardar } from '../lib/turno-config';
 import { parseFeriadosConfig } from '../lib/tarifa-calendario';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
 import { smtpValoresDesdeItems, SMTP_ORDEN } from '../lib/smtp-config';
 import type { Producto } from '../lib/cotizaciones';
 import { FeriadosConfigEditor } from '../components/configuracion/FeriadosConfigEditor';
@@ -53,6 +58,10 @@ const LABELS: Record<string, string> = {
   'contrato.adelanto_referencial': 'Adelanto referencial (S/)',
   'contrato.garantia_referencial': 'Garantía referencial (S/)',
   'catering.minimo_unidades': 'Mínimo catering (unidades)',
+  'solicitud.min_dias_anticipacion': 'Anticipación mínima (días)',
+  'paquetes.cajitas_incluidas': 'Cajitas incluidas por paquete',
+  'paquetes.cajitas_precio_excedente': 'Precio cajita adicional (S/)',
+  'paquetes.piqueos_credito_premium': 'Crédito piqueos Premium (S/)',
 };
 
 const TURNO_KEY_LABEL: Record<string, string> = {
@@ -78,6 +87,58 @@ const SMTP_LABELS: Record<string, string> = {
   'smtp.secure': 'Conexión segura (SSL directo)',
 };
 
+const POSTVENTA_LABELS: Record<string, string> = {
+  'postventa.habilitado': 'Enviar formulario al marcar evento realizado',
+  'postventa.url_formulario': 'URL del formulario',
+  'postventa.asunto': 'Asunto del correo',
+  'postventa.cuerpo': 'Cuerpo del correo',
+};
+
+const POSTVENTA_ORDEN = [
+  'postventa.habilitado',
+  'postventa.url_formulario',
+  'postventa.asunto',
+  'postventa.cuerpo',
+] as const;
+
+const PEDIDOS_PROVEEDOR_LABELS: Record<string, string> = {
+  'pedidos_proveedor.notificar_correo': 'Notificar por correo al crear pedido a proveedor',
+  'pedidos_proveedor.asunto': 'Asunto del correo',
+  'pedidos_proveedor.cuerpo': 'Cuerpo del correo',
+};
+
+const PEDIDOS_PROVEEDOR_ORDEN = [
+  'pedidos_proveedor.notificar_correo',
+  'pedidos_proveedor.asunto',
+  'pedidos_proveedor.cuerpo',
+] as const;
+
+function postventaValoresDesdeItems(items?: ConfigItem[]) {
+  const map: Record<string, string> = {};
+  for (const clave of POSTVENTA_ORDEN) {
+    const item = items?.find((i) => i.clave === clave);
+    if (clave === 'postventa.habilitado') {
+      map[clave] = item?.valor === true ? 'true' : 'false';
+    } else {
+      map[clave] = typeof item?.valor === 'string' ? item.valor : '';
+    }
+  }
+  return map;
+}
+
+function pedidosProveedorValoresDesdeItems(items?: ConfigItem[]) {
+  const map: Record<string, string> = {};
+  for (const clave of PEDIDOS_PROVEEDOR_ORDEN) {
+    const item = items?.find((i) => i.clave === clave);
+    if (clave === 'pedidos_proveedor.notificar_correo') {
+      map[clave] = item?.valor === true ? 'true' : 'false';
+    } else {
+      map[clave] = typeof item?.valor === 'string' ? item.valor : '';
+    }
+  }
+  return map;
+}
+
 const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
   todas: 'Todas',
   paquete: 'Paquetes',
@@ -85,6 +146,18 @@ const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
   catering: 'Catering',
   extra: 'Extras',
   espacio: 'Espacios',
+};
+
+const SUBTIPO_LABEL: Record<string, string> = {
+  general: 'General',
+  piqueo: 'Piqueo',
+  cajita: 'Cajita',
+  snack: 'Snack',
+};
+
+const ORIGEN_LABEL: Record<string, string> = {
+  propio: 'Propio',
+  proveedor: 'Proveedor',
 };
 
 function configLabel(item: ConfigItem) {
@@ -126,11 +199,16 @@ export function ConfiguracionPage() {
   const [turnos, setTurnos] = useState<Record<string, TurnoConfigValor>>({});
   const [cotizadorModos, setCotizadorModos] = useState<Record<string, SelectionMode>>({});
   const [smtpValores, setSmtpValores] = useState<Record<string, string>>({});
+  const [postventaValores, setPostventaValores] = useState<Record<string, string>>({});
+  const [pedidosProveedorValores, setPedidosProveedorValores] = useState<
+    Record<string, string>
+  >({});
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
   const [showInactivos, setShowInactivos] = useState(true);
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
   const [catalogoBusqueda, setCatalogoBusqueda] = useState('');
   const [catalogoPage, setCatalogoPage] = useState(1);
+  const [catalogoPageSize, setCatalogoPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
   const [productoModalOpen, setProductoModalOpen] = useState(false);
   const [productoEditando, setProductoEditando] = useState<Producto | null>(null);
   const qc = useQueryClient();
@@ -175,6 +253,16 @@ export function ConfiguracionPage() {
     [config?.smtp],
   );
 
+  const postventaIniciales = useMemo(
+    () => postventaValoresDesdeItems(config?.postventa),
+    [config?.postventa],
+  );
+
+  const pedidosProveedorIniciales = useMemo(
+    () => pedidosProveedorValoresDesdeItems(config?.pedidosProveedor),
+    [config?.pedidosProveedor],
+  );
+
   const feriadosIniciales = useMemo(() => {
     const item = config?.calendario?.find((c) => c.clave === 'calendario.feriados');
     return parseFeriadosConfig(item?.valor);
@@ -186,6 +274,12 @@ export function ConfiguracionPage() {
     ? cotizadorModos
     : cotizadorModosIniciales;
   const smtpActuales = Object.keys(smtpValores).length ? smtpValores : smtpIniciales;
+  const postventaActuales = Object.keys(postventaValores).length
+    ? postventaValores
+    : postventaIniciales;
+  const pedidosProveedorActuales = Object.keys(pedidosProveedorValores).length
+    ? pedidosProveedorValores
+    : pedidosProveedorIniciales;
   const feriadosActuales = feriadosDraft ?? feriadosIniciales;
 
   const hayCambios =
@@ -193,6 +287,9 @@ export function ConfiguracionPage() {
     JSON.stringify(turnosActuales) !== JSON.stringify(turnosIniciales) ||
     JSON.stringify(cotizadorModosActuales) !== JSON.stringify(cotizadorModosIniciales) ||
     JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales) ||
+    JSON.stringify(postventaActuales) !== JSON.stringify(postventaIniciales) ||
+    JSON.stringify(pedidosProveedorActuales) !==
+      JSON.stringify(pedidosProveedorIniciales) ||
     JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales);
 
   const smtpOrdenados = useMemo(() => {
@@ -214,6 +311,41 @@ export function ConfiguracionPage() {
   }, [config?.smtp, smtpIniciales]);
 
   const smtpHabilitado = smtpActuales['smtp.habilitado'] === 'true';
+  const postventaHabilitado = postventaActuales['postventa.habilitado'] === 'true';
+  const pedidosProveedorHabilitado =
+    pedidosProveedorActuales['pedidos_proveedor.notificar_correo'] === 'true';
+
+  const postventaOrdenados = useMemo(() => {
+    const items = config?.postventa ?? [];
+    const byClave = new Map(items.map((i) => [i.clave, i]));
+    return POSTVENTA_ORDEN.map((clave) => {
+      const existente = byClave.get(clave);
+      if (existente) return existente;
+      return {
+        id: clave,
+        clave,
+        valor: postventaIniciales[clave] ?? '',
+        descripcion: null,
+        esPublico: false,
+      } satisfies ConfigItem;
+    });
+  }, [config?.postventa, postventaIniciales]);
+
+  const pedidosProveedorOrdenados = useMemo(() => {
+    const items = config?.pedidosProveedor ?? [];
+    const byClave = new Map(items.map((i) => [i.clave, i]));
+    return PEDIDOS_PROVEEDOR_ORDEN.map((clave) => {
+      const existente = byClave.get(clave);
+      if (existente) return existente;
+      return {
+        id: clave,
+        clave,
+        valor: pedidosProveedorIniciales[clave] ?? '',
+        descripcion: null,
+        esPublico: false,
+      } satisfies ConfigItem;
+    });
+  }, [config?.pedidosProveedor, pedidosProveedorIniciales]);
 
   const productosFiltrados = useMemo(() => {
     let rows = productos;
@@ -232,17 +364,17 @@ export function ConfiguracionPage() {
 
   useEffect(() => {
     setCatalogoPage(1);
-  }, [categoriaFiltro, showInactivos, catalogoBusqueda]);
+  }, [categoriaFiltro, showInactivos, catalogoBusqueda, catalogoPageSize]);
 
   const catalogoTotalPages = Math.max(
     1,
-    Math.ceil(productosFiltrados.length / DEFAULT_PAGE_SIZE),
+    Math.ceil(productosFiltrados.length / catalogoPageSize),
   );
 
   const productosPaginados = useMemo(() => {
-    const start = (catalogoPage - 1) * DEFAULT_PAGE_SIZE;
-    return productosFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
-  }, [productosFiltrados, catalogoPage]);
+    const start = (catalogoPage - 1) * catalogoPageSize;
+    return productosFiltrados.slice(start, start + catalogoPageSize);
+  }, [productosFiltrados, catalogoPage, catalogoPageSize]);
 
   const guardarConfigMut = useMutation({
     mutationFn: () => {
@@ -268,6 +400,15 @@ export function ConfiguracionPage() {
                 ? Number(v)
                 : v,
         })),
+        ...Object.entries(postventaActuales).map(([clave, v]) => ({
+          clave,
+          valor: clave === 'postventa.habilitado' ? v === 'true' : v,
+        })),
+        ...Object.entries(pedidosProveedorActuales).map(([clave, v]) => ({
+          clave,
+          valor:
+            clave === 'pedidos_proveedor.notificar_correo' ? v === 'true' : v,
+        })),
         ...(JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales)
           ? [{ clave: 'calendario.feriados', valor: feriadosActuales }]
           : []),
@@ -279,6 +420,8 @@ export function ConfiguracionPage() {
       setTurnos({});
       setCotizadorModos({});
       setSmtpValores({});
+      setPostventaValores({});
+      setPedidosProveedorValores({});
       setFeriadosDraft(null);
       await qc.invalidateQueries({ queryKey: ['config-panel'] });
       await qc.invalidateQueries({ queryKey: ['configuracion-publica'] });
@@ -288,6 +431,13 @@ export function ConfiguracionPage() {
         title: 'Configuración guardada',
         timer: 1500,
         showConfirmButton: false,
+      });
+    },
+    onError: (err) => {
+      void Swal.fire({
+        icon: 'error',
+        title: 'No se pudo guardar',
+        text: apiErrorMessage(err, 'Revisa los valores e intenta de nuevo.'),
       });
     },
   });
@@ -314,6 +464,32 @@ export function ConfiguracionPage() {
   const quitarImagenMut = useMutation({
     mutationFn: (id: string) => eliminarImagenProducto(id),
     onSuccess: invalidarCatalogo,
+  });
+
+  const actualizarProductoMedia = async (producto: Producto) => {
+    setProductoEditando(producto);
+    await invalidarCatalogo();
+  };
+
+  const eliminarMediaMut = useMutation({
+    mutationFn: ({ id, mediaId }: { id: string; mediaId: string }) =>
+      eliminarMediaProducto(id, mediaId),
+    onSuccess: actualizarProductoMedia,
+  });
+
+  const guardarVideoUrlMut = useMutation({
+    mutationFn: ({ id, url }: { id: string; url: string }) => guardarVideoUrlProducto(id, url),
+    onSuccess: actualizarProductoMedia,
+  });
+
+  const subirVideoMut = useMutation({
+    mutationFn: ({ id, file }: { id: string; file: File }) => subirVideoProducto(id, file),
+    onSuccess: actualizarProductoMedia,
+  });
+
+  const eliminarVideoMut = useMutation({
+    mutationFn: (id: string) => eliminarVideoProducto(id),
+    onSuccess: actualizarProductoMedia,
   });
 
   const crearProdMut = useMutation({
@@ -600,6 +776,126 @@ export function ConfiguracionPage() {
                 })}
               </div>
             </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Postventa</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                {postventaHabilitado
+                  ? 'Al marcar un evento como realizado se enviará el formulario por correo (requiere SMTP activo y correo del cliente).'
+                  : 'Desactivado: no se envía correo de satisfacción al cerrar eventos.'}
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {postventaOrdenados.map((item) => {
+                  const value = postventaActuales[item.clave] ?? '';
+                  const titulo = POSTVENTA_LABELS[item.clave] ?? item.clave;
+                  const isBoolean = item.clave === 'postventa.habilitado';
+                  const isTextarea = item.clave === 'postventa.cuerpo';
+                  const setValor = (next: string) =>
+                    setPostventaValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : postventaIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isBoolean ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'false'}
+                          onChange={(e) => setValor(e.target.value)}
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type={item.clave === 'postventa.url_formulario' ? 'url' : 'text'}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Pedidos a proveedores</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                {pedidosProveedorHabilitado
+                  ? 'Al crear un pedido de proveedor (automático o manual) se enviará correo si el proveedor tiene email y SMTP está activo.'
+                  : 'Desactivado: el operador contacta al proveedor manualmente (WhatsApp/correo desde el detalle del evento).'}
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {pedidosProveedorOrdenados.map((item) => {
+                  const value = pedidosProveedorActuales[item.clave] ?? '';
+                  const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
+                  const isBoolean = item.clave === 'pedidos_proveedor.notificar_correo';
+                  const isTextarea = item.clave === 'pedidos_proveedor.cuerpo';
+                  const setValor = (next: string) =>
+                    setPedidosProveedorValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isBoolean ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'false'}
+                          onChange={(e) => setValor(e.target.value)}
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
           </form>
 
           {puedeEditarTarifas && (
@@ -686,10 +982,43 @@ export function ConfiguracionPage() {
                   }
                 : undefined
             }
-            onQuitarImagen={
+            onEliminarMedia={
+              productoEditando
+                ? async (mediaId) => {
+                    const actualizado = await eliminarMediaMut.mutateAsync({
+                      id: productoEditando.id,
+                      mediaId,
+                    });
+                    setProductoEditando(actualizado);
+                  }
+                : undefined
+            }
+            onGuardarVideoUrl={
+              productoEditando
+                ? async (url) => {
+                    const actualizado = await guardarVideoUrlMut.mutateAsync({
+                      id: productoEditando.id,
+                      url,
+                    });
+                    setProductoEditando(actualizado);
+                  }
+                : undefined
+            }
+            onSubirVideo={
+              productoEditando
+                ? async (file) => {
+                    const actualizado = await subirVideoMut.mutateAsync({
+                      id: productoEditando.id,
+                      file,
+                    });
+                    setProductoEditando(actualizado);
+                  }
+                : undefined
+            }
+            onEliminarVideo={
               productoEditando
                 ? async () => {
-                    const actualizado = await quitarImagenMut.mutateAsync(productoEditando.id);
+                    const actualizado = await eliminarVideoMut.mutateAsync(productoEditando.id);
                     setProductoEditando(actualizado);
                   }
                 : undefined
@@ -704,6 +1033,8 @@ export function ConfiguracionPage() {
                     precioLunesViernes: payload.precioLunesViernes,
                     precioFinSemana: payload.precioFinSemana,
                     cantidadMinima: payload.cantidadMinima,
+                    subtipo: payload.subtipo,
+                    unidadesPack: payload.unidadesPack ?? null,
                     descripcion: payload.descripcion,
                     origen: payload.origen,
                     costoInterno: payload.costoInterno,
@@ -724,8 +1055,12 @@ export function ConfiguracionPage() {
                   page={catalogoPage}
                   totalPages={catalogoTotalPages}
                   total={productosFiltrados.length}
-                  pageSize={DEFAULT_PAGE_SIZE}
+                  pageSize={catalogoPageSize}
                   onPageChange={setCatalogoPage}
+                  onPageSizeChange={(size) => {
+                    setCatalogoPageSize(size);
+                    setCatalogoPage(1);
+                  }}
                 />
               ) : undefined
             }
@@ -736,7 +1071,9 @@ export function ConfiguracionPage() {
                   <th className="px-4 py-3">Registro</th>
                   <th className="px-4 py-3">Producto</th>
                   <th className="px-4 py-3">Imagen</th>
+                  <th className="px-4 py-3">Origen</th>
                   <th className="px-4 py-3">Categoría</th>
+                  <th className="px-4 py-3">Subtipo / pack</th>
                   <th className="px-4 py-3">L-V / FDS</th>
                   <th className="px-4 py-3">Estado</th>
                   <th className="px-4 py-3 text-right">Acciones</th>
@@ -745,7 +1082,7 @@ export function ConfiguracionPage() {
               <tbody>
                 {loadingProd ? (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center">
+                    <td colSpan={9} className="px-4 py-8 text-center">
                       Cargando…
                     </td>
                   </tr>
@@ -762,6 +1099,8 @@ export function ConfiguracionPage() {
                       <td className="px-4 py-3">
                         <ProductImageDropzone
                           imagenUrl={p.imagenUrl}
+                          imagenes={p.imagenes}
+                          nombre={p.nombre}
                           disabled={
                             !puedeGestionarCatalogo ||
                             imagenMut.isPending ||
@@ -779,8 +1118,23 @@ export function ConfiguracionPage() {
                           }
                         />
                       </td>
+                      <td className="px-4 py-3 text-xs text-on-surface-variant">
+                        {ORIGEN_LABEL[p.origen ?? 'propio'] ?? p.origen ?? '—'}
+                      </td>
                       <td className="px-4 py-3 capitalize">
                         {CATEGORIA_LABEL[p.categoria as CategoriaFiltro] ?? p.categoria}
+                      </td>
+                      <td className="px-4 py-3 text-xs text-on-surface-variant">
+                        {p.categoria === 'catering' && p.subtipo ? (
+                          <>
+                            {SUBTIPO_LABEL[p.subtipo] ?? p.subtipo}
+                            {p.subtipo === 'piqueo' && p.unidadesPack
+                              ? ` · ${p.unidadesPack} uds/pack`
+                              : ''}
+                          </>
+                        ) : (
+                          '—'
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         S/ {p.precioLunesViernes} · S/ {p.precioFinSemana}
@@ -811,7 +1165,7 @@ export function ConfiguracionPage() {
                 )}
                 {!loadingProd && productosFiltrados.length === 0 && (
                   <tr>
-                    <td colSpan={7} className="px-4 py-8 text-center text-outline">
+                    <td colSpan={9} className="px-4 py-8 text-center text-outline">
                       No hay productos para el filtro seleccionado.
                     </td>
                   </tr>

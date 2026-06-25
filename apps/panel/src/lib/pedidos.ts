@@ -30,6 +30,9 @@ export type Pedido = {
   costo: number;
   etapa: EtapaPedido;
   notas: string | null;
+  creadoEn?: string;
+  tokenPublico?: string;
+  linkPublico?: string;
   producto?: { id: string; codigo: string; nombre: string; categoria: string } | null;
   proveedor?: { id: string; nombre: string; celular: string | null; correo?: string | null } | null;
 };

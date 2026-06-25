@@ -146,3 +146,7 @@ Desde `apps/panel` también: `yarn dev` / `npm run dev` (equivalente a `dev:pane
 - [MODULOS_ESTADO.md](./MODULOS_ESTADO.md) — módulos y fases (gentle-ai)
 - [BOSQUE_PLAN_IMPLEMENTACION_REACT_NEST.md](./BOSQUE_PLAN_IMPLEMENTACION_REACT_NEST.md) — plan técnico
 - [BOSQUE_LOGICA_NEGOCIO_MODELO_DATOS.md](./BOSQUE_LOGICA_NEGOCIO_MODELO_DATOS.md) — negocio y trazabilidad
+
+
+
+

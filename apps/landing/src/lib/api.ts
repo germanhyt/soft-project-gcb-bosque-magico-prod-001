@@ -20,11 +20,15 @@ export type ProductoCatalogo = {
   codigo: string;
   nombre: string;
   categoria: 'show' | 'catering' | 'extra' | 'paquete' | 'espacio';
+  subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
   precioLunesViernes: number;
   precioFinSemana: number;
   cantidadMinima: number;
+  unidadesPack?: number | null;
   descripcion: string | null;
   imagenUrl: string | null;
+  imagenes?: string[];
+  videoUrl?: string | null;
   etapa: 'activo' | 'inactivo';
 };
 
@@ -34,6 +38,9 @@ export type CatalogoPublicoResponse = {
     paquetes: ProductoCatalogo[];
     shows: ProductoCatalogo[];
     catering: ProductoCatalogo[];
+    piqueos: ProductoCatalogo[];
+    cajitas: ProductoCatalogo[];
+    snacks: ProductoCatalogo[];
     extras: ProductoCatalogo[];
     espacios: ProductoCatalogo[];
   };
@@ -78,10 +85,21 @@ export type PreviewCotizacionItemPayload = {
   cantidad: number;
 };
 
+export type SeleccionPaquetePayload = {
+  showIds?: string[];
+  extraIds?: string[];
+  snackId?: string;
+  cajitasCantidad?: number;
+  piqueos?: PreviewCotizacionItemPayload[];
+  adicionales?: PreviewCotizacionItemPayload[];
+};
+
 export type PreviewCotizacionPayload = {
   fechaEvento: string;
   cantidadNinos: number;
-  paquete?: string;
+  paquete: string;
+  seleccion?: SeleccionPaquetePayload;
+  /** @deprecated usar seleccion.adicionales */
   items?: PreviewCotizacionItemPayload[];
 };
 
@@ -97,14 +115,26 @@ export type PreviewCotizacionResponse = {
     total: number;
   };
   advertencia?: string;
+  resumenPaquete?: {
+    cajitasIncluidas: number;
+    cajitasSolicitadas: number;
+    cajitasExcedente: number;
+    piqueosCreditoIncluido: number;
+    piqueosValorSeleccionado: number;
+    piqueosExcedente: number;
+  };
   items: Array<{
-    productoId: string;
+    productoId?: string;
     nombre: string;
-    categoria: 'show' | 'catering' | 'extra' | 'paquete' | 'espacio';
+    categoria: string;
     cantidad: number;
     cantidadMinima: number;
     precioUnitario: number;
+    precioCatalogo?: number;
     subtotal: number;
+    origenItem?: string;
+    creditoAplicado?: number;
+    notas?: string;
   }>;
 };
 

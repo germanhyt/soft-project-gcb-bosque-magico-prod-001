@@ -11,6 +11,7 @@ import {
 import { ActualizarSolicitudDto } from '../dto/actualizar-solicitud.dto';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 
 function nullableText(value?: string) {
   if (value === undefined) return undefined;
@@ -35,6 +36,7 @@ export class ActualizarSolicitudUseCase {
   constructor(
     private readonly solicitudes: SolicitudesRepository,
     private readonly auditoria: AuditoriaRepository,
+    private readonly anticipacion: AnticipacionEventoService,
   ) {}
 
   async ejecutar(id: string, dto: ActualizarSolicitudDto) {
@@ -62,6 +64,10 @@ export class ActualizarSolicitudUseCase {
       : esSeguimiento && !esDatos
         ? new Date()
         : undefined;
+
+    if (dto.fechaTentativa !== undefined && dto.fechaTentativa.trim()) {
+      await this.anticipacion.validar(dto.fechaTentativa.trim());
+    }
 
     const data: Prisma.BosqueMagicoSolicitudUpdateInput = {
       ...(dto.nombreContacto !== undefined

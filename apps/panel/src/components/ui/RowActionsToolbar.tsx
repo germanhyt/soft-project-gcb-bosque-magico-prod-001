@@ -17,7 +17,7 @@ export function RowActionsToolbar({ children, className = '' }: Props) {
   );
 }
 
-/** Separador visual entre grupos de acciones en filas (contacto | envío | CRUD | confirmar). */
+/** Separador visual entre grupos de acciones en filas (compartir | registro | envío | confirmar). */
 export function RowActionDivider() {
   return <span className="mx-1 h-5 w-px shrink-0 bg-outline-variant/60" aria-hidden />;
 }

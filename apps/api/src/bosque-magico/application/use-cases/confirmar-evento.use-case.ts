@@ -10,6 +10,7 @@ import { mapEventoResponse } from '../../domain/mappers/evento.mapper';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
+import { PrecondicionesEventoService } from '../../domain/services/precondiciones-evento.service';
 
 @Injectable()
 export class ConfirmarEventoUseCase {
@@ -19,6 +20,7 @@ export class ConfirmarEventoUseCase {
     private readonly events: EventsService,
     private readonly generarPedidos: GenerarPedidosEventoUseCase,
     private readonly generarTareas: GenerarTareasEventoUseCase,
+    private readonly precondiciones: PrecondicionesEventoService,
   ) {}
 
   async ejecutar(id: string) {
@@ -29,6 +31,8 @@ export class ConfirmarEventoUseCase {
         'Solo se confirman eventos en etapa Por confirmar',
       );
     }
+
+    await this.precondiciones.validarParaConfirmar(id);
 
     const conflicto = await this.eventos.existeConflictoActivo(
       antes.fechaEvento,

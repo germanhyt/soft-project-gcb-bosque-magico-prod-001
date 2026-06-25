@@ -6,7 +6,9 @@ import {
 } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { PREFIJO_NUMERO_CONTRATO } from '../../domain/constants/codigos-secuencia';
 import { toDecimal } from '../../domain/utils/decimal';
+import { SecuenciasRepository } from './secuencias.repository';
 
 export type CrearContratoInput = {
   eventoId: string;
@@ -37,7 +39,10 @@ export type ActualizarContratoBorradorInput = Omit<
 
 @Injectable()
 export class ContratosRepository {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly secuencias: SecuenciasRepository,
+  ) {}
 
   private includeRelaciones = {
     evento: {
@@ -50,19 +55,13 @@ export class ContratosRepository {
       },
     },
     cotizacion: { select: { id: true, codigo: true } },
+    adjuntos: {
+      orderBy: { tipo: 'asc' as const },
+    },
   };
 
-  private async generarNumero(): Promise<string> {
-    const ultimo = await this.prisma.bosqueMagicoContrato.findFirst({
-      orderBy: { numero: 'desc' },
-      select: { numero: true },
-    });
-    let secuencia = 1;
-    const match = ultimo?.numero.match(/(\d+)\s*$/);
-    if (match) {
-      secuencia = Number.parseInt(match[1], 10) + 1;
-    }
-    return `BM-CT-${String(secuencia).padStart(5, '0')}`;
+  private generarNumero(): Promise<string> {
+    return this.secuencias.siguiente(PREFIJO_NUMERO_CONTRATO);
   }
 
   private generarToken(): string {

@@ -1,5 +1,6 @@
 import type { Producto } from '../../lib/cotizaciones';
 import { cantidadItemProducto } from '../../lib/producto-cotizacion';
+import { descripcionPrecioProducto } from '../../lib/origen-item';
 import { INPUT_CLASS } from '../../constants/design';
 
 type Props = {
@@ -10,6 +11,14 @@ type Props = {
   onToggle: (id: string) => void;
   onCantidad: (id: string, cantidad: number) => void;
 };
+
+function esPiqueo(p: Producto) {
+  return p.subtipo === 'piqueo';
+}
+
+function etiquetaCantidad(p: Producto): string {
+  return esPiqueo(p) ? 'Nº de packs' : 'Cantidad';
+}
 
 export function CatalogoSection({
   titulo,
@@ -23,22 +32,39 @@ export function CatalogoSection({
 
   return (
     <div className="mt-4">
-      <p className="text-label-caps text-outline">{titulo}</p>
+      {titulo ? <p className="text-label-caps text-outline">{titulo}</p> : null}
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {productos.map((p) => {
           const selected = selectedIds.includes(p.id);
           const permiteCantidad = p.categoria === 'catering' || p.categoria === 'extra';
           const qty = cantidades[p.id] ?? cantidadItemProducto(p, {});
+          const udsPack = p.unidadesPack ?? 1;
 
           return (
             <div
               key={p.id}
-              className={`rounded-lg border p-3 ${
+              role="button"
+              tabIndex={0}
+              onClick={() => onToggle(p.id)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                  event.preventDefault();
+                  onToggle(p.id);
+                }
+              }}
+              className={`cursor-pointer rounded-lg border p-3 outline-none focus-visible:ring-2 focus-visible:ring-primary ${
                 selected ? 'border-primary bg-primary-fixed/30' : 'border-outline-variant'
               }`}
             >
-              <label className="flex cursor-pointer items-start gap-2">
-                <input type="checkbox" checked={selected} onChange={() => onToggle(p.id)} />
+              <div className="flex items-start gap-2">
+                <input
+                  type="checkbox"
+                  checked={selected}
+                  readOnly
+                  tabIndex={-1}
+                  aria-hidden
+                  className="pointer-events-none mt-0.5 shrink-0"
+                />
                 {p.imagenUrl && (
                   <img src={p.imagenUrl} alt="" className="h-10 w-10 shrink-0 rounded object-cover" />
                 )}
@@ -46,13 +72,21 @@ export function CatalogoSection({
                   <span className="font-medium">{p.nombre}</span>
                   <span className="block text-xs text-on-surface-variant">
                     L-V S/ {p.precioLunesViernes} · FDS S/ {p.precioFinSemana}
-                    {p.cantidadMinima > 1 ? ` · mín. ${p.cantidadMinima}` : ''}
+                    {esPiqueo(p)
+                      ? ` · pack ${udsPack} uds (${descripcionPrecioProducto(p)})`
+                      : p.cantidadMinima > 1
+                        ? ` · mín. ${p.cantidadMinima}`
+                        : ''}
                   </span>
                 </span>
-              </label>
+              </div>
               {selected && permiteCantidad && (
-                <label className="mt-2 flex items-center gap-2 text-body-sm">
-                  <span className="text-on-surface-variant">Cant.</span>
+                <div
+                  className="mt-2 flex items-center gap-2 text-body-sm"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <span className="text-on-surface-variant">{etiquetaCantidad(p)}</span>
                   <input
                     type="number"
                     min={p.cantidadMinima}
@@ -60,7 +94,12 @@ export function CatalogoSection({
                     value={qty}
                     onChange={(e) => onCantidad(p.id, Math.max(p.cantidadMinima, Number(e.target.value) || 0))}
                   />
-                </label>
+                  {esPiqueo(p) && (
+                    <span className="text-xs text-outline">
+                      = {(qty * udsPack).toLocaleString('es-PE')} porciones
+                    </span>
+                  )}
+                </div>
               )}
             </div>
           );

@@ -39,27 +39,40 @@ import { ObtenerAgendaUseCase } from './application/use-cases/obtener-agenda.use
 import { ObtenerCatalogoPublicoUseCase } from './application/use-cases/obtener-catalogo-publico.use-case';
 import { ObtenerConfiguracionPublicaUseCase } from './application/use-cases/obtener-configuracion-publica.use-case';
 import { ObtenerContratoPublicoUseCase } from './application/use-cases/obtener-contrato-publico.use-case';
+import { ObtenerPedidoPublicoUseCase } from './application/use-cases/obtener-pedido-publico.use-case';
+import { ResponderPedidoPublicoUseCase } from './application/use-cases/responder-pedido-publico.use-case';
 import { ObtenerCotizacionUseCase } from './application/use-cases/obtener-cotizacion.use-case';
 import { PrevisualizarCotizacionPublicaUseCase } from './application/use-cases/previsualizar-cotizacion-publica.use-case';
 import { RealizarEventoUseCase } from './application/use-cases/realizar-evento.use-case';
 import { EliminarImagenProductoUseCase } from './application/use-cases/eliminar-imagen-producto.use-case';
+import { GestionarMediaProductoUseCase } from './application/use-cases/gestionar-media-producto.use-case';
 import { SubirImagenProductoUseCase } from './application/use-cases/subir-imagen-producto.use-case';
 import { TomarSolicitudUseCase } from './application/use-cases/tomar-solicitud.use-case';
+import { ComposicionPaqueteRepository } from './infrastructure/repositories/composicion-paquete.repository';
 import { CalculoPreciosService } from './domain/services/calculo-precios.service';
+import { ComposicionPaqueteService } from './domain/services/composicion-paquete.service';
 import { SolicitudCotizacionSyncService } from './domain/services/solicitud-cotizacion-sync.service';
 import { SmtpService } from './domain/services/smtp.service';
+import { AnticipacionEventoService } from './domain/services/anticipacion-evento.service';
+import { PrecondicionesEventoService } from './domain/services/precondiciones-evento.service';
 import { IdentidadContactoService } from './domain/services/identidad-contacto.service';
 import { AuditoriaRepository } from './infrastructure/repositories/auditoria.repository';
 import { ClientesRepository } from './infrastructure/repositories/clientes.repository';
 import { ContratosRepository } from './infrastructure/repositories/contratos.repository';
+import { ContratoAdjuntosRepository } from './infrastructure/repositories/contrato-adjuntos.repository';
 import { ConfiguracionRepository } from './infrastructure/repositories/configuracion.repository';
 import { CotizacionesRepository } from './infrastructure/repositories/cotizaciones.repository';
 import { CumpleanerosRepository } from './infrastructure/repositories/cumpleaneros.repository';
 import { EventosRepository } from './infrastructure/repositories/eventos.repository';
+import { ProductoMediaRepository } from './infrastructure/repositories/producto-media.repository';
 import { ProductosRepository } from './infrastructure/repositories/productos.repository';
+import { ProductoMediaSyncService } from './domain/services/producto-media-sync.service';
+import { PostventaService } from './domain/services/postventa.service';
+import { NotificacionProveedorService } from './domain/services/notificacion-proveedor.service';
 import { PedidosRepository } from './infrastructure/repositories/pedidos.repository';
 import { ProveedoresRepository } from './infrastructure/repositories/proveedores.repository';
 import { TareasEventoRepository } from './infrastructure/repositories/tareas-evento.repository';
+import { SecuenciasRepository } from './infrastructure/repositories/secuencias.repository';
 import { SolicitudesRepository } from './infrastructure/repositories/solicitudes.repository';
 import { AuditoriaController } from './presentation/auditoria.controller';
 import { ConfiguracionController } from './presentation/configuracion.controller';
@@ -82,6 +95,10 @@ import {
   MarcarContratoEnviadoUseCase,
   MarcarContratoFirmadoUseCase,
 } from './application/use-cases/marcar-contrato-estado.use-case';
+import {
+  EliminarAdjuntoContratoUseCase,
+  SubirAdjuntoContratoUseCase,
+} from './application/use-cases/gestionar-adjunto-contrato.use-case';
 import {
   ObtenerContratoPorEventoUseCase,
   ObtenerContratoUseCase,
@@ -111,14 +128,24 @@ import {
     CumpleanerosRepository,
     CotizacionesRepository,
     ProductosRepository,
+    ProductoMediaRepository,
+    ComposicionPaqueteRepository,
     ProveedoresRepository,
     PedidosRepository,
     TareasEventoRepository,
     EventosRepository,
     ContratosRepository,
+    ContratoAdjuntosRepository,
+    SecuenciasRepository,
     CalculoPreciosService,
+    ComposicionPaqueteService,
     SolicitudCotizacionSyncService,
     SmtpService,
+    PostventaService,
+    NotificacionProveedorService,
+    ProductoMediaSyncService,
+    AnticipacionEventoService,
+    PrecondicionesEventoService,
     IdentidadContactoService,
     ListarClientesUseCase,
     ObtenerClienteUseCase,
@@ -172,8 +199,13 @@ import {
     ListarAuditoriaUseCase,
     SubirImagenProductoUseCase,
     EliminarImagenProductoUseCase,
+    GestionarMediaProductoUseCase,
     PrevisualizarCotizacionPublicaUseCase,
     ObtenerContratoPublicoUseCase,
+    ObtenerPedidoPublicoUseCase,
+    ResponderPedidoPublicoUseCase,
+    SubirAdjuntoContratoUseCase,
+    EliminarAdjuntoContratoUseCase,
   ],
 })
 export class BosqueMagicoModule {}

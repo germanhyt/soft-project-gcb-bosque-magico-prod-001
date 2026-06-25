@@ -5,6 +5,7 @@ import {
   Prisma,
   TipoPedido,
 } from '@prisma/client';
+import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { toDecimal } from '../../domain/utils/decimal';
 
@@ -12,9 +13,25 @@ import { toDecimal } from '../../domain/utils/decimal';
 export class PedidosRepository {
   constructor(private readonly prisma: PrismaService) {}
 
+  private generarToken(): string {
+    return randomBytes(24).toString('hex');
+  }
+
   private includeRelaciones = {
     producto: { select: { id: true, codigo: true, nombre: true, categoria: true } },
     proveedor: { select: { id: true, nombre: true, celular: true, correo: true } },
+  };
+
+  private includePublico = {
+    proveedor: { select: { nombre: true } },
+    evento: {
+      select: {
+        id: true,
+        fechaEvento: true,
+        turno: true,
+        cliente: { select: { nombreCompleto: true } },
+      },
+    },
   };
 
   listarPorEvento(eventoId: string) {
@@ -67,6 +84,13 @@ export class PedidosRepository {
     });
   }
 
+  obtenerPorToken(token: string) {
+    return this.prisma.bosqueMagicoPedido.findUnique({
+      where: { tokenPublico: token },
+      include: this.includePublico,
+    });
+  }
+
   crear(data: {
     eventoId: string;
     productoId?: string;
@@ -93,6 +117,7 @@ export class PedidosRepository {
         costo: toDecimal(data.costo),
         notas: data.notas,
         etapa: data.etapa ?? EtapaPedido.pendiente,
+        tokenPublico: this.generarToken(),
       },
       include: this.includeRelaciones,
     });
@@ -114,6 +139,7 @@ export class PedidosRepository {
             costo: toDecimal(item.costo),
             notas: item.notas,
             etapa: item.etapa ?? EtapaPedido.pendiente,
+            tokenPublico: this.generarToken(),
           },
           include: this.includeRelaciones,
         }),

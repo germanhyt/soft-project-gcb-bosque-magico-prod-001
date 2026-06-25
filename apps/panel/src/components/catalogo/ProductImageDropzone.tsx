@@ -3,17 +3,31 @@ import { useDropzone } from 'react-dropzone';
 import Swal from 'sweetalert2';
 import { apiErrorMessage } from '../../lib/api-error';
 import { resolveAssetUrl } from '../../lib/media';
+import { ProductImageGalleryModal } from './ProductImageGalleryModal';
 
 type Props = {
   imagenUrl?: string | null;
+  imagenes?: string[];
+  nombre?: string;
   onUpload: (file: File) => Promise<void>;
   onRemove?: () => Promise<void>;
   disabled?: boolean;
 };
 
-export function ProductImageDropzone({ imagenUrl, onUpload, onRemove, disabled }: Props) {
+export function ProductImageDropzone({
+  imagenUrl,
+  imagenes,
+  nombre = 'Producto',
+  onUpload,
+  onRemove,
+  disabled,
+}: Props) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
+  const [galleryOpen, setGalleryOpen] = useState(false);
+
+  const galeria =
+    imagenes?.length ? imagenes : imagenUrl?.trim() ? [imagenUrl] : [];
 
   const handleRemove = async () => {
     if (!onRemove) return;
@@ -68,11 +82,21 @@ export function ProductImageDropzone({ imagenUrl, onUpload, onRemove, disabled }
     <div className="flex flex-col gap-2">
       <div className="flex flex-wrap items-center gap-3">
         {src ? (
-          <img
-            src={src}
-            alt=""
-            className="h-12 w-12 shrink-0 rounded-lg border border-surface-variant object-cover"
-          />
+          <button
+            type="button"
+            onClick={() => galeria.length > 0 && setGalleryOpen(true)}
+            className={`shrink-0 rounded-lg border border-surface-variant ${galeria.length > 0 ? 'cursor-zoom-in hover:ring-2 hover:ring-primary/40' : ''}`}
+            title={galeria.length > 1 ? `Ver ${galeria.length} imágenes` : 'Ver imagen'}
+          >
+            <img
+              src={src}
+              alt=""
+              className="h-12 w-12 rounded-lg object-cover"
+            />
+            {galeria.length > 1 && (
+              <span className="sr-only">{galeria.length} imágenes</span>
+            )}
+          </button>
         ) : (
           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-lg border border-dashed border-outline bg-surface-container-low text-xs text-outline">
             Sin foto
@@ -101,6 +125,12 @@ export function ProductImageDropzone({ imagenUrl, onUpload, onRemove, disabled }
         )}
       </div>
       {error && <p className="text-xs text-error">{error}</p>}
+      <ProductImageGalleryModal
+        open={galleryOpen}
+        onClose={() => setGalleryOpen(false)}
+        nombre={nombre}
+        imagenes={galeria}
+      />
     </div>
   );
 }

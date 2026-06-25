@@ -7,7 +7,7 @@ import {
   fetchProveedores,
 } from '../../lib/proveedores-api';
 import type { Proveedor } from '../../lib/proveedores';
-import { DEFAULT_PAGE_SIZE } from '../../lib/pagination';
+import { DEFAULT_PAGE_SIZE, type PageSize } from '../../lib/pagination';
 import { Button } from '../ui/Button';
 import { DataTableCard } from '../ui/DataTableCard';
 import { DataTablePagination } from '../ui/DataTablePagination';
@@ -39,6 +39,7 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
   const [editando, setEditando] = useState<Proveedor | null>(null);
   const [busqueda, setBusqueda] = useState('');
   const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
   const { data: proveedores = [], isLoading } = useQuery({
     queryKey: ['proveedores'],
@@ -52,13 +53,13 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
 
   useEffect(() => {
     setPage(1);
-  }, [busqueda]);
+  }, [busqueda, pageSize]);
 
-  const totalPages = Math.max(1, Math.ceil(proveedoresFiltrados.length / DEFAULT_PAGE_SIZE));
+  const totalPages = Math.max(1, Math.ceil(proveedoresFiltrados.length / pageSize));
   const proveedoresPaginados = useMemo(() => {
-    const start = (page - 1) * DEFAULT_PAGE_SIZE;
-    return proveedoresFiltrados.slice(start, start + DEFAULT_PAGE_SIZE);
-  }, [proveedoresFiltrados, page]);
+    const start = (page - 1) * pageSize;
+    return proveedoresFiltrados.slice(start, start + pageSize);
+  }, [proveedoresFiltrados, page, pageSize]);
 
   const crearMut = useMutation({
     mutationFn: crearProveedor,
@@ -122,8 +123,12 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
                 page={page}
                 totalPages={totalPages}
                 total={proveedoresFiltrados.length}
-                pageSize={DEFAULT_PAGE_SIZE}
+                pageSize={pageSize}
                 onPageChange={setPage}
+                onPageSizeChange={(size) => {
+                  setPageSize(size);
+                  setPage(1);
+                }}
               />
             ) : undefined
           }

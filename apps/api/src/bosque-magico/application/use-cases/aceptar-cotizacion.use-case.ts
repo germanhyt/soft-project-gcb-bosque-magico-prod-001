@@ -10,6 +10,8 @@ import {
 } from '../../domain/mappers/cotizacion.mapper';
 import { EventsService } from '../../../events/events.service';
 import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-cotizacion-sync.service';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { GenerarPedidosEventoUseCase } from './generar-pedidos-evento.use-case';
 import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 
@@ -20,6 +22,8 @@ export class AceptarCotizacionUseCase {
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
     private readonly solicitudSync: SolicitudCotizacionSyncService,
+    private readonly anticipacion: AnticipacionEventoService,
+    private readonly generarPedidos: GenerarPedidosEventoUseCase,
   ) {}
 
   async ejecutarPorId(id: string) {
@@ -55,6 +59,8 @@ export class AceptarCotizacionUseCase {
       );
     }
 
+    await this.anticipacion.validar(cot.fechaEvento);
+
     const conflicto = await this.cotizaciones.existeEventoActivoEnSlot(
       cot.fechaEvento,
       cot.turno,
@@ -70,6 +76,7 @@ export class AceptarCotizacionUseCase {
       aceptadaEn: new Date(),
     });
     const evento = await this.cotizaciones.crearEventoDesdeCotizacion(cot.id);
+    await this.generarPedidos.ejecutar(evento.id);
 
     await this.auditoria.registrar({
       tipoEntidad: 'cotizacion',

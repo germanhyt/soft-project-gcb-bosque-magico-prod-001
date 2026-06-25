@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
-import { RowActionsToolbar } from '../ui/RowActionsToolbar';
+import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
 
 export type ClienteAccionesTarget = {
@@ -23,6 +23,7 @@ export function ClienteRowActions({ cliente, onVer, onEditar, mostrarVer = true 
 
   return (
     <RowActionsToolbar>
+      {/* Contacto: WA · correo · enlace */}
       <ContactoInlineActions
         nombre={cliente.nombreCompleto}
         celular={cliente.celular}
@@ -30,21 +31,28 @@ export function ClienteRowActions({ cliente, onVer, onEditar, mostrarVer = true 
         enlaceCopiar={enlace}
         enlaceTitulo="Copiar enlace del cliente"
       />
-      {mostrarVer && (
-        <RowIconButton
-          icon="visibility"
-          title="Ver cliente"
-          aria-label="Ver cliente"
-          onClick={() => (onVer ? onVer(cliente.id) : navigate(`/clientes/${cliente.id}`))}
-        />
-      )}
-      {onEditar && (
-        <RowIconButton
-          icon="edit_square"
-          title="Editar cliente"
-          aria-label="Editar cliente"
-          onClick={() => onEditar(cliente.id)}
-        />
+
+      {/* Registro: ver · editar */}
+      {(mostrarVer || onEditar) && (
+        <>
+          <RowActionDivider />
+          {mostrarVer && (
+            <RowIconButton
+              icon="visibility"
+              title="Ver cliente"
+              aria-label="Ver cliente"
+              onClick={() => (onVer ? onVer(cliente.id) : navigate(`/clientes/${cliente.id}`))}
+            />
+          )}
+          {onEditar && (
+            <RowIconButton
+              icon="edit_square"
+              title="Editar cliente"
+              aria-label="Editar cliente"
+              onClick={() => onEditar(cliente.id)}
+            />
+          )}
+        </>
       )}
     </RowActionsToolbar>
   );

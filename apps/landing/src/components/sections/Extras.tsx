@@ -5,7 +5,7 @@ import { selectionHint, type SelectionMode } from '../../lib/selection-mode';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SelectionHint } from '../ui/SelectionHint';
-import { CatalogProductImage } from '../ui/CatalogProductImage';
+import { CatalogProductMedia } from '../ui/CatalogProductMedia';
 import { StatusBadge } from '../ui/StatusBadge';
 
 type Props = {
@@ -47,7 +47,12 @@ export function Extras({ selectionMode, selectedExtraIds, onToggleExtra }: Props
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.35, delay: index * 0.05 }}
             >
-              <CatalogProductImage imagenUrl={extra.imagenUrl} nombre={extra.nombre} />
+              <CatalogProductMedia
+                imagenes={extra.imagenes}
+                imagenUrl={extra.imagenUrl}
+                videoUrl={extra.videoUrl}
+                nombre={extra.nombre}
+              />
               <h3 className="font-display text-lg font-bold text-primary">{extra.nombre}</h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-on-surface-variant">
                 {extra.descripcion || 'Servicio adicional configurable para tu evento.'}

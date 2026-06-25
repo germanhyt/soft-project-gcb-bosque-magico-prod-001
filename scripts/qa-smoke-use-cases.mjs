@@ -9,7 +9,7 @@ const email = process.env.QA_EMAIL || DEFAULT_EMAIL;
 const password = process.env.QA_PASSWORD || DEFAULT_PASSWORD;
 
 const nowIso = new Date().toISOString();
-const futureIso = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
+const futureIso = new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString();
 const suffix = Date.now().toString().slice(-6);
 
 const mockSolicitudPublica = {
@@ -176,6 +176,7 @@ async function main() {
       fechaEvento: futureIso.slice(0, 10),
       turno: 'turno_1',
       cantidadNinos: 20,
+      paquete: 'Básico',
       items: [],
     },
   });
@@ -204,6 +205,40 @@ async function main() {
   if (!eventoId) {
     console.error('❌ Aceptar cotizacion no devolvio eventoId');
     process.exit(1);
+  }
+
+  const fechaEvt = futureIso.slice(0, 10);
+  const contrato = await call(`/bosque-magico/eventos/${eventoId}/contrato`, {
+    method: 'POST',
+    token,
+    body: {
+      numeroDocumento: '12345678',
+      tipoComprobante: 'boleta',
+      documentoTributario: '12345678',
+      horarioInicio: '15:00',
+      horarioFin: '18:00',
+      adelanto1Monto: 300,
+      adelanto1Fecha: fechaEvt,
+    },
+  });
+  assertOk('Generar contrato', contrato, [200, 201]);
+
+  const contratoId = contrato.data?.id;
+  const enviarContrato = await call(`/bosque-magico/contratos/${contratoId}/enviar`, {
+    method: 'POST',
+    token,
+  });
+  assertOk('Enviar contrato', enviarContrato, [200, 201]);
+
+  const pedidosEvt = await call(`/bosque-magico/eventos/${eventoId}/pedidos`, { token });
+  for (const p of pedidosEvt.data ?? []) {
+    if (p.tipo === 'proveedor') {
+      await call(`/bosque-magico/pedidos/${p.id}`, {
+        method: 'PATCH',
+        token,
+        body: { etapa: 'confirmado' },
+      });
+    }
   }
 
   const confirmarEvt = await call(`/bosque-magico/eventos/${eventoId}/confirmar`, {

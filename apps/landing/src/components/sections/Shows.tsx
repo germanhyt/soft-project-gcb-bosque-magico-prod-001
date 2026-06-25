@@ -6,7 +6,7 @@ import { selectionHint, type SelectionMode } from '../../lib/selection-mode';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SelectionHint } from '../ui/SelectionHint';
-import { CatalogProductImage } from '../ui/CatalogProductImage';
+import { CatalogProductMedia } from '../ui/CatalogProductMedia';
 import { StatusBadge } from '../ui/StatusBadge';
 
 type Props = {
@@ -23,6 +23,8 @@ export function Shows({ selectionMode, selectedShowIds, onToggleShow }: Props) {
       id: show.id,
       nombre: show.nombre,
       imagenUrl: show.imagenUrl,
+      imagenes: show.imagenes,
+      videoUrl: show.videoUrl,
       detalle: show.descripcion || 'Show disponible para complementar tu celebración.',
     })) ?? [];
 
@@ -58,7 +60,12 @@ export function Shows({ selectionMode, selectedShowIds, onToggleShow }: Props) {
               viewport={{ once: true, margin: '-80px' }}
               transition={{ duration: 0.35, delay: index * 0.05 }}
             >
-              <CatalogProductImage imagenUrl={show.imagenUrl} nombre={show.nombre} />
+              <CatalogProductMedia
+                imagenes={show.imagenes}
+                imagenUrl={show.imagenUrl}
+                videoUrl={show.videoUrl}
+                nombre={show.nombre}
+              />
               <h3 className="font-display text-lg font-bold text-primary">{show.nombre}</h3>
               <p className="mt-2 flex-1 text-sm leading-relaxed text-on-surface-variant">{show.detalle}</p>
               <div className="mt-5 flex justify-end">

@@ -29,13 +29,19 @@ export class ListarConfiguracionPanelUseCase {
     const cotizador = items.filter((i) => i.clave.startsWith('cotizador.'));
     const calendario = items.filter((i) => i.clave.startsWith('calendario.'));
     const smtp = items.filter((i) => i.clave.startsWith('smtp.'));
+    const postventa = items.filter((i) => i.clave.startsWith('postventa.'));
+    const pedidosProveedor = items.filter((i) =>
+      i.clave.startsWith('pedidos_proveedor.'),
+    );
     const otras = items.filter(
       (i) =>
         typeof i.valor !== 'number' &&
         !i.clave.startsWith('turnos.') &&
         !i.clave.startsWith('cotizador.') &&
         !i.clave.startsWith('calendario.') &&
-        !i.clave.startsWith('smtp.'),
+        !i.clave.startsWith('smtp.') &&
+        !i.clave.startsWith('postventa.') &&
+        !i.clave.startsWith('pedidos_proveedor.'),
     );
     return {
       numericas,
@@ -43,6 +49,8 @@ export class ListarConfiguracionPanelUseCase {
       cotizador,
       calendario,
       smtp,
+      postventa,
+      pedidosProveedor,
       otras,
       todas: items,
       meta: {

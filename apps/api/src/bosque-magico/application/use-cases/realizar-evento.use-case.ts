@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { EtapaEvento, Prisma } from '@prisma/client';
 import { mapEventoResponse } from '../../domain/mappers/evento.mapper';
+import { PostventaService } from '../../domain/services/postventa.service';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
@@ -15,6 +16,7 @@ export class RealizarEventoUseCase {
     private readonly eventos: EventosRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
+    private readonly postventa: PostventaService,
   ) {}
 
   async ejecutar(id: string) {
@@ -38,6 +40,31 @@ export class RealizarEventoUseCase {
       actorTipo: 'vendedor',
       despues: JSON.parse(JSON.stringify(despues)) as Prisma.InputJsonValue,
     });
+
+    const postventa = await this.postventa.enviarFormulario({
+      correoCliente: antes.cliente?.correo,
+      nombreCliente: antes.cliente?.nombreCompleto ?? 'Cliente',
+      codigoEvento: antes.cotizacion?.codigo ?? null,
+      fechaEvento: antes.fechaEvento,
+    });
+
+    if (postventa.enviado) {
+      await this.auditoria.registrar({
+        tipoEntidad: 'evento',
+        entidadId: id,
+        accion: 'postventa_enviada',
+        actorTipo: 'sistema',
+        metadata: { correo: antes.cliente?.correo },
+      });
+    } else if (postventa.motivo && postventa.motivo !== 'deshabilitado') {
+      await this.auditoria.registrar({
+        tipoEntidad: 'evento',
+        entidadId: id,
+        accion: 'postventa_omitida',
+        actorTipo: 'sistema',
+        metadata: { motivo: postventa.motivo },
+      });
+    }
 
     this.events.eventoActualizado(id, 'Evento realizado');
 

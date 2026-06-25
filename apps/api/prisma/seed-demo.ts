@@ -3,6 +3,7 @@
  * Idempotente: puede ejecutarse varias veces (upsert / skip si ya existe).
  * Ejecutar después del seed base: npm run prisma:seed:demo -w @bosque/api
  */
+import { randomBytes } from 'crypto';
 import {
   AreaPedido,
   CanalSolicitud,
@@ -240,6 +241,7 @@ async function seedOperacionesDemo() {
         costo: 140,
         etapa: EtapaPedido.solicitado,
         notas: 'Pedido demo generado en seed',
+        tokenPublico: randomBytes(24).toString('hex'),
       },
     });
   }

@@ -1,13 +1,18 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Post,
   Query,
+  UploadedFile,
+  UseInterceptors,
 } from '@nestjs/common';
-import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { EtapaContrato } from '@prisma/client';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { memoryStorage } from 'multer';
+import { EtapaContrato, TipoAdjuntoContrato } from '@prisma/client';
 import { GenerarContratoDto } from '../application/dto/generar-contrato.dto';
 import { GenerarContratoEventoUseCase } from '../application/use-cases/generar-contrato-evento.use-case';
 import { ListarContratosUseCase } from '../application/use-cases/listar-contratos.use-case';
@@ -19,6 +24,10 @@ import {
   ObtenerContratoPorEventoUseCase,
   ObtenerContratoUseCase,
 } from '../application/use-cases/obtener-contrato.use-case';
+import {
+  EliminarAdjuntoContratoUseCase,
+  SubirAdjuntoContratoUseCase,
+} from '../application/use-cases/gestionar-adjunto-contrato.use-case';
 
 @ApiTags('Panel - Contratos')
 @Controller('bosque-magico')
@@ -30,6 +39,8 @@ export class ContratosController {
     private readonly generar: GenerarContratoEventoUseCase,
     private readonly marcarEnviado: MarcarContratoEnviadoUseCase,
     private readonly marcarFirmado: MarcarContratoFirmadoUseCase,
+    private readonly subirAdjunto: SubirAdjuntoContratoUseCase,
+    private readonly eliminarAdjunto: EliminarAdjuntoContratoUseCase,
   ) {}
 
   @Get('contratos')
@@ -82,5 +93,37 @@ export class ContratosController {
   @ApiOperation({ summary: 'Marcar contrato como firmado' })
   firmar(@Param('id') id: string) {
     return this.marcarFirmado.ejecutar(id);
+  }
+
+  @Post('contratos/:id/adjuntos/:tipo')
+  @ApiOperation({ summary: 'Subir comprobante o documento contable (PDF/imagen, máx. 5 MB)' })
+  @ApiConsumes('multipart/form-data')
+  @ApiBody({
+    schema: {
+      type: 'object',
+      properties: { archivo: { type: 'string', format: 'binary' } },
+    },
+  })
+  @UseInterceptors(
+    FileInterceptor('archivo', {
+      storage: memoryStorage(),
+      limits: { fileSize: 5 * 1024 * 1024 },
+    }),
+  )
+  subirAdjuntoContrato(
+    @Param('id') id: string,
+    @Param('tipo') tipo: TipoAdjuntoContrato,
+    @UploadedFile() file: Express.Multer.File,
+  ) {
+    return this.subirAdjunto.ejecutar(id, tipo, file);
+  }
+
+  @Delete('contratos/:id/adjuntos/:tipo')
+  @ApiOperation({ summary: 'Quitar adjunto del contrato' })
+  quitarAdjuntoContrato(
+    @Param('id') id: string,
+    @Param('tipo') tipo: TipoAdjuntoContrato,
+  ) {
+    return this.eliminarAdjunto.ejecutar(id, tipo);
   }
 }

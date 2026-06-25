@@ -204,6 +204,62 @@ enum OrigenProducto {
 
 
 
+enum SubtipoProducto {
+
+  general
+
+  cajita
+
+  piqueo
+
+  snack
+
+}
+
+
+
+enum TipoMediaProducto {
+
+  imagen
+
+  video
+
+}
+
+
+
+enum ModoComposicionPaquete {
+
+  producto_fijo
+
+  slot_show
+
+  slot_extra
+
+  cajitas_incluidas
+
+  credito_piqueos
+
+  eleccion_snack
+
+}
+
+
+
+enum OrigenItemCotizacion {
+
+  incluido_paquete
+
+  excedente_paquete
+
+  adicional
+
+  manual
+
+}
+
+
+
 enum EtapaProveedor {
 
   activo
@@ -281,6 +337,16 @@ enum TipoComprobanteContrato {
   boleta
 
   factura
+
+}
+
+
+
+enum TipoAdjuntoContrato {
+
+  comprobante_pago
+
+  documento_contabilidad
 
 }
 
@@ -478,6 +544,10 @@ model BosqueMagicoProducto {
 
   proveedorId        String?             @map("proveedor_id")
 
+  subtipo            SubtipoProducto     @default(general)
+
+  unidadesPack       Int?                @map("unidades_pack")
+
   creadoEn           DateTime          @default(now()) @map("creado_en")
 
   actualizadoEn      DateTime          @updatedAt @map("actualizado_en")
@@ -490,9 +560,83 @@ model BosqueMagicoProducto {
 
   pedidos BosqueMagicoPedido[]
 
+  composicionPaquete      BosqueMagicoProductoComposicion[] @relation("ComposicionPaquete")
+
+  composicionComponente   BosqueMagicoProductoComposicion[] @relation("ComposicionComponente")
+
+  medios                  BosqueMagicoProductoMedia[]
+
 
 
   @@map("productos")
+
+}
+
+
+
+model BosqueMagicoProductoMedia {
+
+  id             String            @id @default(uuid())
+
+  productoId     String            @map("producto_id")
+
+  tipo           TipoMediaProducto
+
+  url            String
+
+  nombreOriginal String?           @map("nombre_original")
+
+  mimeType       String?           @map("mime_type")
+
+  tamanoBytes    Int?              @map("tamano_bytes")
+
+  orden          Int               @default(0)
+
+  creadoEn       DateTime          @default(now()) @map("creado_en")
+
+
+
+  producto BosqueMagicoProducto @relation(fields: [productoId], references: [id], onDelete: Cascade)
+
+
+
+  @@index([productoId, tipo])
+
+  @@map("producto_media")
+
+}
+
+
+
+model BosqueMagicoProductoComposicion {
+
+  id           String                 @id @default(uuid())
+
+  paqueteId    String                 @map("paquete_id")
+
+  modo         ModoComposicionPaquete
+
+  componenteId String?                @map("componente_id")
+
+  cantidad     Int                    @default(1)
+
+  montoCredito Decimal?               @map("monto_credito") @db.Decimal(10, 2)
+
+  orden        Int                    @default(0)
+
+  metadata     Json?
+
+
+
+  paquete    BosqueMagicoProducto  @relation("ComposicionPaquete", fields: [paqueteId], references: [id], onDelete: Cascade)
+
+  componente BosqueMagicoProducto? @relation("ComposicionComponente", fields: [componenteId], references: [id])
+
+
+
+  @@index([paqueteId])
+
+  @@map("producto_composicion")
 
 }
 
@@ -595,6 +739,10 @@ model BosqueMagicoItemCotizacion {
   subtotal        Decimal            @db.Decimal(10, 2)
 
   notas           String?
+
+  origenItem      OrigenItemCotizacion @default(manual) @map("origen_item")
+
+  creditoAplicado Decimal?             @map("credito_aplicado") @db.Decimal(10, 2)
 
 
 
@@ -734,6 +882,8 @@ model BosqueMagicoContrato {
 
   cotizacion BosqueMagicoCotizacion @relation(fields: [cotizacionId], references: [id])
 
+  adjuntos   BosqueMagicoContratoAdjunto[]
+
 
 
   @@index([etapa])
@@ -741,6 +891,38 @@ model BosqueMagicoContrato {
   @@index([cotizacionId])
 
   @@map("contratos")
+
+}
+
+
+
+model BosqueMagicoContratoAdjunto {
+
+  id             String              @id @default(uuid())
+
+  contratoId     String              @map("contrato_id")
+
+  tipo           TipoAdjuntoContrato
+
+  nombreOriginal String              @map("nombre_original")
+
+  url            String
+
+  mimeType       String?             @map("mime_type")
+
+  tamanoBytes    Int                 @map("tamano_bytes")
+
+  creadoEn       DateTime            @default(now()) @map("creado_en")
+
+
+
+  contrato BosqueMagicoContrato @relation(fields: [contratoId], references: [id], onDelete: Cascade)
+
+
+
+  @@unique([contratoId, tipo])
+
+  @@map("contrato_adjuntos")
 
 }
 
@@ -898,6 +1080,8 @@ model BosqueMagicoPedido {
 
   notas          String?     @db.Text
 
+  tokenPublico   String      @unique @map("token_publico")
+
   creadoEn       DateTime    @default(now()) @map("creado_en")
 
   actualizadoEn  DateTime    @updatedAt @map("actualizado_en")
@@ -1017,6 +1201,24 @@ model BosqueMagicoPanelNotificacionUsuario {
   @@index([usuarioId, oculta])
 
   @@map("panel_notificaciones_usuario")
+
+}
+
+
+
+model BosqueMagicoSecuencia {
+
+  prefijo       String   @id
+
+  ultimo        Int      @default(0)
+
+  padding       Int      @default(5)
+
+  actualizadoEn DateTime @updatedAt @map("actualizado_en")
+
+
+
+  @@map("secuencias")
 
 }
 

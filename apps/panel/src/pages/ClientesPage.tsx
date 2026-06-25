@@ -15,8 +15,8 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TABLE_HEAD_CLASS, TABLE_ROW_CLASS, TABLE_ROW_SELECTED } from '../constants/design';
 import { useAuth } from '../contexts/AuthContext';
 import { actualizarCliente, fetchCliente, fetchClientes } from '../lib/clientes';
-import { formatFecha } from '../lib/format';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { formatFecha, formatFechaHora } from '../lib/format';
+import { useListPagination } from '../hooks/useListPagination';
 import { PageHeader } from '../components/ui/PageHeader';
 
 export function ClientesPage() {
@@ -25,7 +25,7 @@ export function ClientesPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const qParam = searchParams.get('q') ?? '';
   const detalleParam = searchParams.get('detalle');
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const { page, pageSize, setPage, setPageSize } = useListPagination();
   const [busqueda, setBusqueda] = useState(qParam);
   const [selectedId, setSelectedId] = useState<string | null>(detalleParam);
   const [editId, setEditId] = useState<string | null>(null);
@@ -55,11 +55,11 @@ export function ClientesPage() {
   }, [busqueda, searchParams, setSearchParams]);
 
   const { data: paginated, isLoading, isError } = useQuery({
-    queryKey: ['clientes', qParam, page],
+    queryKey: ['clientes', qParam, page, pageSize],
     queryFn: () =>
       fetchClientes({
         page,
-        pageSize: DEFAULT_PAGE_SIZE,
+        pageSize,
         q: qParam || undefined,
       }),
   });
@@ -86,13 +86,6 @@ export function ClientesPage() {
     const next = new URLSearchParams(searchParams);
     next.delete('detalle');
     setSearchParams(next, { replace: true });
-  };
-
-  const setPage = (p: number) => {
-    const next = new URLSearchParams(searchParams);
-    if (p <= 1) next.delete('page');
-    else next.set('page', String(p));
-    setSearchParams(next);
   };
 
   const guardarMut = useMutation({
@@ -140,14 +133,16 @@ export function ClientesPage() {
             page={meta?.page ?? page}
             totalPages={meta?.totalPages ?? 1}
             total={meta?.total ?? 0}
-            pageSize={meta?.pageSize ?? DEFAULT_PAGE_SIZE}
+            pageSize={meta?.pageSize ?? pageSize}
             onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
         }
       >
         <table className="w-full text-left text-body-sm">
           <thead className={TABLE_HEAD_CLASS}>
             <tr>
+              <th className="px-4 py-3">Registro</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Contacto</th>
               <th className="px-4 py-3">Solicitudes</th>
@@ -159,13 +154,13 @@ export function ClientesPage() {
           <tbody className="text-on-surface">
             {isLoading ? (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-outline">
+                <td colSpan={7} className="px-4 py-8 text-center text-outline">
                   Cargando…
                 </td>
               </tr>
             ) : data.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-4 py-6" />
+                <td colSpan={7} className="px-4 py-6" />
               </tr>
             ) : (
               data.map((c) => (
@@ -175,6 +170,9 @@ export function ClientesPage() {
                     selectedId === c.id ? TABLE_ROW_SELECTED : ''
                   }`}
                 >
+                  <td className="px-4 py-3 text-xs text-outline">
+                    {formatFechaHora(c.creadoEn)}
+                  </td>
                   <td className="px-4 py-3">
                     <button
                       type="button"

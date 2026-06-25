@@ -6,7 +6,7 @@ import { fetchProveedores } from '../../lib/proveedores-api';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { ProductImageDropzone } from './ProductImageDropzone';
+import { ProductoMediaSection } from './ProductoMediaSection';
 
 export type ProductoFormPayload = {
   codigo: string;
@@ -15,6 +15,8 @@ export type ProductoFormPayload = {
   precioLunesViernes: number;
   precioFinSemana: number;
   cantidadMinima: number;
+  subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
+  unidadesPack?: number;
   descripcion?: string;
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
@@ -28,13 +30,18 @@ type Props = {
   producto?: Producto | null;
   puedeGestionarImagen?: boolean;
   onUploadImagen?: (file: File) => Promise<void>;
-  onQuitarImagen?: () => Promise<void>;
+  onEliminarMedia?: (mediaId: string) => Promise<void>;
+  onGuardarVideoUrl?: (url: string) => Promise<void>;
+  onSubirVideo?: (file: File) => Promise<void>;
+  onEliminarVideo?: () => Promise<void>;
 };
 
 const EMPTY = {
   codigo: '',
   nombre: '',
   categoria: 'show',
+  subtipo: 'general',
+  unidadesPack: '',
   precioLunesViernes: '',
   precioFinSemana: '',
   cantidadMinima: '1',
@@ -49,6 +56,8 @@ function formFromProducto(p: Producto) {
     codigo: p.codigo,
     nombre: p.nombre,
     categoria: p.categoria,
+    subtipo: p.subtipo ?? 'general',
+    unidadesPack: p.unidadesPack != null ? String(p.unidadesPack) : '',
     precioLunesViernes: String(p.precioLunesViernes),
     precioFinSemana: String(p.precioFinSemana),
     cantidadMinima: String(p.cantidadMinima ?? 1),
@@ -66,11 +75,13 @@ export function ProductoFormModal({
   producto,
   puedeGestionarImagen = true,
   onUploadImagen,
-  onQuitarImagen,
+  onEliminarMedia,
+  onGuardarVideoUrl,
+  onSubirVideo,
+  onEliminarVideo,
 }: Props) {
   const esEdicion = Boolean(producto);
   const [form, setForm] = useState(EMPTY);
-  const [imagenUrl, setImagenUrl] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
 
@@ -83,7 +94,6 @@ export function ProductoFormModal({
   useEffect(() => {
     if (!open) return;
     setForm(producto ? formFromProducto(producto) : EMPTY);
-    setImagenUrl(producto?.imagenUrl ?? null);
     setError('');
     setPending(false);
   }, [open, producto]);
@@ -98,6 +108,10 @@ export function ProductoFormModal({
     const precioFinSemana = Number(form.precioFinSemana);
     const cantidadMinima = Number(form.cantidadMinima) || 1;
     const costoInterno = form.costoInterno ? Number(form.costoInterno) : undefined;
+    const unidadesPack =
+      form.categoria === 'catering' && form.subtipo === 'piqueo' && form.unidadesPack
+        ? Number(form.unidadesPack)
+        : undefined;
     if (!Number.isFinite(precioLunesViernes) || !Number.isFinite(precioFinSemana)) {
       setError('Los precios deben ser números válidos');
       return;
@@ -108,6 +122,15 @@ export function ProductoFormModal({
     }
     if (!Number.isInteger(cantidadMinima) || cantidadMinima < 1) {
       setError('El mínimo de unidades debe ser un entero mayor o igual a 1');
+      return;
+    }
+    if (
+      form.categoria === 'catering' &&
+      form.subtipo === 'piqueo' &&
+      form.unidadesPack &&
+      (!Number.isInteger(unidadesPack) || (unidadesPack ?? 0) < 1)
+    ) {
+      setError('Unidades por pack debe ser un entero mayor o igual a 1');
       return;
     }
     if (costoInterno != null && (!Number.isFinite(costoInterno) || costoInterno < 0)) {
@@ -128,6 +151,11 @@ export function ProductoFormModal({
         precioLunesViernes,
         precioFinSemana,
         cantidadMinima,
+        subtipo:
+          form.categoria === 'catering'
+            ? (form.subtipo as ProductoFormPayload['subtipo'])
+            : undefined,
+        unidadesPack,
         descripcion: form.descripcion.trim() || undefined,
         origen: form.origen as 'propio' | 'proveedor',
         costoInterno,
@@ -179,7 +207,14 @@ export function ProductoFormModal({
               setForm({
                 ...form,
                 categoria,
-                cantidadMinima: categoria === 'catering' ? '18' : form.cantidadMinima,
+                subtipo: categoria === 'catering' ? form.subtipo : 'general',
+                unidadesPack: categoria === 'catering' && form.subtipo === 'piqueo' ? form.unidadesPack : '',
+                cantidadMinima:
+                  categoria === 'catering' && form.subtipo === 'piqueo'
+                    ? '1'
+                    : categoria === 'catering'
+                      ? '18'
+                      : form.cantidadMinima,
               });
             }}
           >
@@ -190,8 +225,48 @@ export function ProductoFormModal({
             <option value="espacio">Espacio</option>
           </select>
         </label>
+        {form.categoria === 'catering' && (
+          <label className="block">
+            <span className={LABEL_CLASS}>Subtipo catering</span>
+            <select
+              className={INPUT_CLASS}
+              value={form.subtipo}
+              onChange={(e) => {
+                const subtipo = e.target.value;
+                setForm({
+                  ...form,
+                  subtipo,
+                  cantidadMinima: subtipo === 'piqueo' ? '1' : form.cantidadMinima,
+                  unidadesPack: subtipo === 'piqueo' ? form.unidadesPack || '25' : '',
+                });
+              }}
+            >
+              <option value="general">General (catering adicional)</option>
+              <option value="piqueo">Piqueo Premium (precio por pack)</option>
+              <option value="cajita">Cajita Bosque</option>
+              <option value="snack">Snack incluido Premium</option>
+            </select>
+          </label>
+        )}
+        {form.categoria === 'catering' && form.subtipo === 'piqueo' && (
+          <label className="block">
+            <span className={LABEL_CLASS}>Unidades por pack</span>
+            <input
+              type="number"
+              min={1}
+              className={INPUT_CLASS}
+              value={form.unidadesPack}
+              onChange={(e) => setForm({ ...form, unidadesPack: e.target.value })}
+              placeholder="Ej. 25 porciones por pack"
+            />
+          </label>
+        )}
         <label className="block">
-          <span className={LABEL_CLASS}>Mínimo unidades</span>
+          <span className={LABEL_CLASS}>
+            {form.categoria === 'catering' && form.subtipo === 'piqueo'
+              ? 'Mínimo packs'
+              : 'Mínimo unidades'}
+          </span>
           <input
             type="number"
             min={1}
@@ -201,7 +276,11 @@ export function ProductoFormModal({
           />
         </label>
         <label className="block">
-          <span className={LABEL_CLASS}>Precio L-V (S/)</span>
+          <span className={LABEL_CLASS}>
+            {form.categoria === 'catering' && form.subtipo === 'piqueo'
+              ? 'Precio por pack L-V (S/)'
+              : 'Precio L-V (S/)'}
+          </span>
           <input
             type="number"
             step="0.01"
@@ -211,7 +290,11 @@ export function ProductoFormModal({
           />
         </label>
         <label className="block">
-          <span className={LABEL_CLASS}>Precio fin de semana (S/)</span>
+          <span className={LABEL_CLASS}>
+            {form.categoria === 'catering' && form.subtipo === 'piqueo'
+              ? 'Precio por pack fin de semana (S/)'
+              : 'Precio fin de semana (S/)'}
+          </span>
           <input
             type="number"
             step="0.01"
@@ -267,19 +350,16 @@ export function ProductoFormModal({
             </select>
           </label>
         )}
-        {esEdicion && producto && onUploadImagen && (
-          <div className="sm:col-span-2">
-            <span className={LABEL_CLASS}>Imagen del producto</span>
-            <p className="mb-2 text-body-sm text-outline">
-              Se muestra en la landing. Puedes reemplazarla o quitarla.
-            </p>
-            <ProductImageDropzone
-              imagenUrl={imagenUrl}
-              disabled={!puedeGestionarImagen}
-              onUpload={onUploadImagen}
-              onRemove={imagenUrl && onQuitarImagen ? onQuitarImagen : undefined}
-            />
-          </div>
+        {esEdicion && producto && onUploadImagen && onEliminarMedia && onGuardarVideoUrl && onSubirVideo && onEliminarVideo && (
+          <ProductoMediaSection
+            producto={producto}
+            disabled={!puedeGestionarImagen}
+            onUploadImagen={onUploadImagen}
+            onEliminarMedia={onEliminarMedia}
+            onGuardarVideoUrl={onGuardarVideoUrl}
+            onSubirVideo={onSubirVideo}
+            onEliminarVideo={onEliminarVideo}
+          />
         )}
         <label className="block sm:col-span-2">
           <span className={LABEL_CLASS}>Descripción (opcional)</span>

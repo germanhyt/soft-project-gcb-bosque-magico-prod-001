@@ -17,7 +17,7 @@ import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
-import { DEFAULT_PAGE_SIZE } from '../lib/pagination';
+import { useListPagination } from '../hooks/useListPagination';
 import { PageHeader } from '../components/ui/PageHeader';
 import { Icon } from '../components/ui/Icon';
 import {
@@ -31,7 +31,7 @@ import {
   clearCotizacionFormParams,
   cotizacionFormFromSearchParams,
 } from '../lib/cotizacion-form-url';
-import { formatFecha } from '../lib/format';
+import { formatFecha, formatFechaHora } from '../lib/format';
 
 export function CotizacionesPage() {
   const qc = useQueryClient();
@@ -39,7 +39,7 @@ export function CotizacionesPage() {
   const etapa = (searchParams.get('etapa') ?? '') as '' | EtapaCotizacion;
   const qParam = searchParams.get('q') ?? '';
   const detalleParam = searchParams.get('detalle');
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const { page, pageSize, setPage, setPageSize } = useListPagination();
   const [busqueda, setBusqueda] = useState(qParam);
   const [selectedId, setSelectedId] = useState<string | null>(detalleParam);
 
@@ -70,11 +70,11 @@ export function CotizacionesPage() {
   }, [busqueda, searchParams, setSearchParams]);
 
   const { data: paginated, isLoading, isError } = useQuery({
-    queryKey: ['cotizaciones', etapa || 'todas', qParam, page],
+    queryKey: ['cotizaciones', etapa || 'todas', qParam, page, pageSize],
     queryFn: () =>
       fetchCotizaciones(etapa || undefined, {
         page,
-        pageSize: DEFAULT_PAGE_SIZE,
+        pageSize,
         q: qParam || undefined,
       }),
   });
@@ -95,13 +95,6 @@ export function CotizacionesPage() {
     const next = new URLSearchParams(searchParams);
     next.delete('detalle');
     setSearchParams(next, { replace: true });
-  };
-
-  const setPage = (p: number) => {
-    const next = new URLSearchParams(searchParams);
-    if (p <= 1) next.delete('page');
-    else next.set('page', String(p));
-    setSearchParams(next);
   };
 
   const cerrarForm = () => {
@@ -197,14 +190,16 @@ export function CotizacionesPage() {
             page={meta?.page ?? page}
             totalPages={meta?.totalPages ?? 1}
             total={meta?.total ?? 0}
-            pageSize={meta?.pageSize ?? DEFAULT_PAGE_SIZE}
+            pageSize={meta?.pageSize ?? pageSize}
             onPageChange={setPage}
+            onPageSizeChange={setPageSize}
           />
         }
       >
         <table className="w-full text-left text-body-sm">
           <thead className={TABLE_HEAD_CLASS}>
             <tr>
+              <th className="px-4 py-3">Registro</th>
               <th className="px-4 py-3">Código</th>
               <th className="px-4 py-3">Cliente</th>
               <th className="px-4 py-3">Contacto</th>
@@ -217,7 +212,7 @@ export function CotizacionesPage() {
           <tbody className="text-on-surface">
             {isLoading ? (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-outline">
+                <td colSpan={8} className="px-4 py-8 text-center text-outline">
                   Cargando…
                 </td>
               </tr>
@@ -233,6 +228,9 @@ export function CotizacionesPage() {
                     selectedId === c.id ? TABLE_ROW_SELECTED : ''
                   }`}
                 >
+                  <td className="px-4 py-3 text-xs text-outline">
+                    {formatFechaHora(c.creadoEn)}
+                  </td>
                   <td className="px-4 py-3 font-mono text-xs">
                     <button
                       type="button"
