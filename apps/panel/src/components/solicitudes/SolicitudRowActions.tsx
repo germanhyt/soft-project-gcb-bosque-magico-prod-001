@@ -16,7 +16,6 @@ import {
 } from '../../lib/api';
 import {
   cotizacionActivaDeSolicitud,
-  esSolicitudDesdeLanding,
   puedeCrearCotizacionManual,
   puedeGenerarBorradorDesdePayload,
 } from '../../lib/solicitud-cotizacion';

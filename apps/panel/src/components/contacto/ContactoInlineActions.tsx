@@ -27,7 +27,7 @@ export function ContactoInlineActions({
   nombre,
   celular,
   correo,
-  enlaceCopiar,
+  enlaceCopiar: _enlaceCopiar,
   enlaceTitulo = 'Copiar enlace',
   enlaceCopiarSecundario,
   enlaceTituloSecundario = 'Copiar enlace',
