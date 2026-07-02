@@ -14,23 +14,29 @@ export const BENEFICIOS = [
 ];
 
 export const SHOWS = [
-  { nombre: 'Magia Chispeante', detalle: 'Rutina mágica e interacción con niños.' },
+  { nombre: 'Magia Chispeante', detalle: 'Rutina mágica e interacción con los niños.' },
   { nombre: 'Show Mimo', detalle: 'Música, baile y adivinanzas en vivo.' },
   { nombre: 'Burbujas Fantásticas', detalle: 'Variedad de burbujas y cápsula especial.' },
+  { nombre: 'Show de Ciencia', detalle: 'Experimentos divertidos y educativos.' },
+  { nombre: 'Show Competijuegos', detalle: 'Dinámicas y retos para todo el grupo.' },
+  { nombre: 'Show Globoflexia', detalle: 'Figuras y sorpresas con globos.' },
   { nombre: 'Silent Disco', detalle: 'DJ con auriculares y luces para bailar.' },
+  { nombre: 'Cine al aire libre', detalle: 'Proyección pensada para fiestas infantiles.' },
 ];
 
 export const CATERING = [
-  { nombre: 'Popcorn', detalle: 'Mínimo 18 unidades por evento.' },
-  { nombre: 'Algodón de azúcar', detalle: 'Ideal para fiestas infantiles.' },
-  { nombre: 'Gelatina', detalle: 'Porciones individuales.' },
-  { nombre: 'Arroz con leche', detalle: 'Clásico favorito de los pequeños.' },
+  { nombre: 'Popcorn', detalle: 'S/ 10 por porción · mínimo 18 unidades por evento.' },
+  { nombre: 'Algodón de azúcar', detalle: 'S/ 10 por porción · mínimo 18 unidades.' },
+  { nombre: 'Manzanas acarameladas', detalle: 'S/ 10 por porción · mínimo 18 unidades.' },
+  { nombre: 'Mazamorra morada', detalle: 'S/ 6 por porción · mínimo 18 unidades.' },
+  { nombre: 'Gelatina', detalle: 'S/ 5 por porción · mínimo 18 unidades.' },
+  { nombre: 'Arroz con leche', detalle: 'S/ 6 por porción · mínimo 18 unidades.' },
 ];
 
 export const FAQ = [
   {
     pregunta: '¿Cuántos niños incluye la tarifa base?',
-    respuesta: 'La capacidad base es de 10 a 25 niños. Del 26 al 35 se aplica un adicional por niño.',
+    respuesta: 'La capacidad base es de hasta 20 niños por show. Del 21 al 30 se aplican cargos adicionales según show y servicios extra.',
   },
   {
     pregunta: '¿Cómo separo la fecha?',

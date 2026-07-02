@@ -17,10 +17,12 @@ import {
 import { fetchProveedores } from '../../lib/proveedores-api';
 import type { EtapaPedido } from '../../lib/pedidos';
 import { formatFecha } from '../../lib/format';
-import { abrirWhatsApp } from '../../lib/whatsapp-cotizacion';
+import { buildPedidoProveedorEventoResumen } from '../../lib/pedido-proveedor-evento';
 import { linkPedidoProveedorCompleto } from '../../lib/pedidos-links';
-import { mailtoPedidoProveedor, waMeUrlPedidoProveedor } from '../../lib/whatsapp-pedido-proveedor';
+import { mostrarFeedbackNotificacionProveedor } from '../../lib/notificacion-pedido-proveedor-feedback';
 import { Button } from '../ui/Button';
+import { EnviarPedidoProveedorCorreoModal } from './EnviarPedidoProveedorCorreoModal';
+import { PedidoProveedorWhatsAppModal } from './PedidoProveedorWhatsAppModal';
 import { PedidoFormModal } from './PedidoFormModal';
 
 type Props = {
@@ -40,6 +42,8 @@ export function EventoPedidosSection({
 }: Props) {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [contactoPedidoId, setContactoPedidoId] = useState<string | null>(null);
+  const [contactoCanal, setContactoCanal] = useState<'whatsapp' | 'correo' | null>(null);
   const puedeOperar =
     etapaEvento === 'por_confirmar' ||
     etapaEvento === 'confirmado' ||
@@ -87,10 +91,36 @@ export function EventoPedidosSection({
   const actualizarMut = useMutation({
     mutationFn: ({ id, etapa }: { id: string; etapa: EtapaPedido }) =>
       actualizarPedido(id, { etapa }),
-    onSuccess: () => invalidate(),
+    onSuccess: async (res, { etapa }) => {
+      await invalidate();
+      if (etapa === 'solicitado') {
+        await mostrarFeedbackNotificacionProveedor(res.notificacionProveedor);
+      }
+    },
   });
 
   const totalCosto = pedidos.reduce((n, p) => n + p.costo, 0);
+  const pedidoContacto = contactoPedidoId
+    ? pedidos.find((p) => p.id === contactoPedidoId)
+    : undefined;
+  const eventoContactoResumen = pedidoContacto
+    ? buildPedidoProveedorEventoResumen(pedidoContacto, {
+        eventoId,
+        clienteNombre,
+        fechaEvento,
+        turnoLabel,
+      })
+    : null;
+
+  const abrirContacto = (pedidoId: string, canal: 'whatsapp' | 'correo') => {
+    setContactoPedidoId(pedidoId);
+    setContactoCanal(canal);
+  };
+
+  const cerrarContacto = () => {
+    setContactoPedidoId(null);
+    setContactoCanal(null);
+  };
 
   return (
     <section className="rounded-xl border border-surface-variant bg-surface-container-low/40 p-4">
@@ -198,14 +228,7 @@ export function EventoPedidosSection({
                     <Button
                       variant="ghost"
                       className="!px-2 !py-1 text-xs"
-                      onClick={() => {
-                        const url = waMeUrlPedidoProveedor(p.proveedor!.celular!, p, {
-                          clienteNombre,
-                          fechaEvento,
-                          turnoLabel,
-                        });
-                        abrirWhatsApp(url, window.open('about:blank', '_blank'));
-                      }}
+                      onClick={() => abrirContacto(p.id, 'whatsapp')}
                     >
                       WhatsApp proveedor
                     </Button>
@@ -214,13 +237,7 @@ export function EventoPedidosSection({
                     <Button
                       variant="ghost"
                       className="!px-2 !py-1 text-xs"
-                      onClick={() => {
-                        window.location.href = mailtoPedidoProveedor(p.proveedor!.correo!, p, {
-                          clienteNombre,
-                          fechaEvento,
-                          turnoLabel,
-                        });
-                      }}
+                      onClick={() => abrirContacto(p.id, 'correo')}
                     >
                       Correo proveedor
                     </Button>
@@ -242,6 +259,23 @@ export function EventoPedidosSection({
           await crearMut.mutateAsync(payload);
         }}
       />
+
+      {pedidoContacto && eventoContactoResumen && contactoCanal === 'whatsapp' && (
+        <PedidoProveedorWhatsAppModal
+          open
+          onClose={cerrarContacto}
+          pedido={pedidoContacto}
+          evento={eventoContactoResumen}
+        />
+      )}
+      {pedidoContacto && eventoContactoResumen && contactoCanal === 'correo' && (
+        <EnviarPedidoProveedorCorreoModal
+          open
+          onClose={cerrarContacto}
+          pedido={pedidoContacto}
+          evento={eventoContactoResumen}
+        />
+      )}
     </section>
   );
 }

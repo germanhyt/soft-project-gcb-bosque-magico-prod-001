@@ -111,6 +111,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             className={INPUT_CLASS}
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+            placeholder="Ej. Show Magic Pro"
           />
         </label>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -120,6 +121,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
               className={INPUT_CLASS}
               value={form.contacto}
               onChange={(e) => setForm((f) => ({ ...f, contacto: e.target.value }))}
+              placeholder="Ej. Luis Animador"
             />
           </label>
           <label className="block space-y-2">
@@ -128,6 +130,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
               className={INPUT_CLASS}
               value={form.celular}
               onChange={(e) => setForm((f) => ({ ...f, celular: e.target.value }))}
+              placeholder="955 444 333"
             />
           </label>
         </div>
@@ -138,6 +141,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             className={INPUT_CLASS}
             value={form.correo}
             onChange={(e) => setForm((f) => ({ ...f, correo: e.target.value }))}
+            placeholder="contacto@proveedor.com"
           />
         </label>
         <div className="grid gap-5 sm:grid-cols-2">
@@ -175,6 +179,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             className={`${INPUT_CLASS} min-h-[80px]`}
             value={form.notas}
             onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
+            placeholder="Condiciones, horarios o acuerdos"
           />
         </label>
         {error && <p className="text-body-sm text-error">{error}</p>}

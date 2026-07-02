@@ -3,6 +3,7 @@ import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import { Public } from '../../auth/decorators/public.decorator';
 import { CrearSolicitudPublicaDto } from '../application/dto/crear-solicitud-publica.dto';
+import { CrearSolicitudWhatsappDto } from '../application/dto/crear-solicitud-whatsapp.dto';
 import { PrevisualizarCotizacionPublicaDto } from '../application/dto/previsualizar-cotizacion-publica.dto';
 import { RechazarPedidoPublicoDto } from '../application/dto/rechazar-pedido-publico.dto';
 import { AceptarCotizacionUseCase } from '../application/use-cases/aceptar-cotizacion.use-case';
@@ -60,6 +61,50 @@ export class PublicBosqueMagicoController {
   @ApiOperation({ summary: 'Crear solicitud desde landing' })
   async solicitudes(@Body() dto: CrearSolicitudPublicaDto) {
     const resultado = await this.crearSolicitud.ejecutar(dto);
+    return {
+      mensaje: resultado.cotizacion
+        ? 'Solicitud registrada. El equipo revisará tu cotización.'
+        : 'Solicitud registrada correctamente',
+      id: resultado.solicitud.id,
+      etapa: resultado.solicitud.etapa,
+      posibleDuplicado: resultado.posibleDuplicado,
+      identidad: resultado.identidad,
+      cotizacion: resultado.cotizacion,
+    };
+  }
+
+  @Post('solicitudes/whatsapp')
+  @Throttle({ default: { limit: 20, ttl: 60000 } })
+  @ApiOperation({ summary: 'Crear solicitud desde bot WhatsApp' })
+  async solicitudesWhatsapp(@Body() dto: CrearSolicitudWhatsappDto) {
+    const resultado = await this.crearSolicitud.ejecutar({
+      cliente: {
+        nombre: dto.nombreContacto,
+        celular: dto.celular,
+        correo: dto.correo,
+      },
+      cumpleanero:
+        dto.nombreCumpleanero || dto.edadCumpleanero
+          ? {
+              nombre: dto.nombreCumpleanero,
+              edad: dto.edadCumpleanero,
+            }
+          : undefined,
+      evento: {
+        fechaTentativa: dto.fechaTentativa,
+        turno: dto.turnoInteres,
+        cantidadNinos: dto.cantidadNinosEstimada,
+        tematica: dto.tematica,
+        paquete: dto.paqueteInteres,
+      },
+      observaciones: dto.notas,
+      origen: {
+        canal: dto.canal,
+        detalle: dto.detalleOrigen,
+        payload: dto.payloadOrigen,
+      },
+    });
+
     return {
       mensaje: resultado.cotizacion
         ? 'Solicitud registrada. El equipo revisará tu cotización.'

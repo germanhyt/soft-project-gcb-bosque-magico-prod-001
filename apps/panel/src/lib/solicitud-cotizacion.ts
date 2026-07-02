@@ -31,6 +31,7 @@ type PayloadOrigen = {
         extraIds?: string[];
         extraCantidades?: Record<string, number>;
         snackId?: string;
+        snackCantidad?: number;
         cajitasCantidad?: number;
         piqueos?: Array<{ productoId: string; cantidad: number }>;
       };
@@ -107,7 +108,11 @@ export function resumenPreferenciasLanding(solicitud: Solicitud): ResumenPrefere
     items.push({ nombre: 'Extra', cantidad: 1, productoId: id });
   }
   if (sel?.snackId) {
-    items.push({ nombre: 'Snack Premium', cantidad: 1, productoId: sel.snackId });
+    items.push({
+      nombre: 'Snack Premium',
+      cantidad: Math.max(sel.snackCantidad ?? 25, 25),
+      productoId: sel.snackId,
+    });
   }
   if (sel?.cateringIds) {
     for (const id of sel.cateringIds) {

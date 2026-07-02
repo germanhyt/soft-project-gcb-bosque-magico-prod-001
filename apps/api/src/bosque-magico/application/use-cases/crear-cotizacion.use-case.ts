@@ -63,6 +63,7 @@ export class CrearCotizacionUseCase {
       showIds: base.showIds,
       extraIds: base.extraIds,
       snackId: base.snackId,
+      snackCantidad: base.snackCantidad,
       cajitasCantidad: base.cajitasCantidad,
       piqueos: base.piqueos,
       adicionales: [...(base.adicionales ?? []), ...adicionalesManuales],

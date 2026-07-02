@@ -12,6 +12,9 @@ import { Button } from '../ui/Button';
 import { DataTableCard } from '../ui/DataTableCard';
 import { DataTablePagination } from '../ui/DataTablePagination';
 import { FilterSearchInput } from '../ui/FilterSearchInput';
+import { FilterSelect } from '../ui/FilterSelect';
+import { TableFiltersPanel } from '../ui/TableFiltersPanel';
+import { ProveedorRowActions } from './ProveedorRowActions';
 import { TABLE_HEAD_CLASS, TABLE_ROW_CLASS, CARD_CLASS } from '../../constants/design';
 import { formatFechaHora } from '../../lib/format';
 import { ProveedorFormModal } from './ProveedorFormModal';
@@ -19,6 +22,8 @@ import { ProveedorFormModal } from './ProveedorFormModal';
 type Props = {
   puedeGestionar: boolean;
 };
+
+type EstadoFiltro = '' | 'activo' | 'inactivo';
 
 function coincideBusqueda(q: string, p: Proveedor) {
   const needle = q.trim().toLowerCase();
@@ -38,6 +43,7 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
   const [modalOpen, setModalOpen] = useState(false);
   const [editando, setEditando] = useState<Proveedor | null>(null);
   const [busqueda, setBusqueda] = useState('');
+  const [estadoFiltro, setEstadoFiltro] = useState<EstadoFiltro>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
@@ -47,13 +53,26 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
   });
 
   const proveedoresFiltrados = useMemo(
-    () => proveedores.filter((p) => coincideBusqueda(busqueda, p)),
-    [proveedores, busqueda],
+    () =>
+      proveedores.filter((p) => {
+        if (!coincideBusqueda(busqueda, p)) return false;
+        if (estadoFiltro === 'activo' && p.etapa !== 'activo') return false;
+        if (estadoFiltro === 'inactivo' && p.etapa !== 'inactivo') return false;
+        return true;
+      }),
+    [proveedores, busqueda, estadoFiltro],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [busqueda, pageSize]);
+  }, [busqueda, estadoFiltro, pageSize]);
+
+  const limpiarFiltros = () => {
+    setBusqueda('');
+    setEstadoFiltro('');
+  };
+
+  const hayFiltros = busqueda.trim().length > 0 || estadoFiltro !== '';
 
   const totalPages = Math.max(1, Math.ceil(proveedoresFiltrados.length / pageSize));
   const proveedoresPaginados = useMemo(() => {
@@ -107,14 +126,30 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
           )}
         </div>
 
-        <div className="mb-4">
+        <TableFiltersPanel className="mb-4" onRefresh={() => void qc.invalidateQueries({ queryKey: ['proveedores'] })}>
           <FilterSearchInput
             inline
             value={busqueda}
             onChange={setBusqueda}
             placeholder="Nombre, contacto o categoría…"
           />
-        </div>
+          <FilterSelect<EstadoFiltro>
+            inline
+            label="Estado"
+            value={estadoFiltro}
+            onChange={setEstadoFiltro}
+            options={[
+              { value: '', label: 'Todos los estados' },
+              { value: 'activo', label: 'Activos' },
+              { value: 'inactivo', label: 'Inactivos' },
+            ]}
+          />
+          {hayFiltros && (
+            <Button variant="ghost" className="!h-[42px]" onClick={limpiarFiltros}>
+              Limpiar
+            </Button>
+          )}
+        </TableFiltersPanel>
 
         <DataTableCard
           footer={
@@ -182,26 +217,16 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
                       </span>
                     </td>
                     {puedeGestionar && (
-                      <td className="px-4 py-3 text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            className="!px-2 !py-1 text-xs"
-                            onClick={() => {
-                              setEditando(p);
-                              setModalOpen(true);
-                            }}
-                          >
-                            Editar
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            className="!px-2 !py-1 text-xs"
-                            onClick={() => toggleEstado(p)}
-                          >
-                            {p.etapa === 'activo' ? 'Desactivar' : 'Activar'}
-                          </Button>
-                        </div>
+                      <td className="px-4 py-3">
+                        <ProveedorRowActions
+                          proveedor={p}
+                          puedeGestionar={puedeGestionar}
+                          onEditar={(prov) => {
+                            setEditando(prov);
+                            setModalOpen(true);
+                          }}
+                          onToggleEstado={toggleEstado}
+                        />
                       </td>
                     )}
                   </tr>

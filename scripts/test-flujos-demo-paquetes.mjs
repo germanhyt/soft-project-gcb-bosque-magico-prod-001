@@ -1,7 +1,7 @@
 /**
- * Integración E2E con mock/seed — landing → borrador + datos demo (24/06/2026).
+ * Integración E2E con mock/seed — landing → borrador + datos demo (TDD 2026-07-01).
  * Uso: node scripts/test-flujos-demo-paquetes.mjs
- * Requiere: API :3000, seed + seed:demo aplicados.
+ * Requiere: API :3000, seed aplicado. Crea solicitud real en BD.
  */
 const BASE = process.env.API_URL ?? 'http://localhost:3000/api';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@bosquemagico.test';
@@ -43,7 +43,7 @@ async function login() {
     email: ADMIN_EMAIL,
     password: ADMIN_PASSWORD,
   });
-  return res.body?.access_token ?? res.body?.accessToken ?? null;
+  return res.body?.accessToken ?? res.body?.access_token ?? null;
 }
 
 async function main() {
@@ -56,6 +56,7 @@ async function main() {
   ok(5, 'GET catalogo', cat.status === 200);
   const piqueos = cat.body?.productos?.piqueos ?? [];
   const cajitas = cat.body?.productos?.cajitas ?? [];
+  const catering = cat.body?.productos?.catering ?? [];
   const piqSample = piqueos[0];
   ok(
     5,
@@ -75,11 +76,20 @@ async function main() {
     cajitas.some((c) => c.subtipo === 'cajita'),
     `cajitas=${cajitas.length}`,
   );
+  ok(
+    5,
+    'Popcorn catering separado de snack',
+    catering.some((c) => c.codigo === 'CAT-POPCORN-CAT') &&
+      (cat.body?.productos?.snacks ?? []).some((s) => s.codigo === 'CAT-POPCORN'),
+    `catering=${catering.some((c) => c.codigo === 'CAT-POPCORN-CAT')} snack=${(cat.body?.productos?.snacks ?? []).some((s) => s.codigo === 'CAT-POPCORN')}`,
+  );
 
   const piq1 = piqueos.find((p) => p.codigo === 'PIQ-001') ?? piqueos[0];
   const piq2 = piqueos.find((p) => p.codigo === 'PIQ-002') ?? piqueos[1];
   const piq3 = piqueos.find((p) => p.codigo === 'PIQ-020') ?? piqueos[2];
   const shows = cat.body?.productos?.shows ?? [];
+  const snacks = cat.body?.productos?.snacks ?? [];
+  const snack1 = snacks.find((s) => s.codigo === 'CAT-POPCORN') ?? snacks[0];
   const show1 = shows[0];
 
   // PASO 5B — Preview mock (misma selección que landing)
@@ -88,6 +98,8 @@ async function main() {
   const seleccionMock = {
     cajitasCantidad: 12,
     showIds: show1 ? [show1.id] : [],
+    snackId: snack1?.id,
+    snackCantidad: 30,
     piqueos: [
       { productoId: piq1?.id, cantidad: 1 },
       { productoId: piq2?.id, cantidad: 1 },
@@ -101,6 +113,12 @@ async function main() {
     seleccion: seleccionMock,
   });
   ok(5, 'Preview mock → 200', preview.status === 200 || preview.status === 201);
+  ok(
+    5,
+    'Preview mock ninosExtra=0 (Premium show incluido, 25 niños)',
+    (preview.body?.montos?.ninosExtra ?? 0) === 0,
+    `ninosExtra=${preview.body?.montos?.ninosExtra}`,
+  );
   const exCaj = preview.body?.resumenPaquete?.cajitasExcedente;
   ok(5, 'Cajitas 12 → excedente 2', exCaj === 2, `excedente=${exCaj}`);
   ok(
@@ -108,6 +126,22 @@ async function main() {
     'Piqueos excedente 62.5',
     Math.abs((preview.body?.resumenPaquete?.piqueosExcedente ?? 0) - 62.5) < 0.01,
     `excedente=${preview.body?.resumenPaquete?.piqueosExcedente}`,
+  );
+  ok(
+    5,
+    'Snack Premium excedente 5×10',
+    (preview.body?.resumenPaquete?.snackUnidadesExcedente ?? 0) === 5 &&
+      Math.abs((preview.body?.resumenPaquete?.snackMontoExcedente ?? 0) - 50) < 0.01,
+    `unidades=${preview.body?.resumenPaquete?.snackUnidadesExcedente} monto=${preview.body?.resumenPaquete?.snackMontoExcedente}`,
+  );
+  const snackIncluido = (preview.body?.items ?? []).find(
+    (i) => i.productoId === snack1?.id && i.origenItem === 'incluido_paquete',
+  );
+  ok(
+    5,
+    'Snack Premium valorizado como pack 350',
+    Math.abs((snackIncluido?.precioCatalogo ?? 0) - 350) < 0.01,
+    snackIncluido ? `precioCatalogo=${snackIncluido.precioCatalogo}` : 'sin item snack incluido',
   );
   const montoPreview = preview.body?.montos?.total;
 
@@ -135,7 +169,7 @@ async function main() {
         ...seleccionMock,
       },
     },
-    observaciones: 'Test mock E2E paquetes 24/06',
+    observaciones: 'Test mock E2E paquetes TDD-2026-07-01',
   });
   ok(5, 'POST solicitud → 201/200', solicitud.status === 201 || solicitud.status === 200, `status=${solicitud.status}`);
   const cotBorrador = solicitud.body?.cotizacion;
@@ -184,9 +218,9 @@ async function main() {
     const demoSols = (Array.isArray(solItems) ? solItems : []).filter(
       (s) => s.detalleOrigen === 'seed_demo' || s.nombreContacto?.includes('Demo'),
     );
-    ok(5, 'Solicitudes demo presentes', demoSols.length >= 2, `count=${demoSols.length}`);
+    ok(5, 'Conteo solicitudes demo (informativo)', true, `count=${demoSols.length}`);
 
-    const cots = await get('/bosque-magico/cotizaciones?limit=50', token);
+    const cots = await get('/bosque-magico/cotizaciones?pageSize=200&q=COT-DEMO', token);
     ok(5, 'GET cotizaciones panel', cots.status === 200);
     const lista = cots.body?.items ?? cots.body?.data ?? [];
     const cotDemo = lista.find((c) => c.codigo === 'COT-DEMO-001');

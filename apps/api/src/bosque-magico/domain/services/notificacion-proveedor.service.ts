@@ -13,6 +13,19 @@ export type NotificacionProveedorConfig = {
   cuerpo: string;
 };
 
+export type ResultadoNotificacionProveedor = {
+  enviado: boolean;
+  motivo?: string;
+  asunto?: string;
+  cuerpo?: string;
+  destino?: string;
+};
+
+type OverridesCorreo = {
+  asunto?: string;
+  cuerpo?: string;
+};
+
 function texto(valor: unknown): string {
   return typeof valor === 'string' ? valor.trim() : '';
 }
@@ -80,21 +93,88 @@ export class NotificacionProveedorService {
     };
   }
 
-  async notificarPedidosCreados(pedidoIds: string[]): Promise<void> {
+  /** Notificación automática al pasar el pedido a Solicitado (requiere config habilitada). */
+  async notificarAlSolicitar(
+    pedidoId: string,
+  ): Promise<ResultadoNotificacionProveedor> {
+    const cfg = await this.cargarConfig();
+    if (!cfg.habilitado) return { enviado: false, motivo: 'deshabilitado' };
+    return this.enviarCorreoInterno(pedidoId, cfg, {});
+  }
+
+  /** Envío manual desde el panel (SMTP si está activo; si no, devuelve plantilla para mailto). */
+  async enviarCorreoManual(
+    pedidoId: string,
+    overrides: OverridesCorreo = {},
+  ): Promise<ResultadoNotificacionProveedor> {
+    const cfg = await this.cargarConfig();
+    return this.enviarCorreoInterno(pedidoId, cfg, overrides);
+  }
+
+  /** @deprecated Usar notificarAlSolicitar */
+  async notificarPedidoCreado(pedidoId: string) {
+    return this.notificarAlSolicitar(pedidoId);
+  }
+
+  async notificarPedidosCreados(pedidoIds: string[]) {
     for (const id of pedidoIds) {
-      await this.notificarPedidoCreado(id);
+      await this.notificarAlSolicitar(id);
     }
   }
 
-  async notificarPedidoCreado(
+  private async enviarCorreoInterno(
     pedidoId: string,
-  ): Promise<{ enviado: boolean; motivo?: string }> {
-    const cfg = await this.cargarConfig();
-    if (!cfg.habilitado) return { enviado: false, motivo: 'deshabilitado' };
-    if (!(await this.smtp.estaActivo())) {
-      return { enviado: false, motivo: 'smtp_inactivo' };
+    cfg: NotificacionProveedorConfig,
+    overrides: OverridesCorreo,
+  ): Promise<ResultadoNotificacionProveedor> {
+    const preparado = await this.prepararCorreo(pedidoId, cfg, overrides);
+    if ('motivo' in preparado) {
+      return preparado;
     }
 
+    const { destino, asunto, cuerpo } = preparado;
+    const smtpActivo = await this.smtp.estaActivo();
+
+    if (!smtpActivo) {
+      return {
+        enviado: false,
+        motivo: 'smtp_inactivo',
+        asunto,
+        cuerpo,
+        destino,
+      };
+    }
+
+    try {
+      await this.smtp.enviarCorreo({
+        destino,
+        asunto,
+        texto: cuerpo,
+      });
+      return { enviado: true, asunto, cuerpo, destino };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'error desconocido';
+      this.logger.warn(
+        `Notificación proveedor no enviada (pedido ${pedidoId}): ${msg}`,
+      );
+      return {
+        enviado: false,
+        motivo: 'error_envio',
+        asunto,
+        cuerpo,
+        destino,
+      };
+    }
+  }
+
+  private async prepararCorreo(
+    pedidoId: string,
+    cfg: NotificacionProveedorConfig,
+    overrides: OverridesCorreo,
+  ): Promise<
+    | { destino: string; asunto: string; cuerpo: string }
+    | { enviado: false; motivo: string }
+  > {
     const pedido = await this.pedidos.obtenerPorId(pedidoId);
     if (!pedido || pedido.tipo !== TipoPedido.proveedor) {
       return { enviado: false, motivo: 'no_aplica' };
@@ -129,20 +209,12 @@ export class NotificacionProveedorService {
       link,
     };
 
-    try {
-      await this.smtp.enviarCorreo({
-        destino: correo,
-        asunto: aplicarPlantilla(cfg.asunto, vars),
-        texto: aplicarPlantilla(cfg.cuerpo, vars),
-      });
-      return { enviado: true };
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'error desconocido';
-      this.logger.warn(
-        `Notificación proveedor no enviada (pedido ${pedidoId}): ${msg}`,
-      );
-      return { enviado: false, motivo: 'error_envio' };
-    }
+    const asunto =
+      overrides.asunto?.trim() || aplicarPlantilla(cfg.asunto, vars);
+    const cuerpo =
+      overrides.cuerpo?.trim() || aplicarPlantilla(cfg.cuerpo, vars);
+
+    return { destino: correo, asunto, cuerpo };
   }
 
   private async etiquetaTurno(turno: TurnoInteres): Promise<string> {

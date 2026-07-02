@@ -1,6 +1,7 @@
 import { PrismaClient, ModoComposicionPaquete, SubtipoProducto } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import { PIQUEOS_CARTA } from './data/piqueos-carta';
+import { CATERING_GENERAL } from './data/catering-catalogo';
 
 const prisma = new PrismaClient();
 
@@ -10,23 +11,20 @@ const PERMISOS_ADMIN = [
   'bosque_magico:admin',
 ];
 
+/** Claves de config obsoletas (reemplazadas por shows.* / extras.*). */
+const CLAVES_CONFIG_DEPRECADAS = ['tarifas.precio_nino_extra'];
+
 const configuraciones = [
   {
     clave: 'tarifas.base_lunes_viernes',
-    valor: 380,
+    valor: 799,
     descripcion: 'Tarifa base por turno de lunes a viernes (S/) — referencia paquete Básico',
     esPublico: true,
   },
   {
     clave: 'tarifas.base_fin_semana',
-    valor: 580,
+    valor: 950,
     descripcion: 'Tarifa base por turno sábado y domingo (S/) — referencia paquete Básico',
-    esPublico: true,
-  },
-  {
-    clave: 'tarifas.precio_nino_extra',
-    valor: 25,
-    descripcion: 'Precio por niño adicional entre 26 y 35 (S/)',
     esPublico: true,
   },
   {
@@ -37,14 +35,32 @@ const configuraciones = [
   },
   {
     clave: 'ninos.maximo_base',
-    valor: 25,
-    descripcion: 'Capacidad base sin cargo extra',
+    valor: 20,
+    descripcion: 'Capacidad base del evento (shows cubren hasta este tope)',
     esPublico: true,
   },
   {
     clave: 'ninos.maximo_permitido',
-    valor: 35,
+    valor: 30,
     descripcion: 'Máximo de niños permitido en reserva regular',
+    esPublico: true,
+  },
+  {
+    clave: 'shows.ninos_incluidos',
+    valor: 20,
+    descripcion: 'Niños incluidos por show sin cargo adicional',
+    esPublico: true,
+  },
+  {
+    clave: 'shows.precio_nino_extra',
+    valor: 15,
+    descripcion: 'Precio por niño adicional en show fuera del rango incluido (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'extras.precio_nino_extra',
+    valor: 10,
+    descripcion: 'Precio por niño adicional en servicios extra (Pintacaritas, Uñitas, Hora loca, S/)',
     esPublico: true,
   },
   {
@@ -69,6 +85,18 @@ const configuraciones = [
     clave: 'paquetes.piqueos_credito_premium',
     valor: 200,
     descripcion: 'Crédito de piqueos incluido en paquete Premium (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'paquetes.snack_premium_unidades_incluidas',
+    valor: 25,
+    descripcion: 'Unidades incluidas del carrito snack Premium',
+    esPublico: true,
+  },
+  {
+    clave: 'paquetes.snack_premium_precio_excedente',
+    valor: 10,
+    descripcion: 'Precio por unidad adicional del carrito snack Premium (S/)',
     esPublico: true,
   },
   {
@@ -224,7 +252,7 @@ const configuraciones = [
     clave: 'pedidos_proveedor.notificar_correo',
     valor: false,
     descripcion:
-      'Enviar correo automático al proveedor al crear un pedido (requiere SMTP activo y correo del proveedor).',
+      'Enviar correo automático al proveedor al marcar el pedido como Solicitado (requiere SMTP activo y correo del proveedor).',
     esPublico: false,
   },
   {
@@ -257,23 +285,37 @@ type ProductoSeed = {
 };
 
 const productosBase: ProductoSeed[] = [
-  { codigo: 'PK-BASICO', nombre: 'Básico', categoria: 'paquete', lv: 380, fds: 580 },
-  { codigo: 'PK-ESTANDAR', nombre: 'Estándar', categoria: 'paquete', lv: 480, fds: 680 },
-  { codigo: 'PK-PREMIUM', nombre: 'Premium', categoria: 'paquete', lv: 580, fds: 780 },
+  { codigo: 'PK-BASICO', nombre: 'Básico', categoria: 'paquete', lv: 799, fds: 950 },
+  { codigo: 'PK-ESTANDAR', nombre: 'Estándar', categoria: 'paquete', lv: 1310, fds: 1650 },
+  { codigo: 'PK-PREMIUM', nombre: 'Premium', categoria: 'paquete', lv: 1770, fds: 2100 },
   { codigo: 'ESP-ALQ-3H', nombre: 'Alquiler 3 horas', categoria: 'espacio', lv: 0, fds: 0 },
   { codigo: 'CAJ-BOSQUE', nombre: 'Cajita Bosque Mágico', categoria: 'catering', lv: 20.9, fds: 20.9, subtipo: 'cajita', unidad: 'unidad', cantidadMinima: 1 },
-  { codigo: 'SHOW-MAGIA', nombre: 'Magia Chispeante', categoria: 'show', lv: 180, fds: 220 },
-  { codigo: 'SHOW-MIMO', nombre: 'Show Mimo', categoria: 'show', lv: 200, fds: 240 },
-  { codigo: 'SHOW-BURBUJAS', nombre: 'Burbujas Fantásticas', categoria: 'show', lv: 220, fds: 260 },
-  { codigo: 'SHOW-DISCO', nombre: 'Silent Disco', categoria: 'show', lv: 350, fds: 400 },
-  { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 120, fds: 150 },
+  { codigo: 'SHOW-MAGIA', nombre: 'Magia Chispeante', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-MIMO', nombre: 'Show Mimo', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-BURBUJAS', nombre: 'Burbujas Fantásticas', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-DISCO', nombre: 'Silent Disco', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-CIENCIA', nombre: 'Show de Ciencia', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-COMPETI', nombre: 'Show Competijuegos', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-GLOBO', nombre: 'Show Globoflexia', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'SHOW-CINE', nombre: 'Cine al aire libre', categoria: 'show', lv: 520, fds: 690 },
+  { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 190, fds: 250 },
+  { codigo: 'EXT-UNITAS', nombre: 'Uñitas (sticker en uñas)', categoria: 'extra', lv: 190, fds: 250 },
+  { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250 },
   { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120 },
-  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 0, fds: 0 },
+  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150 },
   { codigo: 'EXT-DECOR', nombre: 'Arco decorativo', categoria: 'extra', lv: 180, fds: 220 },
-  { codigo: 'CAT-POPCORN', nombre: 'Popcorn', categoria: 'catering', lv: 3.5, fds: 3.5, subtipo: 'snack', cantidadMinima: 18 },
-  { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar', categoria: 'catering', lv: 4, fds: 4, subtipo: 'snack', cantidadMinima: 18 },
-  { codigo: 'CAT-GELATINA', nombre: 'Gelatina', categoria: 'catering', lv: 3, fds: 3, cantidadMinima: 18 },
-  { codigo: 'CAT-ARROZ', nombre: 'Arroz con leche', categoria: 'catering', lv: 3.5, fds: 3.5, cantidadMinima: 18 },
+  { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
+  { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
+  ...CATERING_GENERAL.map((c) => ({
+    codigo: c.codigo,
+    nombre: c.nombre,
+    categoria: 'catering' as const,
+    lv: c.precio,
+    fds: c.precio,
+    subtipo: 'general' as SubtipoProducto,
+    cantidadMinima: c.cantidadMinima ?? 18,
+    unidad: c.unidad ?? 'porción',
+  })),
 ];
 
 const productosPiqueos: ProductoSeed[] = PIQUEOS_CARTA.map((p) => ({
@@ -330,6 +372,12 @@ async function ensureConfiguracion(
   }
 
   return 'skipped';
+}
+
+async function eliminarConfigDeprecada() {
+  for (const clave of CLAVES_CONFIG_DEPRECADAS) {
+    await prisma.bosqueMagicoConfiguracion.deleteMany({ where: { clave } });
+  }
 }
 
 async function upsertProductos(syncCatalogo: boolean) {
@@ -412,6 +460,9 @@ async function seedComposicion(ids: Map<string, string>, force: boolean) {
         orden: 6,
         metadata: {
           productoIds: [ids.get('CAT-POPCORN'), ids.get('CAT-ALGODON')].filter(Boolean),
+          unidadesIncluidas: 25,
+          precioPack: 350,
+          precioUnidadExcedente: 10,
         },
       },
       { modo: 'credito_piqueos', cantidad: 1, montoCredito: 200, orden: 7 },
@@ -501,6 +552,7 @@ async function main() {
     if (result === 'created') configCreated += 1;
     else if (result === 'skipped') configSkipped += 1;
   }
+  await eliminarConfigDeprecada();
 
   const ids = await upsertProductos(syncCatalogo);
   await seedComposicion(ids, forceReset);

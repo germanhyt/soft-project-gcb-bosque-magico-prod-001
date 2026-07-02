@@ -8,6 +8,11 @@ import {
   groupNotifications,
   notificationVisual,
 } from '../../lib/notificaciones';
+import {
+  isNotificationSoundEnabled,
+  playNotificationSound,
+  setNotificationSoundEnabled,
+} from '../../lib/notification-sound';
 import type { PanelNotification } from '../../types/bosque-panel-event';
 import { Icon } from '../ui/Icon';
 
@@ -93,6 +98,7 @@ export function NotificationsDropdown() {
   const { items, unreadCount, markAllRead, markRead, clearAll } = useNotifications();
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<FilterMode>('all');
+  const [soundEnabled, setSoundEnabled] = useState(isNotificationSoundEnabled);
   const ref = useRef<HTMLDivElement>(null);
   const panelId = 'panel-notificaciones';
 
@@ -189,6 +195,29 @@ export function NotificationsDropdown() {
                 <p className="mt-0.5 text-xs text-outline">{unreadLabel}</p>
               </div>
               <div className="flex shrink-0 items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const next = !soundEnabled;
+                    setSoundEnabled(next);
+                    setNotificationSoundEnabled(next);
+                    if (next) playNotificationSound();
+                  }}
+                  className={`flex h-8 w-8 items-center justify-center rounded-lg border transition hover:bg-surface-container-low ${
+                    soundEnabled
+                      ? 'border-primary/30 text-primary'
+                      : 'border-surface-variant text-outline'
+                  }`}
+                  aria-pressed={soundEnabled}
+                  aria-label={
+                    soundEnabled
+                      ? 'Desactivar sonido de notificaciones'
+                      : 'Activar sonido de notificaciones'
+                  }
+                  title={soundEnabled ? 'Sonido activado' : 'Sonido desactivado'}
+                >
+                  <Icon name={soundEnabled ? 'volume_up' : 'volume_off'} size={18} filled={false} />
+                </button>
                 {unreadCount > 0 && (
                   <button
                     type="button"

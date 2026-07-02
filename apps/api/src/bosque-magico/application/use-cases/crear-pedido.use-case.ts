@@ -6,7 +6,6 @@ import {
 import { OrigenProducto, TipoPedido } from '@prisma/client';
 import { CrearPedidoDto } from '../dto/crear-pedido.dto';
 import { mapPedidoResponse } from '../../domain/mappers/pedido.mapper';
-import { NotificacionProveedorService } from '../../domain/services/notificacion-proveedor.service';
 import { parseFechaCalendarioUtc } from '../../domain/utils/fecha-calendario';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
@@ -20,7 +19,6 @@ export class CrearPedidoUseCase {
     private readonly eventos: EventosRepository,
     private readonly productos: ProductosRepository,
     private readonly proveedores: ProveedoresRepository,
-    private readonly notificacionProveedor: NotificacionProveedorService,
   ) {}
 
   async ejecutar(eventoId: string, dto: CrearPedidoDto) {
@@ -67,10 +65,6 @@ export class CrearPedidoUseCase {
       costo: dto.costo,
       notas: dto.notas,
     });
-
-    if (dto.tipo === TipoPedido.proveedor) {
-      await this.notificacionProveedor.notificarPedidoCreado(row.id);
-    }
 
     return mapPedidoResponse(row);
   }

@@ -75,6 +75,7 @@ export class ActualizarCotizacionUseCase {
       showIds: dto.seleccion.showIds,
       extraIds: dto.seleccion.extraIds,
       snackId: dto.seleccion.snackId,
+      snackCantidad: dto.seleccion.snackCantidad,
       cajitasCantidad: dto.seleccion.cajitasCantidad,
       piqueos: dto.seleccion.piqueos,
       adicionales: [...(dto.seleccion.adicionales ?? []), ...adicionalesManuales],

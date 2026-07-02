@@ -123,6 +123,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
               className={INPUT_CLASS}
               value={form.nombreContacto}
               onChange={(e) => setForm((p) => ({ ...p, nombreContacto: e.target.value }))}
+              placeholder="Ej. Carlos Ruiz"
             />
           </label>
           <label className="block">
@@ -131,6 +132,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
               className={INPUT_CLASS}
               value={form.celular}
               onChange={(e) => setForm((p) => ({ ...p, celular: e.target.value }))}
+              placeholder="988 777 666"
             />
           </label>
           <label className="block">
@@ -140,6 +142,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
               className={INPUT_CLASS}
               value={form.correo}
               onChange={(e) => setForm((p) => ({ ...p, correo: e.target.value }))}
+              placeholder="contacto@correo.com"
             />
           </label>
           <label className="block">
@@ -182,6 +185,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
               onChange={(e) =>
                 setForm((p) => ({ ...p, cantidadNinosEstimada: e.target.value }))
               }
+              placeholder="25"
             />
           </label>
           <label className="block sm:col-span-2">
@@ -202,6 +206,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
               className={INPUT_CLASS}
               value={form.notas}
               onChange={(e) => setForm((p) => ({ ...p, notas: e.target.value }))}
+              placeholder="Detalle del evento o pedido del cliente"
             />
           </label>
           {error && (

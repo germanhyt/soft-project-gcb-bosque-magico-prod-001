@@ -27,7 +27,7 @@ import { ListarPedidosOperacionesUseCase } from './application/use-cases/listar-
 import { CrearSolicitudManualUseCase } from './application/use-cases/crear-solicitud-manual.use-case';
 import { CrearSolicitudPublicaUseCase } from './application/use-cases/crear-solicitud-publica.use-case';
 import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cases/generar-cotizacion-borrador-solicitud.use-case';
-import { EnviarCotizacionUseCase } from './application/use-cases/enviar-cotizacion.use-case';
+import { EnviarPedidoProveedorCorreoUseCase } from './application/use-cases/enviar-pedido-proveedor-correo.use-case';
 import { ListarAuditoriaUseCase } from './application/use-cases/listar-auditoria.use-case';
 import { ListarConfiguracionPanelUseCase } from './application/use-cases/listar-configuracion-panel.use-case';
 import { ListarCotizacionesUseCase } from './application/use-cases/listar-cotizaciones.use-case';
@@ -167,6 +167,7 @@ import {
     ObtenerCotizacionUseCase,
     ActualizarCotizacionUseCase,
     EnviarCotizacionUseCase,
+    EnviarPedidoProveedorCorreoUseCase,
     AceptarCotizacionUseCase,
     ListarProductosUseCase,
     ListarProductosPanelUseCase,

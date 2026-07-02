@@ -2,6 +2,7 @@ import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsIn,
   IsInt,
   IsNotEmpty,
   IsOptional,
@@ -10,6 +11,7 @@ import {
   Max,
   MaxLength,
   Min,
+  ValidateIf,
   ValidateNested,
 } from 'class-validator';
 import { SeleccionPaqueteDto } from './seleccion-paquete.dto';
@@ -33,14 +35,27 @@ export class PrevisualizarCotizacionPublicaDto {
   @ApiProperty({ example: 25 })
   @IsInt()
   @Min(1)
-  @Max(50)
+  @Max(30)
   cantidadNinos!: number;
 
-  @ApiProperty({ example: 'Estándar' })
+  @ApiPropertyOptional({ enum: ['paquete', 'solo_espacio'], default: 'paquete' })
+  @IsOptional()
+  @IsIn(['paquete', 'solo_espacio'])
+  modalidad?: 'paquete' | 'solo_espacio';
+
+  @ApiPropertyOptional({ example: 'Estándar' })
+  @ValidateIf((o) => o.modalidad !== 'solo_espacio')
   @IsString()
   @IsNotEmpty({ message: 'Debe elegir un paquete' })
   @MaxLength(120)
-  paquete!: string;
+  paquete?: string;
+
+  @ApiPropertyOptional({ example: 0, description: 'Horas adicionales a las 3 h incluidas' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(8)
+  horasAdicionales?: number;
 
   @ApiPropertyOptional({ type: SeleccionPaqueteDto })
   @IsOptional()

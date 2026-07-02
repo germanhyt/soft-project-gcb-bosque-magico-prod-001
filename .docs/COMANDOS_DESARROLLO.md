@@ -98,6 +98,11 @@ En panel: sección **Bitácora** en detalle de solicitud o cotización.
 | `npm run db:down` | Detener contenedor Postgres |
 | `npm run db:migrate` | `prisma migrate dev` en API |
 | `npm run db:seed` | Seed tarifas + productos |
+| `npm run test:unit` | Jest API (dominio + use-cases) |
+| `npm run test:integracion` | Flujos paquetes/capacidad (API :3000) |
+| `npm run test:tdd` | Unit + integración |
+
+Ver [.docs/TDD-2026-07-01.md](./TDD-2026-07-01.md) para matriz de casos.
 
 ---
 
@@ -106,7 +111,9 @@ En panel: sección **Bitácora** en detalle de solicitud o cotización.
 ```bash
 npm run build -w @bosque/api
 npm run test -w @bosque/api
-# Cubre: precios (lunes-viernes, fin de semana, niños extra, >35), aceptar cotización (idempotente, doble reserva), solicitud pública
+# Cubre: capacidad 20/30, show/extras extra, config deprecada, catering mín. 18, solicitud pública
+npm run test:tdd
+# Unit + integración (requiere API en :3000 para la segunda parte)
 npm run lint -w @bosque/api
 
 npm run prisma:generate -w @bosque/api

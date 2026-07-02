@@ -13,11 +13,16 @@ import {
 } from 'class-validator';
 
 export class CrearProductoDto {
-  @ApiProperty({ example: 'SHOW-NUEVO' })
+  @ApiPropertyOptional({
+    example: 'SHOW-004',
+    description:
+      'Opcional. Si se omite, el sistema asigna un código correlativo según categoría.',
+  })
+  @IsOptional()
   @IsString()
   @MinLength(2)
   @MaxLength(40)
-  codigo!: string;
+  codigo?: string;
 
   @ApiProperty()
   @IsString()

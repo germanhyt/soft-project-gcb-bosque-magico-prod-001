@@ -98,12 +98,12 @@ export function PanelLayout() {
         className={`fixed top-0 left-0 z-50 flex h-full flex-col overflow-visible bg-secondary py-6 shadow-[20px_0_20px_-15px_rgba(23,53,14,0.15)] transition-[width,padding,transform] duration-300 md:z-40 ${sidebarWidthClass}`}
       >
         <div
-          className={`shrink-0 border-b border-white/10 pb-4 ${rail ? 'mb-3 flex justify-center' : 'mb-4 flex items-center gap-2 px-1 text-center'}`}
+          className={`shrink-0 border-b border-white/10 ml-2 pb-2 ${rail ? 'mb-3 flex justify-center' : 'mb-4 flex items-center gap-2 px-1 text-center'}`}
         >
           <img
             src="/logo-bm.png"
             alt="Bosque Mágico"
-            className="h-10 w-10 rounded-lg"
+            className="h-12 w-12 rounded-lg"
           />
           {!rail && (
             <div className="">

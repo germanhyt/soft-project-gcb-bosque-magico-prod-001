@@ -5,6 +5,7 @@ import { CrearCotizacionUseCase } from './crear-cotizacion.use-case';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { IdentidadContactoService } from '../../domain/services/identidad-contacto.service';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 
 describe('CrearSolicitudPublicaUseCase', () => {
   let useCase: CrearSolicitudPublicaUseCase;
@@ -19,6 +20,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
   let identidad: jest.Mocked<
     Pick<IdentidadContactoService, 'resolver' | 'vincularClienteConSolicitud'>
   >;
+  let anticipacion: jest.Mocked<Pick<AnticipacionEventoService, 'validar'>>;
 
   const resumenSinDuplicado = {
     celularNormalizado: '999888777',
@@ -43,6 +45,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
       resolver: jest.fn(),
       vincularClienteConSolicitud: jest.fn().mockResolvedValue({ id: 'cli-1' }),
     };
+    anticipacion = { validar: jest.fn().mockResolvedValue(undefined) };
     identidad.resolver.mockResolvedValue(resumenSinDuplicado);
     useCase = new CrearSolicitudPublicaUseCase(
       solicitudes as unknown as SolicitudesRepository,
@@ -50,6 +53,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
       events as unknown as EventsService,
       crearCotizacion as unknown as CrearCotizacionUseCase,
       identidad as unknown as IdentidadContactoService,
+      anticipacion as unknown as AnticipacionEventoService,
     );
   });
 
@@ -163,6 +167,104 @@ describe('CrearSolicitudPublicaUseCase', () => {
       'cot-1',
       'COT-L00001',
       'Luis',
+    );
+  });
+
+  it('permite origen personalizado y evita cotización auto fuera de landing', async () => {
+    solicitudes.crear.mockResolvedValue({
+      id: 'sol-4',
+      nombreContacto: 'Brenda',
+      canal: CanalSolicitud.meta,
+    } as never);
+    solicitudes.obtenerPorId.mockResolvedValue({
+      id: 'sol-4',
+      cotizaciones: [],
+    } as never);
+
+    const res = await useCase.ejecutar({
+      cliente: { nombre: 'Brenda', celular: '955444333' },
+      evento: {
+        fechaTentativa: '2026-08-09',
+        turno: 'turno_1',
+        cantidadNinos: 18,
+        paquete: 'Premium',
+      },
+      origen: {
+        canal: CanalSolicitud.meta,
+        detalle: 'instagram',
+        payload: { detectedFromText: true },
+      },
+      preferencias: {
+        items: [{ productoId: 'p1', cantidad: 1 }],
+      },
+    });
+
+    expect(res.solicitud.id).toBe('sol-4');
+    expect(solicitudes.crear).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canal: CanalSolicitud.meta,
+        detalleOrigen: 'instagram',
+        payloadOrigen: expect.objectContaining({
+          origen: expect.objectContaining({
+            canal: CanalSolicitud.meta,
+            detalle: 'instagram',
+          }),
+        }),
+      }),
+    );
+    expect(auditoria.registrar).toHaveBeenCalledWith(
+      expect.objectContaining({
+        metadata: expect.objectContaining({ canal: CanalSolicitud.meta }),
+      }),
+    );
+    expect(crearCotizacion.ejecutar).not.toHaveBeenCalled();
+  });
+
+  it('infiere canal meta cuando detalle de origen es instagram', async () => {
+    solicitudes.crear.mockResolvedValue({
+      id: 'sol-5',
+      nombreContacto: 'Carla',
+      canal: CanalSolicitud.meta,
+    } as never);
+    solicitudes.obtenerPorId.mockResolvedValue({
+      id: 'sol-5',
+      cotizaciones: [],
+    } as never);
+
+    await useCase.ejecutar({
+      cliente: { nombre: 'Carla', celular: '944333222' },
+      origen: { detalle: 'Insta' },
+    });
+
+    expect(solicitudes.crear).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canal: CanalSolicitud.meta,
+        detalleOrigen: 'instagram',
+      }),
+    );
+  });
+
+  it('infiere canal otro cuando detalle de origen es tiktok', async () => {
+    solicitudes.crear.mockResolvedValue({
+      id: 'sol-6',
+      nombreContacto: 'Mauro',
+      canal: CanalSolicitud.otro,
+    } as never);
+    solicitudes.obtenerPorId.mockResolvedValue({
+      id: 'sol-6',
+      cotizaciones: [],
+    } as never);
+
+    await useCase.ejecutar({
+      cliente: { nombre: 'Mauro', celular: '933222111' },
+      origen: { detalle: 'Tik Tok' },
+    });
+
+    expect(solicitudes.crear).toHaveBeenCalledWith(
+      expect.objectContaining({
+        canal: CanalSolicitud.otro,
+        detalleOrigen: 'tiktok',
+      }),
     );
   });
 });

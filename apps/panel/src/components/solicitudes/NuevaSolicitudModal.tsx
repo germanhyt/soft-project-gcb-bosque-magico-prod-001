@@ -68,15 +68,15 @@ export function NuevaSolicitudModal({ open, onClose }: Props) {
         <form onSubmit={formik.handleSubmit} className="space-y-4">
           <label className="block">
             <span className={LABEL_CLASS}>Nombre contacto *</span>
-            <input name="nombreContacto" className={INPUT_CLASS} value={formik.values.nombreContacto} onChange={formik.handleChange} />
+            <input name="nombreContacto" className={INPUT_CLASS} value={formik.values.nombreContacto} onChange={formik.handleChange} placeholder="Ej. Carlos Ruiz" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Celular *</span>
-            <input name="celular" className={INPUT_CLASS} value={formik.values.celular} onChange={formik.handleChange} />
+            <input name="celular" className={INPUT_CLASS} value={formik.values.celular} onChange={formik.handleChange} placeholder="988 777 666" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Correo</span>
-            <input name="correo" type="email" className={INPUT_CLASS} value={formik.values.correo} onChange={formik.handleChange} />
+            <input name="correo" type="email" className={INPUT_CLASS} value={formik.values.correo} onChange={formik.handleChange} placeholder="contacto@correo.com" />
           </label>
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="block">
@@ -85,7 +85,7 @@ export function NuevaSolicitudModal({ open, onClose }: Props) {
             </label>
             <label className="block">
               <span className={LABEL_CLASS}>Niños estimados</span>
-              <input name="cantidadNinosEstimada" type="number" min={1} className={INPUT_CLASS} value={formik.values.cantidadNinosEstimada} onChange={formik.handleChange} />
+              <input name="cantidadNinosEstimada" type="number" min={1} className={INPUT_CLASS} value={formik.values.cantidadNinosEstimada} onChange={formik.handleChange} placeholder="25" />
             </label>
           </div>
           <label className="block">
@@ -97,7 +97,7 @@ export function NuevaSolicitudModal({ open, onClose }: Props) {
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Notas</span>
-            <textarea name="notas" rows={3} className={INPUT_CLASS} value={formik.values.notas} onChange={formik.handleChange} />
+            <textarea name="notas" rows={3} className={INPUT_CLASS} value={formik.values.notas} onChange={formik.handleChange} placeholder="Detalle del evento o pedido del cliente" />
           </label>
           <div className="flex justify-end gap-2 pt-2">
             <Button variant="ghost" onClick={onClose}>

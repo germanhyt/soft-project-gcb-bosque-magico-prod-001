@@ -45,7 +45,7 @@ export class PedidosRepository {
   listarOperaciones(desde?: Date, hasta?: Date) {
     return this.prisma.bosqueMagicoPedido.findMany({
       where: {
-        etapa: { notIn: [EtapaPedido.cerrado, EtapaPedido.cancelado] },
+        etapa: { notIn: [EtapaPedido.entregado, EtapaPedido.cancelado] },
         ...(desde || hasta
           ? {
               evento: {

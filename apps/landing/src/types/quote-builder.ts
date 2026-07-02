@@ -6,6 +6,8 @@ export type QuoteBuilderSelection = {
   extraCantidades: Record<string, number>;
   /** Popcorn o algodón (Premium) */
   snackId: string;
+  /** Unidades solicitadas del carrito snack Premium (25 incluidas) */
+  snackCantidad: number;
   /** Mínimo 10 incluidas en paquete */
   cajitasCantidad: number;
   piqueoIds: string[];
@@ -28,6 +30,7 @@ export const INITIAL_QUOTE_SELECTION: QuoteBuilderSelection = {
   extraIds: [],
   extraCantidades: {},
   snackId: '',
+  snackCantidad: 25,
   cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
   piqueoIds: [],
   piqueosCantidades: {},

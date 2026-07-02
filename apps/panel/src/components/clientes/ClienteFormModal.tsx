@@ -104,6 +104,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.nombreCompleto}
             onChange={(e) => setForm((prev) => ({ ...prev, nombreCompleto: e.target.value }))}
+            placeholder="Ej. Ana Pérez López"
           />
         </label>
 
@@ -113,6 +114,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.celular}
             onChange={(e) => setForm((prev) => ({ ...prev, celular: e.target.value }))}
+            placeholder="999 888 777"
           />
         </label>
 
@@ -123,6 +125,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.correo}
             onChange={(e) => setForm((prev) => ({ ...prev, correo: e.target.value }))}
+            placeholder="cliente@correo.com"
           />
         </label>
 
@@ -151,6 +154,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.numeroDocumento}
             onChange={(e) => setForm((prev) => ({ ...prev, numeroDocumento: e.target.value }))}
+            placeholder="12345678"
           />
         </label>
 
@@ -160,6 +164,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.direccion}
             onChange={(e) => setForm((prev) => ({ ...prev, direccion: e.target.value }))}
+            placeholder="Av. Principal 123"
           />
         </label>
 
@@ -169,6 +174,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.distrito}
             onChange={(e) => setForm((prev) => ({ ...prev, distrito: e.target.value }))}
+            placeholder="Surco"
           />
         </label>
 
@@ -179,6 +185,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
             className={INPUT_CLASS}
             value={form.notas}
             onChange={(e) => setForm((prev) => ({ ...prev, notas: e.target.value }))}
+            placeholder="Preferencias o comentarios internos"
           />
         </label>
 

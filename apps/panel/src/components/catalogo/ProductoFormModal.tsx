@@ -9,7 +9,7 @@ import { Modal } from '../ui/Modal';
 import { ProductoMediaSection } from './ProductoMediaSection';
 
 export type ProductoFormPayload = {
-  codigo: string;
+  codigo?: string;
   nombre: string;
   categoria: string;
   precioLunesViernes: number;
@@ -37,7 +37,6 @@ type Props = {
 };
 
 const EMPTY = {
-  codigo: '',
   nombre: '',
   categoria: 'show',
   subtipo: 'general',
@@ -53,7 +52,6 @@ const EMPTY = {
 
 function formFromProducto(p: Producto) {
   return {
-    codigo: p.codigo,
     nombre: p.nombre,
     categoria: p.categoria,
     subtipo: p.subtipo ?? 'general',
@@ -100,8 +98,8 @@ export function ProductoFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.codigo.trim() || !form.nombre.trim()) {
-      setError('Código y nombre son obligatorios');
+    if (!form.nombre.trim()) {
+      setError('El nombre es obligatorio');
       return;
     }
     const precioLunesViernes = Number(form.precioLunesViernes);
@@ -145,7 +143,6 @@ export function ProductoFormModal({
     setError('');
     try {
       await onSubmit({
-        codigo: form.codigo.trim(),
         nombre: form.nombre.trim(),
         categoria: form.categoria,
         precioLunesViernes,
@@ -179,17 +176,23 @@ export function ProductoFormModal({
       size="lg"
     >
       <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
-        <label className="block sm:col-span-1">
-          <span className={LABEL_CLASS}>Código *</span>
-          <input
-            className={INPUT_CLASS}
-            value={form.codigo}
-            readOnly={esEdicion}
-            disabled={esEdicion}
-            onChange={(e) => setForm({ ...form, codigo: e.target.value })}
-          />
-        </label>
-        <label className="block sm:col-span-1">
+        {!esEdicion && (
+          <p className="sm:col-span-2 text-body-sm text-on-surface-variant">
+            El código interno se asignará automáticamente al guardar (según categoría).
+          </p>
+        )}
+        {esEdicion && producto && (
+          <label className="block sm:col-span-1">
+            <span className={LABEL_CLASS}>Código</span>
+            <input
+              className={`${INPUT_CLASS} font-mono`}
+              value={producto.codigo}
+              readOnly
+              disabled
+            />
+          </label>
+        )}
+        <label className={`block ${esEdicion ? 'sm:col-span-1' : 'sm:col-span-2'}`}>
           <span className={LABEL_CLASS}>Nombre *</span>
           <input
             className={INPUT_CLASS}
@@ -236,7 +239,7 @@ export function ProductoFormModal({
                 setForm({
                   ...form,
                   subtipo,
-                  cantidadMinima: subtipo === 'piqueo' ? '1' : form.cantidadMinima,
+                  cantidadMinima: subtipo === 'piqueo' ? '1' : subtipo === 'general' ? '18' : form.cantidadMinima,
                   unidadesPack: subtipo === 'piqueo' ? form.unidadesPack || '25' : '',
                 });
               }}

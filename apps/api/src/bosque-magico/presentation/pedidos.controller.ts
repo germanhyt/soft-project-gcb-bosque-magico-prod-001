@@ -2,8 +2,10 @@ import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ActualizarPedidoDto } from '../application/dto/actualizar-pedido.dto';
 import { CrearPedidoDto } from '../application/dto/crear-pedido.dto';
+import { EnviarPedidoProveedorCorreoDto } from '../application/dto/enviar-pedido-proveedor-correo.dto';
 import { ActualizarPedidoUseCase } from '../application/use-cases/actualizar-pedido.use-case';
 import { CrearPedidoUseCase } from '../application/use-cases/crear-pedido.use-case';
+import { EnviarPedidoProveedorCorreoUseCase } from '../application/use-cases/enviar-pedido-proveedor-correo.use-case';
 import { GenerarPedidosEventoUseCase } from '../application/use-cases/generar-pedidos-evento.use-case';
 import { ListarPedidosEventoUseCase } from '../application/use-cases/listar-pedidos-evento.use-case';
 import { ListarPedidosOperacionesUseCase } from '../application/use-cases/listar-pedidos-operaciones.use-case';
@@ -16,6 +18,7 @@ export class PedidosController {
     private readonly listarOps: ListarPedidosOperacionesUseCase,
     private readonly crear: CrearPedidoUseCase,
     private readonly actualizar: ActualizarPedidoUseCase,
+    private readonly enviarCorreo: EnviarPedidoProveedorCorreoUseCase,
     private readonly generar: GenerarPedidosEventoUseCase,
   ) {}
 
@@ -51,5 +54,14 @@ export class PedidosController {
   @ApiOperation({ summary: 'Actualizar pedido (estado, costo, notas)' })
   patch(@Param('id') id: string, @Body() dto: ActualizarPedidoDto) {
     return this.actualizar.ejecutar(id, dto);
+  }
+
+  @Post('pedidos/:id/enviar-correo')
+  @ApiOperation({ summary: 'Enviar pedido a proveedor por correo (SMTP o plantilla mailto)' })
+  enviarCorreoProveedor(
+    @Param('id') id: string,
+    @Body() dto: EnviarPedidoProveedorCorreoDto,
+  ) {
+    return this.enviarCorreo.ejecutar(id, dto);
   }
 }

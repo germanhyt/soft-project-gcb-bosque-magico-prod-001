@@ -59,6 +59,7 @@ export type SeleccionPaquetePayload = {
   showIds?: string[];
   extraIds?: string[];
   snackId?: string;
+  snackCantidad?: number;
   cajitasCantidad?: number;
   piqueos?: Array<{ productoId: string; cantidad: number }>;
   adicionales?: Array<{ productoId: string; cantidad: number }>;
@@ -80,6 +81,10 @@ export type PreviewCotizacionResponse = {
     cajitasIncluidas: number;
     cajitasSolicitadas: number;
     cajitasExcedente: number;
+    snackUnidadesIncluidas: number;
+    snackUnidadesSolicitadas: number;
+    snackUnidadesExcedente: number;
+    snackMontoExcedente: number;
     piqueosCreditoIncluido: number;
     piqueosValorSeleccionado: number;
     piqueosExcedente: number;

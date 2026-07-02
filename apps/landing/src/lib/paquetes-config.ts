@@ -4,6 +4,8 @@ export const PAQUETES_CONFIG_DEFAULT = {
   cajitasIncluidas: 10,
   cajitasPrecioExcedente: 20.9,
   piqueosCreditoPremium: 200,
+  snackPremiumUnidadesIncluidas: 25,
+  snackPremiumPrecioExcedente: 10,
 } as const;
 
 function num(valor: unknown, fallback: number): number {
@@ -24,6 +26,14 @@ export function paquetesConfigDesdeItems(items: ConfiguracionItem[] | undefined)
     piqueosCreditoPremium: num(
       map.get('paquetes.piqueos_credito_premium'),
       PAQUETES_CONFIG_DEFAULT.piqueosCreditoPremium,
+    ),
+    snackPremiumUnidadesIncluidas: num(
+      map.get('paquetes.snack_premium_unidades_incluidas'),
+      PAQUETES_CONFIG_DEFAULT.snackPremiumUnidadesIncluidas,
+    ),
+    snackPremiumPrecioExcedente: num(
+      map.get('paquetes.snack_premium_precio_excedente'),
+      PAQUETES_CONFIG_DEFAULT.snackPremiumPrecioExcedente,
     ),
   };
 }

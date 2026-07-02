@@ -5,6 +5,8 @@ import { AceptarCotizacionUseCase } from './aceptar-cotizacion.use-case';
 import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-cotizacion-sync.service';
+import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { GenerarPedidosEventoUseCase } from './generar-pedidos-evento.use-case';
 
 const fecha = new Date(2026, 5, 15);
 const cotBase = {
@@ -36,6 +38,8 @@ describe('AceptarCotizacionUseCase', () => {
   let solicitudSync: jest.Mocked<
     Pick<SolicitudCotizacionSyncService, 'alAceptarCotizacion'>
   >;
+  let anticipacion: jest.Mocked<Pick<AnticipacionEventoService, 'validar'>>;
+  let generarPedidos: jest.Mocked<Pick<GenerarPedidosEventoUseCase, 'ejecutar'>>;
 
   beforeEach(() => {
     cotizaciones = {
@@ -50,11 +54,15 @@ describe('AceptarCotizacionUseCase', () => {
     solicitudSync = {
       alAceptarCotizacion: jest.fn().mockResolvedValue(undefined),
     };
+    anticipacion = { validar: jest.fn().mockResolvedValue(undefined) };
+    generarPedidos = { ejecutar: jest.fn().mockResolvedValue(undefined) };
     useCase = new AceptarCotizacionUseCase(
       cotizaciones as unknown as CotizacionesRepository,
       auditoria as unknown as AuditoriaRepository,
       events as unknown as EventsService,
       solicitudSync as unknown as SolicitudCotizacionSyncService,
+      anticipacion as unknown as AnticipacionEventoService,
+      generarPedidos as unknown as GenerarPedidosEventoUseCase,
     );
   });
 

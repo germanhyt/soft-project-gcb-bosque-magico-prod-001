@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
+import { CLAVES_NUMERICAS_EDITABLES } from '../../domain/constants/configuracion-claves';
 
 export type SmtpEstadoMeta = {
   habilitado: boolean;
@@ -23,7 +24,10 @@ export class ListarConfiguracionPanelUseCase {
   async ejecutar() {
     const items = await this.configuracion.listarTodas();
     const numericas = items.filter(
-      (i) => typeof i.valor === 'number' && !i.clave.startsWith('smtp.'),
+      (i) =>
+        typeof i.valor === 'number' &&
+        !i.clave.startsWith('smtp.') &&
+        CLAVES_NUMERICAS_EDITABLES.has(i.clave),
     );
     const turnos = items.filter((i) => i.clave.startsWith('turnos.'));
     const cotizador = items.filter((i) => i.clave.startsWith('cotizador.'));

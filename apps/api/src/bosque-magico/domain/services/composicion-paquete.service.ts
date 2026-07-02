@@ -6,6 +6,8 @@ import {
 } from '@prisma/client';
 import { CalculoPreciosService } from './calculo-precios.service';
 import { resolverComposicionPaquete } from './composicion-paquete.resolver';
+import { calcularCargosCapacidad } from './reglas-capacidad';
+import { validarSeleccionPaquete } from './validar-seleccion-paquete';
 import {
   coincidePaquete,
   type ComposicionRegla,
@@ -82,6 +84,7 @@ export class ComposicionPaqueteService {
     const productos = new Map(
       productosDb.map((p) => [p.id, this.aRef(p)] as const),
     );
+    validarSeleccionPaquete(params.seleccion, productos);
     const reglas: ComposicionRegla[] = reglasDb.map((r) => ({
       modo: r.modo,
       cantidad: r.cantidad,
@@ -90,8 +93,11 @@ export class ComposicionPaqueteService {
       metadata: (r.metadata as Record<string, unknown> | null) ?? null,
     }));
 
-    const tarifas = await this.calculo.obtenerTarifas();
-    const configCajitas = await this.calculo.obtenerReglasPaquete();
+    const [tarifas, reglasCapacidad, configPaquete] = await Promise.all([
+      this.calculo.obtenerTarifas(),
+      this.calculo.obtenerReglasCapacidad(),
+      this.calculo.obtenerReglasPaquete(),
+    ]);
 
     const composicion = resolverComposicionPaquete({
       paquete: this.aRef(paqueteProducto),
@@ -99,9 +105,24 @@ export class ComposicionPaqueteService {
       productos,
       seleccion: params.seleccion,
       esFinSemana,
-      cajitasIncluidas: configCajitas.cajitasIncluidas,
-      cajitasPrecioExcedente: configCajitas.cajitasPrecioExcedente,
+      cajitasIncluidas: configPaquete.cajitasIncluidas,
+      cajitasPrecioExcedente: configPaquete.cajitasPrecioExcedente,
+      snackPremiumUnidadesIncluidas:
+        configPaquete.snackPremiumUnidadesIncluidas,
+      snackPremiumPrecioExcedente: configPaquete.snackPremiumPrecioExcedente,
     });
+
+    const cargosCapacidad = calcularCargosCapacidad({
+      cantidadNinos: params.cantidadNinos,
+      maximoPermitido: tarifas.maximoPermitido,
+      ninosIncluidosShow: reglasCapacidad.ninosIncluidosShow,
+      precioNinoExtraShow: reglasCapacidad.precioNinoExtraShow,
+      precioNinoExtraServicio: reglasCapacidad.precioNinoExtraServicio,
+      seleccion: params.seleccion,
+      productos,
+    });
+
+    composicion.items.push(...cargosCapacidad.items);
 
     const montos = this.calculo.calcular(
       tarifas,
@@ -109,7 +130,10 @@ export class ComposicionPaqueteService {
       params.cantidadNinos,
       composicion.itemsCobrables,
       feriados,
-      { montoBasePaquete: composicion.montoBasePaquete },
+      {
+        montoBasePaquete: composicion.montoBasePaquete,
+        montoNinosExtra: cargosCapacidad.montoTotal,
+      },
     );
 
     return {

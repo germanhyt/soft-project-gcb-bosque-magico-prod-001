@@ -33,7 +33,7 @@ describe('NotificacionProveedorService', () => {
       { clave: 'pedidos_proveedor.notificar_correo', valor: false },
     ]);
 
-    const result = await service.notificarPedidoCreado('ped-1');
+    const result = await service.notificarAlSolicitar('ped-1');
 
     expect(result).toEqual({ enviado: false, motivo: 'deshabilitado' });
     expect(smtp.enviarCorreo).not.toHaveBeenCalled();
@@ -74,9 +74,9 @@ describe('NotificacionProveedorService', () => {
       cliente: { nombreCompleto: 'Ana Pérez' },
     });
 
-    const result = await service.notificarPedidoCreado('ped-1');
+    const result = await service.notificarAlSolicitar('ped-1');
 
-    expect(result).toEqual({ enviado: true });
+    expect(result.enviado).toBe(true);
     expect(smtp.enviarCorreo).toHaveBeenCalledWith({
       destino: 'mimo@test.com',
       asunto: 'Pedido Show Magia — 15 de julio de 2026',

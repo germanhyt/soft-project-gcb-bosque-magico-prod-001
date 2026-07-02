@@ -34,6 +34,7 @@ export type SeleccionPaqueteInput = {
   showIds?: string[];
   extraIds?: string[];
   snackId?: string;
+  snackCantidad?: number;
   cajitasCantidad?: number;
   piqueos?: ItemCantidadInput[];
   adicionales?: ItemCantidadInput[];
@@ -55,6 +56,10 @@ export type ResumenPaquete = {
   cajitasIncluidas: number;
   cajitasSolicitadas: number;
   cajitasExcedente: number;
+  snackUnidadesIncluidas: number;
+  snackUnidadesSolicitadas: number;
+  snackUnidadesExcedente: number;
+  snackMontoExcedente: number;
   piqueosCreditoIncluido: number;
   piqueosValorSeleccionado: number;
   piqueosExcedente: number;

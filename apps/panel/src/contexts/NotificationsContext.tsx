@@ -15,6 +15,7 @@ import {
   ocultarTodasNotificaciones,
 } from '../lib/notificaciones-api';
 import type { BosquePanelEvent, PanelNotification } from '../types/bosque-panel-event';
+import { playNotificationSound } from '../lib/notification-sound';
 
 const MAX_NOTIFICATIONS = 50;
 
@@ -75,6 +76,7 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
       leida: false,
     };
     setItems((prev) => upsertNotification(prev, entry));
+    playNotificationSound();
   }, []);
 
   const markAllRead = useCallback(() => {

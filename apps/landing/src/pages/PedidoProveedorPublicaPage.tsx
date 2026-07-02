@@ -53,10 +53,8 @@ const ETAPA_LABEL: Record<string, string> = {
   pendiente: 'Pendiente de respuesta',
   solicitado: 'Solicitado',
   confirmado: 'Confirmado',
+  entregado: 'Completado',
   cancelado: 'Rechazado / cancelado',
-  en_proceso: 'En proceso',
-  entregado: 'Entregado',
-  cerrado: 'Cerrado',
 };
 
 export function PedidoProveedorPublicaPage() {

@@ -26,7 +26,7 @@ export function MobileNav({ open, onClose }: Props) {
       <button
         type="button"
         aria-label="Cerrar menú"
-        className="fixed inset-0 z-40 bg-primary/25 backdrop-blur-[2px] lg:hidden"
+        className="fixed inset-0 z-40 bg-primary/50 lg:hidden"
         onClick={onClose}
       />
       <nav

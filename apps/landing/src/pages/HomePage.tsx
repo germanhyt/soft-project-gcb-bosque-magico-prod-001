@@ -9,6 +9,7 @@ import { Beneficios } from '../components/sections/Beneficios';
 import { CajitasSelector } from '../components/sections/CajitasSelector';
 import { Catering } from '../components/sections/Catering';
 import { Extras } from '../components/sections/Extras';
+import { Experiencia } from '../components/sections/Experiencia';
 import { Faq } from '../components/sections/Faq';
 import { Hero } from '../components/sections/Hero';
 import { Paquetes } from '../components/sections/Paquetes';
@@ -20,19 +21,18 @@ import {
   type QuoteBuilderSelection,
 } from '../types/quote-builder';
 import { paquetesConfigDesdeItems } from '../lib/paquetes-config';
+import { minimoCateringDesdeConfig, minimoUnidadesCatering } from '../lib/catering-minimo';
 import { getSelectionMode, SELECTION_MODE_KEYS } from '../lib/selection-mode';
 import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
-
-function getMinimoCatering(items: { clave: string; valor: unknown }[] | undefined) {
-  const minimo = items?.find((item) => item.clave === 'catering.minimo_unidades')?.valor;
-  return typeof minimo === 'number' && minimo > 0 ? minimo : 18;
-}
 
 export function HomePage() {
   const [selection, setSelection] = useState<QuoteBuilderSelection>(INITIAL_QUOTE_SELECTION);
   const [fechaPreview, setFechaPreview] = useState('');
   const { data } = useConfiguracion();
-  const minimoCatering = useMemo(() => getMinimoCatering(data?.items), [data?.items]);
+  const minimoCatering = useMemo(
+    () => minimoCateringDesdeConfig(data?.items),
+    [data?.items],
+  );
   const paquetesConfig = useMemo(() => paquetesConfigDesdeItems(data?.items), [data?.items]);
   const selectionModes = useMemo(
     () => ({
@@ -50,6 +50,7 @@ export function HomePage() {
       <main>
         <Hero />
         <Beneficios />
+        <Experiencia />
         <Paquetes
           selectedPaquete={selection.paquete}
           onSelectPaquete={(paquete) =>
@@ -60,6 +61,7 @@ export function HomePage() {
               piqueoIds: [],
               piqueosCantidades: {},
               snackId: '',
+              snackCantidad: paquetesConfig.snackPremiumUnidadesIncluidas,
             }))
           }
         />
@@ -69,7 +71,24 @@ export function HomePage() {
         />
         <SnackPremiumSelector
           selection={selection}
-          onSelectSnack={(snackId) => setSelection((prev) => ({ ...prev, snackId }))}
+          onSelectSnack={(snackId) =>
+            setSelection((prev) => ({
+              ...prev,
+              snackId,
+              snackCantidad: snackId
+                ? Math.max(prev.snackCantidad, paquetesConfig.snackPremiumUnidadesIncluidas)
+                : paquetesConfig.snackPremiumUnidadesIncluidas,
+            }))
+          }
+          onSnackCantidad={(snackCantidad) =>
+            setSelection((prev) => ({
+              ...prev,
+              snackCantidad: Math.max(
+                snackCantidad,
+                paquetesConfig.snackPremiumUnidadesIncluidas,
+              ),
+            }))
+          }
         />
         <PiqueosSelector
           selection={selection}
@@ -117,7 +136,7 @@ export function HomePage() {
           onToggleCatering={(cateringId, checked) =>
             setSelection((prev) => {
               const producto = data?.productos.catering?.find((p) => p.id === cateringId);
-              const minQty = Math.max(producto?.cantidadMinima ?? 1, minimoCatering);
+              const minQty = minimoUnidadesCatering(producto, minimoCatering);
               return toggleCatalogSelection(
                 prev,
                 'cateringIds',

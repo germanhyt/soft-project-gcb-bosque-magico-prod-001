@@ -11,10 +11,10 @@ export const CARD_CLASS =
 export const FIELDSET_CLASS = `${CARD_CLASS} p-6 md:p-7`;
 
 export const BTN_PRIMARY =
-  'inline-flex items-center justify-center rounded-xl bg-tertiary-fixed-dim px-6 py-3.5 font-display text-sm font-bold text-on-tertiary-fixed shadow-ambient transition hover:bg-tertiary-fixed hover:shadow-[0_12px_28px_-8px_rgba(62,44,0,0.35)] active:scale-[0.98] disabled:opacity-60';
+  'inline-flex items-center justify-center rounded-xl bg-tertiary-fixed-dim px-6 py-3.5 font-display text-sm font-bold text-on-tertiary-fixed shadow-ambient transition hover:bg-secondary-container hover:text-on-secondary-container active:scale-[0.98] disabled:opacity-60';
 
 export const BTN_SECONDARY =
-  'inline-flex items-center justify-center rounded-xl border-2 border-primary-container bg-transparent px-6 py-3.5 font-display text-sm font-semibold text-primary transition hover:bg-primary-fixed/35';
+  'inline-flex items-center justify-center rounded-xl border-2 border-primary-container bg-surface-container-lowest px-6 py-3.5 font-display text-sm font-semibold text-primary transition hover:bg-primary-container hover:text-on-primary';
 
 export const CONTAINER = 'mx-auto max-w-(--width-container) px-4 sm:px-6';
 
@@ -27,7 +27,8 @@ export const SECTION_HERO = 'py-16 md:py-24 lg:py-28';
 export const SECTION_SHELL = `${SECTION_SCROLL} px-4 sm:px-6 ${SECTION_PY}`;
 export const SECTION_ALT = `${SECTION_SHELL} bg-surface-container-low`;
 export const SECTION_TINTED = `${SECTION_SHELL} bg-surface-container`;
-export const SECTION_QUOTE = `${SECTION_SCROLL} bg-linear-to-b from-primary-fixed/12 via-surface-container-low to-background px-4 py-16 sm:px-6 md:py-24`;
+export const SECTION_QUOTE = `${SECTION_SCROLL} relative overflow-hidden bg-primary-fixed px-4 py-16 sm:px-6 md:py-24`;
+export const SECTION_FOREST = `${SECTION_SCROLL} relative overflow-hidden bg-primary-container px-4 sm:px-6 ${SECTION_PY}`;
 
 /** Grids de catálogo */
 export const GRID_CATALOG = 'grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
@@ -60,4 +61,4 @@ export const CART_PANEL =
   'sticky top-[5.25rem] rounded-2xl border border-surface-variant/90 bg-surface-container-lowest p-6 shadow-ambient md:p-7 lg:top-28';
 
 export const HEADER_CLASS =
-  'sticky top-0 z-30 border-b border-surface-variant/80 bg-surface-container-lowest/95 shadow-[0_1px_0_rgba(23,53,14,0.06)] backdrop-blur-xl';
+  'sticky top-0 z-30 border-b-2 border-primary-fixed-dim bg-surface-container-lowest shadow-ambient';

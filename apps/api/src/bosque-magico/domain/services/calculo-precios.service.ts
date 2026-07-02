@@ -8,9 +8,14 @@ import {
 export type TarifasNegocio = {
   baseLunesViernes: number;
   baseFinSemana: number;
-  precioNinoExtra: number;
   maximoBase: number;
   maximoPermitido: number;
+};
+
+export type ReglasCapacidadNegocio = {
+  ninosIncluidosShow: number;
+  precioNinoExtraShow: number;
+  precioNinoExtraServicio: number;
 };
 
 export type ItemCalculoInput = {
@@ -39,11 +44,25 @@ export class CalculoPreciosService {
       return typeof v === 'number' && !Number.isNaN(v) ? v : d;
     };
     return {
-      baseLunesViernes: num('tarifas.base_lunes_viernes', 380),
-      baseFinSemana: num('tarifas.base_fin_semana', 580),
-      precioNinoExtra: num('tarifas.precio_nino_extra', 25),
-      maximoBase: num('ninos.maximo_base', 25),
-      maximoPermitido: num('ninos.maximo_permitido', 35),
+      baseLunesViernes: num('tarifas.base_lunes_viernes', 799),
+      baseFinSemana: num('tarifas.base_fin_semana', 950),
+      maximoBase: num('ninos.maximo_base', 20),
+      maximoPermitido: num('ninos.maximo_permitido', 30),
+    };
+  }
+
+  async obtenerReglasCapacidad(): Promise<ReglasCapacidadNegocio> {
+    const items = await this.configuracion.listarPublicas();
+    const map = new Map(items.map((i) => [i.clave, i.valor]));
+    const num = (k: string, d: number) => {
+      const v = map.get(k);
+      return typeof v === 'number' && !Number.isNaN(v) ? v : d;
+    };
+    const ninosIncluidosShow = num('shows.ninos_incluidos', 20);
+    return {
+      ninosIncluidosShow,
+      precioNinoExtraShow: num('shows.precio_nino_extra', 15),
+      precioNinoExtraServicio: num('extras.precio_nino_extra', 10),
     };
   }
 
@@ -64,6 +83,8 @@ export class CalculoPreciosService {
   async obtenerReglasPaquete(): Promise<{
     cajitasIncluidas: number;
     cajitasPrecioExcedente: number;
+    snackPremiumUnidadesIncluidas: number;
+    snackPremiumPrecioExcedente: number;
   }> {
     const items = await this.configuracion.listarPublicas();
     const map = new Map(items.map((i) => [i.clave, i.valor]));
@@ -74,6 +95,14 @@ export class CalculoPreciosService {
     return {
       cajitasIncluidas: num('paquetes.cajitas_incluidas', 10),
       cajitasPrecioExcedente: num('paquetes.cajitas_precio_excedente', 20.9),
+      snackPremiumUnidadesIncluidas: num(
+        'paquetes.snack_premium_unidades_incluidas',
+        25,
+      ),
+      snackPremiumPrecioExcedente: num(
+        'paquetes.snack_premium_precio_excedente',
+        10,
+      ),
     };
   }
 
@@ -83,7 +112,7 @@ export class CalculoPreciosService {
     cantidadNinos: number,
     items: ItemCalculoInput[],
     feriados: ReadonlySet<string> = new Set(),
-    options?: { montoBasePaquete?: number },
+    options?: { montoBasePaquete?: number; montoNinosExtra?: number },
   ): ResultadoCalculo {
     let advertencia: string | undefined;
     if (cantidadNinos > tarifas.maximoPermitido) {
@@ -93,9 +122,7 @@ export class CalculoPreciosService {
     const montoBase =
       options?.montoBasePaquete ??
       (esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes);
-    const ninosParaExtra = Math.min(cantidadNinos, tarifas.maximoPermitido);
-    const extraCount = Math.max(ninosParaExtra - tarifas.maximoBase, 0);
-    const montoNinosExtra = extraCount * tarifas.precioNinoExtra;
+    const montoNinosExtra = options?.montoNinosExtra ?? 0;
     const montoItems = items.reduce(
       (s, i) => s + i.cantidad * i.precioUnitario,
       0,

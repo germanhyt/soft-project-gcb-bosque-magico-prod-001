@@ -181,6 +181,7 @@ export function PedidoFormModal({
             className={INPUT_CLASS}
             value={form.nombre}
             onChange={(e) => setForm((f) => ({ ...f, nombre: e.target.value }))}
+            placeholder="Ej. Servilletas temáticas"
           />
         </label>
 
@@ -221,6 +222,7 @@ export function PedidoFormModal({
                 setCostoManual(true);
                 setForm((f) => ({ ...f, costo: e.target.value }));
               }}
+              placeholder="0.00"
             />
             {form.productoId && !costoManual && (
               <p className="text-xs text-outline">
@@ -263,6 +265,7 @@ export function PedidoFormModal({
             className={`${INPUT_CLASS} min-h-[72px]`}
             value={form.notas}
             onChange={(e) => setForm((f) => ({ ...f, notas: e.target.value }))}
+            placeholder="Instrucciones para operaciones"
           />
         </label>
 

@@ -14,7 +14,7 @@ import {
   MinLength,
   ValidateNested,
 } from 'class-validator';
-import { TurnoInteres } from '@prisma/client';
+import { CanalSolicitud, TurnoInteres } from '@prisma/client';
 
 export class ClienteSolicitudDto {
   @ApiProperty({ example: 'Juan Pérez' })
@@ -82,6 +82,29 @@ export class EventoSolicitudDto {
   paquete?: string;
 }
 
+export class OrigenSolicitudPublicaDto {
+  @ApiPropertyOptional({ enum: CanalSolicitud, default: CanalSolicitud.landing })
+  @IsOptional()
+  @IsEnum(CanalSolicitud)
+  canal?: CanalSolicitud;
+
+  @ApiPropertyOptional({
+    example: 'instagram',
+    description: 'Detalle de origen declarado o inferido (ej. instagram, referido)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  detalle?: string;
+
+  @ApiPropertyOptional({
+    description: 'Payload técnico de trazabilidad del canal/origen',
+  })
+  @IsOptional()
+  @IsObject()
+  payload?: Record<string, unknown>;
+}
+
 export class CrearSolicitudPublicaDto {
   @ApiProperty({ type: ClienteSolicitudDto })
   @IsDefined()
@@ -113,4 +136,13 @@ export class CrearSolicitudPublicaDto {
   @IsOptional()
   @IsObject()
   preferencias?: Record<string, unknown>;
+
+  @ApiPropertyOptional({
+    type: OrigenSolicitudPublicaDto,
+    description: 'Canal y detalle de origen del lead',
+  })
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => OrigenSolicitudPublicaDto)
+  origen?: OrigenSolicitudPublicaDto;
 }

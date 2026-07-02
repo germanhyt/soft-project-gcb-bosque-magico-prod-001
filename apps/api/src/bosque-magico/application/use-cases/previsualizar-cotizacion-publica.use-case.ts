@@ -19,6 +19,7 @@ export class PrevisualizarCotizacionPublicaUseCase {
       showIds: base.showIds,
       extraIds: base.extraIds,
       snackId: base.snackId,
+      snackCantidad: base.snackCantidad,
       cajitasCantidad: base.cajitasCantidad,
       piqueos: base.piqueos,
       adicionales: [
@@ -39,13 +40,28 @@ export class PrevisualizarCotizacionPublicaUseCase {
       throw new BadRequestException('Fecha de evento inválida');
     }
 
-    const { composicion, montos, esFinSemana } =
+    let composicion;
+    let montos;
+    let esFinSemana: boolean;
+
+    if (dto.modalidad === 'solo_espacio') {
+      throw new BadRequestException(
+        'Modalidad solo espacio aún no soportada en previsualización',
+      );
+    }
+
+    const paquete = dto.paquete?.trim();
+    if (!paquete) {
+      throw new BadRequestException('Debe elegir un paquete');
+    }
+
+    ({ composicion, montos, esFinSemana } =
       await this.composicionPaquete.armarCotizacionConPaquete({
-        paquete: dto.paquete,
+        paquete,
         fechaEvento,
         cantidadNinos: dto.cantidadNinos,
         seleccion: this.mapearSeleccion(dto),
-      });
+      }));
 
     return {
       paquete: composicion.paqueteNombre,

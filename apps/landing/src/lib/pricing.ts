@@ -3,7 +3,6 @@ import type { ConfiguracionItem, ProductoCatalogo } from './api';
 export type TarifasConfig = {
   baseLunesViernes: number;
   baseFinSemana: number;
-  precioNinoExtra: number;
   minimoNinos: number;
   maximoBase: number;
   maximoPermitido: number;
@@ -12,12 +11,11 @@ export type TarifasConfig = {
 };
 
 export const TARIFAS_DEFAULT: TarifasConfig = {
-  baseLunesViernes: 380,
-  baseFinSemana: 580,
-  precioNinoExtra: 25,
+  baseLunesViernes: 799,
+  baseFinSemana: 950,
   minimoNinos: 10,
-  maximoBase: 25,
-  maximoPermitido: 35,
+  maximoBase: 20,
+  maximoPermitido: 30,
   adelanto: 500,
   garantia: 500,
 };
@@ -31,7 +29,6 @@ export function mapConfigToTarifas(items: ConfiguracionItem[]): TarifasConfig {
   return {
     baseLunesViernes: num(map.get('tarifas.base_lunes_viernes'), TARIFAS_DEFAULT.baseLunesViernes),
     baseFinSemana: num(map.get('tarifas.base_fin_semana'), TARIFAS_DEFAULT.baseFinSemana),
-    precioNinoExtra: num(map.get('tarifas.precio_nino_extra'), TARIFAS_DEFAULT.precioNinoExtra),
     minimoNinos: num(map.get('ninos.minimo'), TARIFAS_DEFAULT.minimoNinos),
     maximoBase: num(map.get('ninos.maximo_base'), TARIFAS_DEFAULT.maximoBase),
     maximoPermitido: num(map.get('ninos.maximo_permitido'), TARIFAS_DEFAULT.maximoPermitido),
@@ -55,9 +52,9 @@ export function isWeekend(dateStr: string, feriados: readonly string[] = []): bo
 }
 
 export const PRECIOS_PAQUETE_FALLBACK: Record<string, { lv: number; fds: number }> = {
-  basico: { lv: 380, fds: 580 },
-  estandar: { lv: 480, fds: 680 },
-  premium: { lv: 580, fds: 780 },
+  basico: { lv: 799, fds: 950 },
+  estandar: { lv: 1310, fds: 1650 },
+  premium: { lv: 1770, fds: 2100 },
 };
 
 function normalizarNombrePaquete(nombre: string): string {
@@ -123,9 +120,7 @@ export function calcularEstimado(
   const base =
     options?.montoBasePaquete ??
     (esFinSemana ? tarifas.baseFinSemana : tarifas.baseLunesViernes);
-  const extraCount = Math.max(Math.min(cantidadNinos, tarifas.maximoPermitido) - tarifas.maximoBase, 0);
-  const extraNinos = extraCount * tarifas.precioNinoExtra;
-  return { base, extraNinos, total: base + extraNinos, esFinSemana, advertencia };
+  return { base, extraNinos: 0, total: base, esFinSemana, advertencia };
 }
 
 export function formatSoles(amount: number) {

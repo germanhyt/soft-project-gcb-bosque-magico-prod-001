@@ -175,7 +175,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
         },
     validationSchema: activeEsEdicion ? schemaEditar : schemaCrear,
     onSubmit: (values) => {
-      const seleccionPayload = seleccionToPayload(seleccion);
+      const seleccionPayload = seleccionToPayload(seleccion, catalogo.catering);
 
       if (activeEsEdicion) {
         actualizarMut.mutate({

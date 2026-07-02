@@ -23,8 +23,8 @@ describe('resolverComposicionPaquete', () => {
     codigo: 'PK-PREMIUM',
     nombre: 'Premium',
     categoria: CategoriaProducto.paquete,
-    precioLunesViernes: 580,
-    precioFinSemana: 780,
+    precioLunesViernes: 1770,
+    precioFinSemana: 2100,
   });
 
   const productos = new Map<string, ProductoCotizacionRef>([
@@ -110,12 +110,36 @@ describe('resolverComposicionPaquete', () => {
         precioFinSemana: 62.5,
       }),
     ],
+    [
+      'snack1',
+      mk({
+        id: 'snack1',
+        codigo: 'CAT-POPCORN',
+        nombre: 'Popcorn',
+        categoria: CategoriaProducto.catering,
+        subtipo: SubtipoProducto.snack,
+        precioLunesViernes: 350,
+        precioFinSemana: 350,
+      }),
+    ],
   ]);
 
   const reglasPremium = [
     { modo: ModoComposicionPaquete.slot_show, cantidad: 1, montoCredito: null, componenteId: null, metadata: null },
     { modo: ModoComposicionPaquete.slot_extra, cantidad: 1, montoCredito: null, componenteId: null, metadata: null },
     { modo: ModoComposicionPaquete.cajitas_incluidas, cantidad: 10, montoCredito: null, componenteId: null, metadata: null },
+    {
+      modo: ModoComposicionPaquete.eleccion_snack,
+      cantidad: 1,
+      montoCredito: null,
+      componenteId: null,
+      metadata: {
+        productoIds: ['snack1'],
+        unidadesIncluidas: 25,
+        precioPack: 350,
+        precioUnidadExcedente: 10,
+      },
+    },
     { modo: ModoComposicionPaquete.credito_piqueos, cantidad: 1, montoCredito: 200, componenteId: null, metadata: null },
   ];
 
@@ -151,7 +175,7 @@ describe('resolverComposicionPaquete', () => {
     const shows = r.items.filter((i) => i.tipo === 'show');
     expect(shows[0].precioUnitario).toBe(0);
     expect(shows[1].precioUnitario).toBe(200);
-    expect(r.montoBasePaquete).toBe(580);
+    expect(r.montoBasePaquete).toBe(1770);
   });
 
   it('aplica crédito S/200 en piqueos y cobra packs que exceden', () => {
@@ -216,5 +240,62 @@ describe('resolverComposicionPaquete', () => {
 
     expect(r.resumen.piqueosValorSeleccionado).toBe(112.5 + 50 + 50);
     expect(r.resumen.piqueosExcedente).toBe(50);
+  });
+
+  it('snack Premium incluye 25 unidades y cobra excedente por unidad', () => {
+    const r = resolverComposicionPaquete({
+      paquete: paquetePremium,
+      reglas: reglasPremium,
+      productos,
+      seleccion: {
+        snackId: 'snack1',
+        snackCantidad: 30,
+      },
+      esFinSemana: false,
+    });
+
+    const snackIncluido = r.items.find(
+      (i) => i.nombre === 'Popcorn' && i.origenItem === OrigenItemCotizacion.incluido_paquete,
+    );
+    const snackExcedente = r.items.find(
+      (i) => i.nombre === 'Popcorn' && i.origenItem === OrigenItemCotizacion.excedente_paquete,
+    );
+    expect(snackIncluido?.cantidad).toBe(25);
+    expect(snackIncluido?.precioCatalogo).toBe(350);
+    expect(snackExcedente?.cantidad).toBe(5);
+    expect(snackExcedente?.precioUnitario).toBe(10);
+    expect(r.resumen.snackUnidadesExcedente).toBe(5);
+    expect(r.resumen.snackMontoExcedente).toBe(50);
+  });
+
+  it('prioriza configuración pública para excedente snack sobre metadata de regla', () => {
+    const r = resolverComposicionPaquete({
+      paquete: paquetePremium,
+      reglas: reglasPremium,
+      productos,
+      seleccion: {
+        snackId: 'snack1',
+        snackCantidad: 32,
+      },
+      esFinSemana: false,
+      snackPremiumUnidadesIncluidas: 30,
+      snackPremiumPrecioExcedente: 12,
+    });
+
+    const snackIncluido = r.items.find(
+      (i) =>
+        i.nombre === 'Popcorn' &&
+        i.origenItem === OrigenItemCotizacion.incluido_paquete,
+    );
+    const snackExcedente = r.items.find(
+      (i) =>
+        i.nombre === 'Popcorn' &&
+        i.origenItem === OrigenItemCotizacion.excedente_paquete,
+    );
+    expect(snackIncluido?.cantidad).toBe(30);
+    expect(snackExcedente?.cantidad).toBe(2);
+    expect(snackExcedente?.precioUnitario).toBe(12);
+    expect(r.resumen.snackUnidadesExcedente).toBe(2);
+    expect(r.resumen.snackMontoExcedente).toBe(24);
   });
 });

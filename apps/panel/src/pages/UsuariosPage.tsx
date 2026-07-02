@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import { UsuarioFormModal } from '../components/usuarios/UsuarioFormModal';
+import { UsuarioRowActions } from '../components/usuarios/UsuarioRowActions';
 import { AlertError } from '../components/ui/Alert';
 import { Button } from '../components/ui/Button';
 import { PageHeader } from '../components/ui/PageHeader';
@@ -247,26 +248,16 @@ export function UsuariosPage() {
                       {u.activo ? 'Activo' : 'Inactivo'}
                     </span>
                   </td>
-                  <td className="px-4 py-3 text-right">
-                    <button
-                      type="button"
-                      className="mr-3 text-body-sm font-semibold text-secondary hover:text-primary"
-                      onClick={() => {
-                        setEditUser(u);
+                  <td className="px-4 py-3">
+                    <UsuarioRowActions
+                      usuario={u}
+                      esUsuarioActual={yo?.id === u.id}
+                      onEditar={(usuario) => {
+                        setEditUser(usuario);
                         setModalOpen(true);
                       }}
-                    >
-                      Editar
-                    </button>
-                    {yo?.id !== u.id && (
-                      <button
-                        type="button"
-                        className="text-body-sm font-semibold text-outline hover:text-error"
-                        onClick={() => toggleActivo(u)}
-                      >
-                        {u.activo ? 'Desactivar' : 'Activar'}
-                      </button>
-                    )}
+                      onToggleActivo={toggleActivo}
+                    />
                   </td>
                 </tr>
               ))

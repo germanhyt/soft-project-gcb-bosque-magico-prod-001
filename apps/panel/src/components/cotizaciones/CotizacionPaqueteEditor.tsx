@@ -41,7 +41,10 @@ export function CotizacionPaqueteEditor({
   catalogo,
 }: Props) {
   const esPremium = esPaquetePremium(paquete);
-  const payload = useMemo(() => seleccionToPayload(seleccion), [seleccion]);
+  const payload = useMemo(
+    () => seleccionToPayload(seleccion, catalogo.catering),
+    [seleccion, catalogo.catering],
+  );
 
   const { data: configPanel } = useQuery({
     queryKey: ['configuracion-panel'],
@@ -200,7 +203,18 @@ export function CotizacionPaqueteEditor({
               <button
                 key={s.id}
                 type="button"
-                onClick={() => patch({ snackId: seleccion.snackId === s.id ? '' : s.id })}
+                onClick={() =>
+                  patch({
+                    snackId: seleccion.snackId === s.id ? '' : s.id,
+                    snackCantidad:
+                      seleccion.snackId === s.id
+                        ? paquetesConfig.snackPremiumUnidadesIncluidas
+                        : Math.max(
+                            seleccion.snackCantidad,
+                            paquetesConfig.snackPremiumUnidadesIncluidas,
+                          ),
+                  })
+                }
                 className={`rounded-lg border px-3 py-2 text-sm ${
                   seleccion.snackId === s.id
                     ? 'border-primary bg-primary-fixed/30 font-semibold text-primary'
@@ -211,6 +225,28 @@ export function CotizacionPaqueteEditor({
               </button>
             ))}
           </div>
+          {seleccion.snackId && (
+            <label className="mt-3 block max-w-xs">
+              <span className={LABEL_CLASS}>Unidades snack (carrito Premium)</span>
+              <input
+                type="number"
+                min={paquetesConfig.snackPremiumUnidadesIncluidas}
+                className={INPUT_CLASS}
+                value={Math.max(seleccion.snackCantidad, paquetesConfig.snackPremiumUnidadesIncluidas)}
+                onChange={(e) =>
+                  patch({
+                    snackCantidad: Math.max(
+                      Number(e.target.value) || paquetesConfig.snackPremiumUnidadesIncluidas,
+                      paquetesConfig.snackPremiumUnidadesIncluidas,
+                    ),
+                  })
+                }
+              />
+              <span className="mt-1 block text-xs text-on-surface-variant">
+                Incluye {paquetesConfig.snackPremiumUnidadesIncluidas} unidades; excedente S/ {paquetesConfig.snackPremiumPrecioExcedente} por unidad adicional.
+              </span>
+            </label>
+          )}
         </div>
       )}
 
@@ -295,7 +331,7 @@ export function CotizacionPaqueteEditor({
                 </div>
                 {preview.data.montos.ninosExtra > 0 && (
                   <div className="flex justify-between">
-                    <dt>Niños extra</dt>
+                    <dt>Cargos por capacidad</dt>
                     <dd className="font-semibold">{formatSoles(preview.data.montos.ninosExtra)}</dd>
                   </div>
                 )}

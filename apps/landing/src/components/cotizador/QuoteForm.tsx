@@ -33,11 +33,16 @@ import {
 } from '../../constants/design';
 import { CatalogConnectionAlert } from '../ui/CatalogConnectionAlert';
 import { MotionReveal } from '../ui/MotionReveal';
+import { PartyDecor } from '../ui/PartyDecor';
 import { SectionTitle } from '../ui/SectionTitle';
 import type { QuoteBuilderSelection } from '../../types/quote-builder';
-import { buildSeleccionPaquete } from '../../lib/build-seleccion-paquete';
+import { buildSeleccionPaquete, type BuildSeleccionPaqueteOptions } from '../../lib/build-seleccion-paquete';
+import { minimoCateringDesdeConfig, minimoUnidadesCatering } from '../../lib/catering-minimo';
+import type { ProductoCatalogo } from '../../lib/api';
 import { consultarIdentidad } from '../../lib/identidad';
 import { fechaMinimaEvento, mensajeAnticipacion } from '../../lib/anticipacion';
+import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
+import { expandIdsFromQty } from '../../lib/expand-catalog-qty';
 
 type FormValues = {
   nombre: string;
@@ -88,7 +93,10 @@ function buildSchema(tarifas: TarifasConfig, minDiasAnticipacion: number) {
     turno: Yup.string().oneOf(['', 'turno_1', 'turno_2', 'turno_3']).optional(),
     cantidadNinos: Yup.number()
       .min(tarifas.minimoNinos, `Mínimo ${tarifas.minimoNinos} niños`)
-      .max(50, 'Máximo 50 — confirma con el equipo')
+      .max(
+        tarifas.maximoPermitido,
+        `Máximo ${tarifas.maximoPermitido} niños en reserva regular — confirma con el equipo si necesitas más`,
+      )
       .required('Requerido'),
   });
 }
@@ -116,8 +124,9 @@ function getTurnos(items: ConfiguracionItem[] | undefined) {
 function toPayload(
   values: FormValues,
   selection: QuoteBuilderSelection,
+  buildOpts?: BuildSeleccionPaqueteOptions,
 ): CrearSolicitudPayload {
-  const seleccion = buildSeleccionPaquete(selection);
+  const seleccion = buildSeleccionPaquete(selection, buildOpts);
   const payload: CrearSolicitudPayload = {
     cliente: {
       nombre: values.nombre.trim(),
@@ -147,10 +156,13 @@ function toPayload(
       extraIds: selection.extraIds,
       extraCantidades: selection.extraCantidades,
       snackId: selection.snackId || undefined,
+      snackCantidad: selection.snackId ? Math.max(selection.snackCantidad, 25) : undefined,
       cajitasCantidad: selection.cajitasCantidad,
       piqueos: seleccion.piqueos,
       cateringIds: selection.cateringIds,
-      cateringCantidades: selection.cateringCantidades,
+      cateringCantidades: Object.fromEntries(
+        (seleccion.adicionales ?? []).map((a) => [a.productoId, a.cantidad]),
+      ),
     },
   };
   payload.preferencias = preferencias;
@@ -161,17 +173,160 @@ function fieldClass(error?: string) {
   return `${INPUT_CLASS} ${error ? INPUT_ERROR_CLASS : ''}`;
 }
 
+type CartItemView = {
+  productoId: string;
+  nombre: string;
+  cantidad: number;
+  precioUnitario: number;
+  subtotal: number;
+  tipo?: string;
+  origenItem?: string;
+  notas?: string;
+};
+
+type CartQtyEdit =
+  | { kind: 'cajitas'; value: number; min: number; max: number }
+  | { kind: 'piqueo'; productoId: string; value: number; min: number; max: number }
+  | { kind: 'snack'; value: number; min: number; max: number }
+  | { kind: 'catering'; productoId: string; value: number; min: number; max: number }
+  | { kind: 'show'; productoId: string; value: number; min: number; max: number }
+  | { kind: 'extra'; productoId: string; value: number; min: number; max: number };
+
+function resolveCartQtyEdit(
+  item: CartItemView,
+  selection: QuoteBuilderSelection,
+  options: {
+    cajitasIncluidas: number;
+    snackMin: number;
+    showCajitaControl: boolean;
+    cateringCatalog?: readonly ProductoCatalogo[];
+    minimoCateringGlobal?: number;
+  },
+): CartQtyEdit | null {
+  const id = item.productoId;
+  if (selection.piqueoIds.includes(id)) {
+    return {
+      kind: 'piqueo',
+      productoId: id,
+      value: selection.piqueosCantidades[id] ?? 1,
+      min: 1,
+      max: 20,
+    };
+  }
+  if (selection.snackId && selection.snackId === id) {
+    return {
+      kind: 'snack',
+      value: selection.snackCantidad,
+      min: options.snackMin,
+      max: 200,
+    };
+  }
+  if (selection.cateringIds.includes(id)) {
+    const producto = options.cateringCatalog?.find((p) => p.id === id);
+    const min = minimoUnidadesCatering(producto, options.minimoCateringGlobal);
+    return {
+      kind: 'catering',
+      productoId: id,
+      value: Math.max(selection.cateringCantidades[id] ?? min, min),
+      min,
+      max: 99,
+    };
+  }
+  if (selection.showIds.includes(id)) {
+    return {
+      kind: 'show',
+      productoId: id,
+      value:
+        selection.showCantidades[id] ??
+        selection.showIds.filter((showId) => showId === id).length,
+      min: 1,
+      max: 10,
+    };
+  }
+  if (selection.extraIds.includes(id)) {
+    return {
+      kind: 'extra',
+      productoId: id,
+      value:
+        selection.extraCantidades[id] ??
+        selection.extraIds.filter((extraId) => extraId === id).length,
+      min: 1,
+      max: 10,
+    };
+  }
+  if (
+    options.showCajitaControl &&
+    item.origenItem === 'incluido_paquete' &&
+    /cajita/i.test(item.nombre)
+  ) {
+    return {
+      kind: 'cajitas',
+      value: selection.cajitasCantidad,
+      min: options.cajitasIncluidas,
+      max: 200,
+    };
+  }
+  return null;
+}
+
+function CartQtyStepper({
+  value,
+  min,
+  max,
+  onChange,
+}: {
+  value: number;
+  min: number;
+  max: number;
+  onChange: (next: number) => void;
+}) {
+  return (
+    <div className="flex items-center gap-1.5">
+      <button
+        type="button"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant bg-surface text-sm font-bold text-primary hover:bg-surface-container-high disabled:opacity-40"
+        disabled={value <= min}
+        aria-label="Reducir cantidad"
+        onClick={() => onChange(Math.max(min, value - 1))}
+      >
+        −
+      </button>
+      <span className="min-w-[2ch] text-center text-sm font-semibold tabular-nums">{value}</span>
+      <button
+        type="button"
+        className="flex h-8 w-8 items-center justify-center rounded-lg border border-outline-variant bg-surface text-sm font-bold text-primary hover:bg-surface-container-high disabled:opacity-40"
+        disabled={value >= max}
+        aria-label="Aumentar cantidad"
+        onClick={() => onChange(Math.min(max, value + 1))}
+      >
+        +
+      </button>
+    </div>
+  );
+}
+
 type Props = {
   selection: QuoteBuilderSelection;
   onSelectionChange: (next: QuoteBuilderSelection | ((prev: QuoteBuilderSelection) => QuoteBuilderSelection)) => void;
   onFechaChange?: (fecha: string) => void;
 };
 
-export function QuoteForm({ selection, onFechaChange }: Props) {
+export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props) {
   const [identidadHint, setIdentidadHint] = useState<string | null>(null);
   const { data, isLoading, isError } = useConfiguracion();
   const tarifas = data?.tarifas ?? TARIFAS_DEFAULT;
   const feriados = data?.feriados ?? [];
+  const paquetesConfig = useMemo(
+    () => paquetesConfigDesdeItems(data?.items),
+    [data?.items],
+  );
+  const buildSeleccionOpts = useMemo(
+    (): BuildSeleccionPaqueteOptions => ({
+      cateringCatalog: data?.productos.catering,
+      minimoCateringGlobal: minimoCateringDesdeConfig(data?.items),
+    }),
+    [data?.items, data?.productos.catering],
+  );
   const minDiasAnticipacion = data?.minDiasAnticipacion ?? 7;
   const fechaMinEvento = useMemo(
     () => fechaMinimaEvento(minDiasAnticipacion),
@@ -218,7 +373,7 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
           return;
         }
 
-        const res = await crearSolicitudPublica(toPayload(values, selection));
+        const res = await crearSolicitudPublica(toPayload(values, selection, buildSeleccionOpts));
         const estimado = preview.data
           ? {
               total: preview.data.montos.total,
@@ -274,7 +429,10 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
     },
   });
 
-  const seleccionPreview = useMemo(() => buildSeleccionPaquete(selection), [selection]);
+  const seleccionPreview = useMemo(
+    () => buildSeleccionPaquete(selection, buildSeleccionOpts),
+    [selection, buildSeleccionOpts],
+  );
 
   const canPreview = Boolean(formik.values.fechaTentativa && selection.paquete);
   const preview = useQuery({
@@ -351,7 +509,7 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
     };
   }, [preview.data, estimadoFallback]);
 
-  const cartItems = useMemo(() => {
+  const cartItems = useMemo((): CartItemView[] => {
     if (preview.data?.items?.length) {
       return preview.data.items.map((item) => ({
         productoId: item.productoId ?? item.nombre,
@@ -367,6 +525,48 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
     return [];
   }, [preview.data?.items]);
 
+  const handleCartQtyChange = useCallback(
+    (edit: CartQtyEdit, nextQty: number) => {
+      onSelectionChange((prev) => {
+        switch (edit.kind) {
+          case 'cajitas':
+            return { ...prev, cajitasCantidad: nextQty };
+          case 'piqueo':
+            return {
+              ...prev,
+              piqueosCantidades: { ...prev.piqueosCantidades, [edit.productoId]: nextQty },
+            };
+          case 'snack':
+            return { ...prev, snackCantidad: nextQty };
+          case 'catering':
+            return {
+              ...prev,
+              cateringCantidades: { ...prev.cateringCantidades, [edit.productoId]: nextQty },
+            };
+          case 'show': {
+            const showCantidades = { ...prev.showCantidades, [edit.productoId]: nextQty };
+            return {
+              ...prev,
+              showCantidades,
+              showIds: expandIdsFromQty(prev.showIds, showCantidades),
+            };
+          }
+          case 'extra': {
+            const extraCantidades = { ...prev.extraCantidades, [edit.productoId]: nextQty };
+            return {
+              ...prev,
+              extraCantidades,
+              extraIds: expandIdsFromQty(prev.extraIds, extraCantidades),
+            };
+          }
+          default:
+            return prev;
+        }
+      });
+    },
+    [onSelectionChange],
+  );
+
   const wa = import.meta.env.VITE_WHATSAPP_NUMBER;
   const waLink = wa
     ? `https://wa.me/${wa}?text=${encodeURIComponent('Hola Bosque Mágico, quiero cotizar una fiesta infantil.')}`
@@ -376,7 +576,8 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
 
   return (
     <section id="cotizar" className={SECTION_QUOTE}>
-      <div className={CONTAINER}>
+      <PartyDecor placement="quote-pattern" />
+      <div className={`${CONTAINER} relative z-[1]`}>
         <SectionTitle
           pill="Cotizador"
           title="Arma tu solicitud en minutos"
@@ -558,6 +759,10 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
                     <span className={chip(selection.extraIds.length > 0)}>
                       Extras: {selection.extraIds.length > 0 ? selection.extraIds.length : 'Ninguno'}
                     </span>
+                    <span className={chip(Boolean(selection.snackId))}>
+                      Snack Premium:{' '}
+                      {selection.snackId ? `${Math.max(selection.snackCantidad, 25)} uds` : 'Sin elegir'}
+                    </span>
                   </div>
                 </div>
                 <label className="block sm:col-span-2">
@@ -604,27 +809,75 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
                 </p>
               ) : (
                 <ul className="mt-5 space-y-3">
-                  {cartItems.map((item) => (
-                    <li
-                      key={item.productoId}
-                      className="rounded-xl border border-surface-variant/80 bg-surface-container-low px-4 py-3"
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <p className="text-sm font-semibold text-on-surface">{item.nombre}</p>
-                          <p className="text-xs capitalize text-outline">
-                            {item.origenItem === 'incluido_paquete' ? 'Incluido' : item.tipo}
-                          </p>
-                        </div>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm font-semibold">x{item.cantidad}</span>
-                        <p className="text-sm font-semibold text-primary">
-                          {item.precioUnitario <= 0 ? 'Incluido' : formatSoles(item.subtotal)}
-                        </p>
-                      </div>
-                    </li>
-                  ))}
+                  {(() => {
+                    let cajitaControlShown = false;
+                    const qtyControlShown = new Set<string>();
+                    return cartItems.map((item) => {
+                      const showCajitaControl = !cajitaControlShown;
+                      const qtyEdit = resolveCartQtyEdit(item, selection, {
+                        cajitasIncluidas: paquetesConfig.cajitasIncluidas,
+                        snackMin: paquetesConfig.snackPremiumUnidadesIncluidas,
+                        showCajitaControl,
+                        cateringCatalog: data?.productos.catering,
+                        minimoCateringGlobal: buildSeleccionOpts.minimoCateringGlobal,
+                      });
+                      if (
+                        qtyEdit?.kind === 'cajitas' ||
+                        (showCajitaControl &&
+                          item.origenItem === 'incluido_paquete' &&
+                          /cajita/i.test(item.nombre))
+                      ) {
+                        cajitaControlShown = true;
+                      }
+                      const controlKey =
+                        qtyEdit &&
+                        (qtyEdit.kind === 'piqueo' ||
+                          qtyEdit.kind === 'catering' ||
+                          qtyEdit.kind === 'show' ||
+                          qtyEdit.kind === 'extra')
+                          ? `${qtyEdit.kind}:${qtyEdit.productoId}`
+                          : qtyEdit?.kind === 'snack'
+                            ? 'snack'
+                            : qtyEdit?.kind === 'cajitas'
+                              ? 'cajitas'
+                              : null;
+                      const showQtyControl =
+                        qtyEdit != null &&
+                        controlKey != null &&
+                        !qtyControlShown.has(controlKey);
+                      if (showQtyControl) qtyControlShown.add(controlKey);
+                      return (
+                        <li
+                          key={`${item.productoId}-${item.origenItem ?? item.nombre}`}
+                          className="rounded-xl border border-surface-variant/80 bg-surface-container-low px-4 py-3"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <p className="text-sm font-semibold text-on-surface">{item.nombre}</p>
+                              <p className="text-xs capitalize text-outline">
+                                {item.origenItem === 'incluido_paquete' ? 'Incluido' : item.tipo}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="mt-2 flex items-center justify-between gap-2">
+                            {showQtyControl && qtyEdit ? (
+                              <CartQtyStepper
+                                value={qtyEdit.value}
+                                min={qtyEdit.min}
+                                max={qtyEdit.max}
+                                onChange={(next) => handleCartQtyChange(qtyEdit, next)}
+                              />
+                            ) : (
+                              <span className="text-sm font-semibold">x{item.cantidad}</span>
+                            )}
+                            <p className="text-sm font-semibold text-primary">
+                              {item.precioUnitario <= 0 ? 'Incluido' : formatSoles(item.subtotal)}
+                            </p>
+                          </div>
+                        </li>
+                      );
+                    });
+                  })()}
                 </ul>
               )}
 
@@ -653,7 +906,7 @@ export function QuoteForm({ selection, onFechaChange }: Props) {
                   </div>
                   {estimado.extraNinos > 0 && (
                     <div className="flex justify-between">
-                      <dt>Niños extra (26–35)</dt>
+                      <dt>Cargos por capacidad (show / extras)</dt>
                       <dd className="font-semibold">{formatSoles(estimado.extraNinos)}</dd>
                     </div>
                   )}

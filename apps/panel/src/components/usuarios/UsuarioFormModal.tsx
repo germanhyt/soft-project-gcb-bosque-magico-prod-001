@@ -8,6 +8,7 @@ import {
   type UsuarioPanel,
 } from '../../lib/usuarios';
 import { Button } from '../ui/Button';
+import { FormCheckbox } from '../ui/FormCheckbox';
 import { Modal } from '../ui/Modal';
 import { PasswordInput } from '../ui/PasswordInput';
 
@@ -101,6 +102,7 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
             className={INPUT_CLASS}
             value={nombre}
             onChange={(e) => setNombre(e.target.value)}
+            placeholder="Ej. María García"
             required
           />
         </label>
@@ -111,6 +113,7 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
             className={INPUT_CLASS}
             value={email}
             onChange={(e) => setEmail(e.target.value)}
+            placeholder="usuario@bosquemagico.test"
             required
             disabled={editando}
           />
@@ -125,7 +128,7 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
             generatable
             minLength={6}
             autoComplete={editando ? 'new-password' : 'new-password'}
-            placeholder={editando ? 'Dejar vacío para no cambiar' : undefined}
+            placeholder={editando ? 'Dejar vacío para no cambiar' : 'Mínimo 6 caracteres'}
           />
           <p className="mt-1 text-xs text-outline">
             Mínimo 6 caracteres. Usa «Generar» para una clave segura y cópiala antes de guardar.
@@ -138,24 +141,21 @@ export function UsuarioFormModal({ open, onClose, usuario, onSubmit, onUpdate }:
             Los permisos son jerárquicos: Administración incluye Operación y Consulta; Operación
             incluye Consulta.
           </p>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {PERMISOS_PANEL.map((p) => (
-              <label key={p.id} className="flex cursor-pointer items-start gap-3 text-body-sm">
-                <input
-                  type="checkbox"
-                  className="mt-1"
-                  checked={permisos.includes(p.id)}
-                  onChange={() => setPermisos((prev) => togglePermisoPanel(prev, p.id))}
-                />
-                <span className="min-w-0">
-                  <span className="font-semibold text-on-surface">{p.label}</span>
-                  <span className="block text-on-surface-variant">{p.descripcion}</span>
-                  <span className="mt-1 block text-xs text-outline">
-                    {p.modulos.join(' · ')}
-                  </span>
-                  <span className="mt-0.5 block font-mono text-[10px] text-outline">{p.id}</span>
-                </span>
-              </label>
+              <FormCheckbox
+                key={p.id}
+                id={`permiso-${p.id}`}
+                checked={permisos.includes(p.id)}
+                onChange={() => setPermisos((prev) => togglePermisoPanel(prev, p.id))}
+                label={p.label}
+                description={
+                  <>
+                    {p.descripcion}
+                    <span className="mt-1 block text-xs text-outline">{p.modulos.join(' · ')}</span>
+                  </>
+                }
+              />
             ))}
           </div>
         </fieldset>

@@ -15,6 +15,7 @@ type PreferenciasLanding = {
     extraIds?: string[];
     extraCantidades?: Record<string, number>;
     snackId?: string;
+    snackCantidad?: number;
     cajitasCantidad?: number;
     piqueos?: Array<{ productoId: string; cantidad: number }>;
     piqueosCantidades?: Record<string, number>;
@@ -57,6 +58,7 @@ function extraerSeleccion(
     showIds: sel.showIds,
     extraIds: sel.extraIds,
     snackId: sel.snackId,
+    snackCantidad: sel.snackCantidad,
     cajitasCantidad: sel.cajitasCantidad,
     piqueos:
       sel.piqueos ??

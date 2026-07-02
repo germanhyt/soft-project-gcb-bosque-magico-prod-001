@@ -25,7 +25,34 @@ export class CrearSolicitudPublicaUseCase {
     private readonly anticipacion: AnticipacionEventoService,
   ) {}
 
+  private normalizarDetalleOrigen(detalle?: string): string | undefined {
+    const limpio = detalle?.trim().toLowerCase();
+    if (!limpio) return undefined;
+    if (['instagram', 'insta', 'ig'].includes(limpio)) return 'instagram';
+    if (['facebook', 'fb'].includes(limpio)) return 'facebook';
+    if (['tik tok', 'tik-tok'].includes(limpio)) return 'tiktok';
+    return limpio;
+  }
+
+  private inferirCanalDesdeDetalle(detalle?: string): CanalSolicitud | undefined {
+    const normalizado = this.normalizarDetalleOrigen(detalle);
+    if (!normalizado) return undefined;
+    if (normalizado === 'landing') return CanalSolicitud.landing;
+    if (normalizado === 'whatsapp') return CanalSolicitud.whatsapp;
+    if (normalizado === 'referido') return CanalSolicitud.referido;
+    if (['instagram', 'facebook'].includes(normalizado)) return CanalSolicitud.meta;
+    if (normalizado === 'tiktok') return CanalSolicitud.otro;
+    return undefined;
+  }
+
   async ejecutar(dto: CrearSolicitudPublicaDto) {
+    const detalleNormalizado = this.normalizarDetalleOrigen(dto.origen?.detalle);
+    const canal =
+      dto.origen?.canal ??
+      this.inferirCanalDesdeDetalle(detalleNormalizado) ??
+      CanalSolicitud.landing;
+    const detalleOrigen = detalleNormalizado ?? canal;
+
     if (dto.evento?.fechaTentativa) {
       await this.anticipacion.validar(dto.evento.fechaTentativa);
     }
@@ -54,7 +81,7 @@ export class CrearSolicitudPublicaUseCase {
       });
     } catch (err) {
       this.logger.warn(
-        `No se pudo vincular cliente para solicitud landing`,
+        `No se pudo vincular cliente para solicitud pública`,
         err instanceof Error ? err.message : String(err),
       );
     }
@@ -63,8 +90,8 @@ export class CrearSolicitudPublicaUseCase {
       nombreContacto: dto.cliente.nombre,
       celular: dto.cliente.celular,
       correo: dto.cliente.correo,
-      canal: CanalSolicitud.landing,
-      detalleOrigen: 'landing',
+      canal,
+      detalleOrigen,
       fechaTentativa: dto.evento?.fechaTentativa
         ? new Date(dto.evento.fechaTentativa)
         : undefined,
@@ -72,7 +99,11 @@ export class CrearSolicitudPublicaUseCase {
       cantidadNinosEstimada: dto.evento?.cantidadNinos,
       notas: notasPartes.length ? notasPartes.join('\n') : undefined,
       payloadOrigen: JSON.parse(
-        JSON.stringify({ dto, posibleDuplicado: !!duplicado }),
+        JSON.stringify({
+          dto,
+          posibleDuplicado: !!duplicado,
+          origen: dto.origen ?? { canal, detalle: detalleOrigen },
+        }),
       ) as Prisma.InputJsonValue,
     });
 
@@ -83,7 +114,7 @@ export class CrearSolicitudPublicaUseCase {
       actorTipo: 'cliente',
       despues: JSON.parse(JSON.stringify(solicitud)) as Prisma.InputJsonValue,
       metadata: {
-        canal: 'landing',
+        canal,
         posibleDuplicado: !!duplicado,
         totalSolicitudesPrevias: resumenIdentidad.totalSolicitudes,
         clienteConocidoId: resumenIdentidad.clienteId,
@@ -93,7 +124,10 @@ export class CrearSolicitudPublicaUseCase {
     this.events.solicitudNueva(solicitud.id, solicitud.nombreContacto);
 
     let cotizacion: { id: string; codigo: string; etapa: string } | undefined;
-    if (puedeCrearCotizacionBorradorDesdeLanding(dto)) {
+    if (
+      canal === CanalSolicitud.landing &&
+      puedeCrearCotizacionBorradorDesdeLanding(dto)
+    ) {
       try {
         const creada = await this.crearCotizacion.ejecutar(
           mapearSolicitudLandingACotizacion(solicitud.id, dto),

@@ -12,9 +12,7 @@ export type EtapaPedido =
   | 'pendiente'
   | 'solicitado'
   | 'confirmado'
-  | 'en_proceso'
   | 'entregado'
-  | 'cerrado'
   | 'cancelado';
 
 export type Pedido = {

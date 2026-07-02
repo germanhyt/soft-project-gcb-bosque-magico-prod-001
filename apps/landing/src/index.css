@@ -34,8 +34,8 @@
 
   --color-error: #ba1a1a;
 
-  --font-display: 'Fredoka', 'Nunito Sans', system-ui, sans-serif;
-  --font-body: 'Nunito Sans', 'Nunito', system-ui, sans-serif;
+  --font-display: 'Plus Jakarta Sans', 'Nunito Sans', system-ui, sans-serif;
+  --font-body: 'Nunito Sans', system-ui, sans-serif;
 
   --text-display-lg: 3rem;
   --text-display-lg--line-height: 3.5rem;
@@ -107,6 +107,19 @@
 
 @utility shadow-ambient {
   box-shadow: 0 8px 20px -4px rgba(27, 48, 20, 0.08);
+}
+
+@utility bg-party-dots {
+  background-color: var(--color-surface-container-low);
+}
+
+@utility decorador-blend {
+  mix-blend-mode: screen;
+}
+
+@utility frame-party {
+  border: 3px solid var(--color-tertiary-fixed-dim);
+  box-shadow: 0 12px 32px -10px rgba(23, 53, 14, 0.18);
 }
 
 @utility tactile-card {

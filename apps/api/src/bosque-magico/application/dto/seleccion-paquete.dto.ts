@@ -37,6 +37,12 @@ export class SeleccionPaqueteDto {
   @IsUUID()
   snackId?: string;
 
+  @ApiPropertyOptional({ example: 25, description: 'Unidades solicitadas para carrito snack Premium' })
+  @IsOptional()
+  @IsInt()
+  @Min(25)
+  snackCantidad?: number;
+
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
   @IsInt()

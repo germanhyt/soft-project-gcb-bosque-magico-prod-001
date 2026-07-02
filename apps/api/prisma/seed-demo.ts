@@ -104,10 +104,10 @@ async function seedSolicitudesBasicas() {
         fechaEvento: solicitudAtencion.fechaTentativa!,
         turno: TurnoInteres.turno_1,
         cantidadNinos: 22,
-        montoBase: 380,
+        montoBase: 799,
         montoNinosExtra: 0,
         montoItems: 180,
-        montoTotal: 560,
+        montoTotal: 979,
         enviadaEn: new Date(),
       },
     });
@@ -190,10 +190,10 @@ async function seedOperacionesDemo() {
       fechaEvento: fechaEventoOps,
       turno: TurnoInteres.turno_2,
       cantidadNinos: 20,
-      montoBase: 580,
+      montoBase: 1770,
       montoNinosExtra: 0,
       montoItems: productoShow ? 240 : 0,
-      montoTotal: productoShow ? 820 : 580,
+      montoTotal: productoShow ? 2010 : 1770,
       aceptadaEn: new Date(),
       items: productoShow
         ? {

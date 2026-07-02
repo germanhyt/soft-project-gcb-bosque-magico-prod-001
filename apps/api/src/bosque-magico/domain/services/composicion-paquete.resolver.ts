@@ -17,6 +17,9 @@ import {
 
 const CAJITAS_INCLUIDAS_DEFAULT = 10;
 const CAJITAS_PRECIO_EXCEDENTE_DEFAULT = 20.9;
+const SNACK_PREMIUM_UNIDADES_INCLUIDAS_DEFAULT = 25;
+const SNACK_PREMIUM_PRECIO_PACK_DEFAULT = 350;
+const SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT = 10;
 
 export type ResolverComposicionInput = {
   paquete: ProductoCotizacionRef;
@@ -26,6 +29,8 @@ export type ResolverComposicionInput = {
   esFinSemana: boolean;
   cajitasIncluidas?: number;
   cajitasPrecioExcedente?: number;
+  snackPremiumUnidadesIncluidas?: number;
+  snackPremiumPrecioExcedente?: number;
 };
 
 function itemIncluido(
@@ -234,6 +239,104 @@ function resolverPiqueos(
   };
 }
 
+function resolverSnackPremium(
+  regla: ComposicionRegla,
+  seleccion: SeleccionPaqueteInput,
+  productos: Map<string, ProductoCotizacionRef>,
+  esFinSemana: boolean,
+  overrides?: {
+    unidadesIncluidas?: number;
+    precioUnidadExcedente?: number;
+  },
+): {
+  items: ItemPaqueteResuelto[];
+  resumen: Pick<
+    ResumenPaquete,
+    | 'snackUnidadesIncluidas'
+    | 'snackUnidadesSolicitadas'
+    | 'snackUnidadesExcedente'
+    | 'snackMontoExcedente'
+  >;
+} {
+  const ids = (regla.metadata?.productoIds as string[] | undefined) ?? [];
+  const elegido = seleccion.snackId;
+  const unidadesIncluidas =
+    overrides?.unidadesIncluidas ??
+    (regla.metadata?.unidadesIncluidas as number | undefined) ??
+    SNACK_PREMIUM_UNIDADES_INCLUIDAS_DEFAULT;
+  const precioPack =
+    (regla.metadata?.precioPack as number | undefined) ??
+    SNACK_PREMIUM_PRECIO_PACK_DEFAULT;
+  const precioUnidadExcedente =
+    overrides?.precioUnidadExcedente ??
+    (regla.metadata?.precioUnidadExcedente as number | undefined) ??
+    SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT;
+
+  if (!elegido || !ids.includes(elegido)) {
+    return {
+      items: [],
+      resumen: {
+        snackUnidadesIncluidas: unidadesIncluidas,
+        snackUnidadesSolicitadas: 0,
+        snackUnidadesExcedente: 0,
+        snackMontoExcedente: 0,
+      },
+    };
+  }
+
+  const producto = productos.get(elegido);
+  if (!producto) {
+    return {
+      items: [],
+      resumen: {
+        snackUnidadesIncluidas: unidadesIncluidas,
+        snackUnidadesSolicitadas: 0,
+        snackUnidadesExcedente: 0,
+        snackMontoExcedente: 0,
+      },
+    };
+  }
+
+  const solicitadas = Math.max(
+    seleccion.snackCantidad ?? unidadesIncluidas,
+    unidadesIncluidas,
+  );
+  const unidadesExcedente = Math.max(0, solicitadas - unidadesIncluidas);
+  const montoExcedente = unidadesExcedente * precioUnidadExcedente;
+  const items: ItemPaqueteResuelto[] = [
+    {
+      ...itemIncluido(
+        producto,
+        unidadesIncluidas,
+        esFinSemana,
+        `${unidadesIncluidas} unidades incluidas en carrito snack Premium`,
+      ),
+      precioCatalogo: precioPack,
+    },
+  ];
+  if (unidadesExcedente > 0) {
+    items.push(
+      itemExcedente(
+        producto,
+        unidadesExcedente,
+        precioUnidadExcedente,
+        esFinSemana,
+        `Excedente snack Premium (${unidadesExcedente} unidad(es) adicional(es))`,
+      ),
+    );
+  }
+
+  return {
+    items,
+    resumen: {
+      snackUnidadesIncluidas: unidadesIncluidas,
+      snackUnidadesSolicitadas: solicitadas,
+      snackUnidadesExcedente: unidadesExcedente,
+      snackMontoExcedente: montoExcedente,
+    },
+  };
+}
+
 function idsEnSeleccion(seleccion: SeleccionPaqueteInput): Set<string> {
   const ids = new Set<string>();
   for (const id of seleccion.showIds ?? []) ids.add(id);
@@ -254,6 +357,9 @@ export function resolverComposicionPaquete(
     esFinSemana,
     cajitasIncluidas = CAJITAS_INCLUIDAS_DEFAULT,
     cajitasPrecioExcedente = CAJITAS_PRECIO_EXCEDENTE_DEFAULT,
+    snackPremiumUnidadesIncluidas = SNACK_PREMIUM_UNIDADES_INCLUIDAS_DEFAULT,
+    snackPremiumPrecioExcedente =
+      SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT,
   } = input;
 
   const items: ItemPaqueteResuelto[] = [];
@@ -261,6 +367,18 @@ export function resolverComposicionPaquete(
   let slotExtra = 0;
   let creditoPiqueos = 0;
   let cajitasRegla = cajitasIncluidas;
+  let snackResumen: Pick<
+    ResumenPaquete,
+    | 'snackUnidadesIncluidas'
+    | 'snackUnidadesSolicitadas'
+    | 'snackUnidadesExcedente'
+    | 'snackMontoExcedente'
+  > = {
+    snackUnidadesIncluidas: 0,
+    snackUnidadesSolicitadas: 0,
+    snackUnidadesExcedente: 0,
+    snackMontoExcedente: 0,
+  };
 
   for (const regla of reglas) {
     switch (regla.modo) {
@@ -291,21 +409,18 @@ export function resolverComposicionPaquete(
         creditoPiqueos = regla.montoCredito ?? 200;
         break;
       case ModoComposicionPaquete.eleccion_snack: {
-        const ids = (regla.metadata?.productoIds as string[] | undefined) ?? [];
-        const elegido = seleccion.snackId;
-        if (elegido && ids.includes(elegido)) {
-          const producto = productos.get(elegido);
-          if (producto) {
-            items.push(
-              itemIncluido(
-                producto,
-                1,
-                esFinSemana,
-                'Snack incluido en Premium',
-              ),
-            );
-          }
-        }
+        const snack = resolverSnackPremium(
+          regla,
+          seleccion,
+          productos,
+          esFinSemana,
+          {
+            unidadesIncluidas: snackPremiumUnidadesIncluidas,
+            precioUnidadExcedente: snackPremiumPrecioExcedente,
+          },
+        );
+        items.push(...snack.items);
+        snackResumen = snack.resumen;
         break;
       }
       default:
@@ -370,6 +485,7 @@ export function resolverComposicionPaquete(
     itemsCobrables,
     resumen: {
       ...cajitas.resumen,
+      ...snackResumen,
       ...piqueos.resumen,
     },
   };

@@ -1,35 +1,41 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   AREA_PEDIDO_LABEL,
-  ETAPA_PEDIDO_BADGE,
+  AREAS_PEDIDO_FILTRO,
   ETAPA_PEDIDO_LABEL,
+  ETAPAS_PEDIDO_FILTRO,
+  ETAPAS_PEDIDO_OPCIONES,
 } from '../constants/pedidos';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
-import { fechaCalendarioHoy } from '../lib/fecha-calendario';
+import { parseMesParam, rangoMes } from '../lib/agenda-calendar';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
+import { actualizarPedido } from '../lib/pedidos-api';
+import type { AreaPedido, EtapaPedido } from '../lib/pedidos';
 import { fetchPedidosOperaciones } from '../lib/tareas-api';
 import { formatFecha, formatFechaHora } from '../lib/format';
+import { mostrarFeedbackNotificacionProveedor } from '../lib/notificacion-pedido-proveedor-feedback';
 import { PageHeader } from '../components/ui/PageHeader';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
+import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
-import { Button } from '../components/ui/Button';
+import {
+  PedidoOperacionesRowActions,
+  puedeOperarPedidosEvento,
+  type PedidoOperaciones,
+} from '../components/pedidos/PedidoOperacionesRowActions';
 
-function rangoMesHastaHoy() {
-  const hoy = fechaCalendarioHoy();
-  const [y, m] = hoy.split('-');
-  return { desde: `${y}-${m}-01`, hasta: hoy };
+function rangoMesCompletoActual() {
+  const { year, month } = parseMesParam(null);
+  return rangoMes(year, month);
 }
 
-function coincideBusqueda(
-  q: string,
-  pedido: Awaited<ReturnType<typeof fetchPedidosOperaciones>>[number],
-) {
+function coincideBusqueda(q: string, pedido: PedidoOperaciones) {
   const needle = q.trim().toLowerCase();
   if (!needle) return true;
   const campos = [
@@ -44,26 +50,46 @@ function coincideBusqueda(
 
 export function OperacionesPage() {
   const navigate = useNavigate();
-  const def = rangoMesHastaHoy();
+  const qc = useQueryClient();
+  const def = rangoMesCompletoActual();
   const [desde, setDesde] = useState(def.desde);
   const [hasta, setHasta] = useState(def.hasta);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroEtapa, setFiltroEtapa] = useState<'' | EtapaPedido>('');
+  const [filtroArea, setFiltroArea] = useState<'' | AreaPedido>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
 
-  const { data: pedidos = [], isLoading, isError } = useQuery({
+  const { data: pedidos = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['pedidos-operaciones', desde, hasta],
     queryFn: () => fetchPedidosOperaciones(desde, hasta),
   });
 
+  const actualizarEtapaMut = useMutation({
+    mutationFn: ({ id, etapa }: { id: string; etapa: EtapaPedido; eventoId: string }) =>
+      actualizarPedido(id, { etapa }),
+    onSuccess: async (res, { eventoId, etapa }) => {
+      qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] });
+      qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] });
+      if (etapa === 'solicitado') {
+        await mostrarFeedbackNotificacionProveedor(res.notificacionProveedor);
+      }
+    },
+  });
+
   const pedidosFiltrados = useMemo(
-    () => pedidos.filter((p) => coincideBusqueda(busqueda, p)),
-    [pedidos, busqueda],
+    () =>
+      pedidos.filter((p) => {
+        if (filtroEtapa && p.etapa !== filtroEtapa) return false;
+        if (filtroArea && p.area !== filtroArea) return false;
+        return coincideBusqueda(busqueda, p);
+      }),
+    [pedidos, busqueda, filtroEtapa, filtroArea],
   );
 
   useEffect(() => {
     setPage(1);
-  }, [desde, hasta, busqueda, pageSize]);
+  }, [desde, hasta, busqueda, filtroEtapa, filtroArea, pageSize]);
 
   const totalPages = Math.max(1, Math.ceil(pedidosFiltrados.length / pageSize));
   const pedidosPaginados = useMemo(() => {
@@ -87,7 +113,7 @@ export function OperacionesPage() {
         }
       />
 
-      <TableFiltersPanel className="mb-4">
+      <TableFiltersPanel className="mb-4" onRefresh={() => refetch()}>
         <label className="flex min-w-[160px] flex-col gap-1 text-body-sm">
           Desde
           <input
@@ -106,6 +132,18 @@ export function OperacionesPage() {
             onChange={(e) => setHasta(e.target.value)}
           />
         </label>
+        <FilterSelect
+          label="Estado"
+          value={filtroEtapa}
+          onChange={setFiltroEtapa}
+          options={ETAPAS_PEDIDO_FILTRO}
+        />
+        <FilterSelect
+          label="Área"
+          value={filtroArea}
+          onChange={setFiltroArea}
+          options={AREAS_PEDIDO_FILTRO}
+        />
         <FilterSearchInput
           inline
           value={busqueda}
@@ -161,52 +199,70 @@ export function OperacionesPage() {
               </tr>
             )}
             {!isLoading &&
-              pedidosPaginados.map((p) => (
-                <tr key={p.id} className={TABLE_ROW_CLASS}>
-                  <td className="px-4 py-3 text-xs text-outline whitespace-nowrap">
-                    {p.creadoEn ? formatFechaHora(p.creadoEn) : '—'}
-                  </td>
-                  <td className="px-4 py-3 whitespace-nowrap">
-                    {formatFecha(p.evento.fechaEvento)}
-                    <span className="block text-xs text-outline">
-                      {TURNO_LABEL[p.evento.turno] ?? p.evento.turno}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3">{p.evento.cliente.nombreCompleto}</td>
-                  <td className="px-4 py-3">
-                    <span className="font-medium">{p.nombre}</span>
-                    {p.proveedor && (
-                      <span className="block text-xs text-outline">{p.proveedor.nombre}</span>
-                    )}
-                  </td>
-                  <td className="px-4 py-3 text-outline">
-                    {AREA_PEDIDO_LABEL[p.area]}
-                  </td>
-                  <td className="px-4 py-3">
-                    <span
-                      className={`rounded-full px-2 py-0.5 text-xs font-semibold ${ETAPA_PEDIDO_BADGE[p.etapa]}`}
-                    >
-                      {ETAPA_PEDIDO_LABEL[p.etapa]}
-                    </span>
-                  </td>
-                  <td className="px-4 py-3 text-right">S/ {p.costo.toFixed(2)}</td>
-                  <td className="px-4 py-3 text-right">
-                    <Button
-                      variant="ghost"
-                      className="!px-2 !py-1 text-xs"
-                      onClick={() => navigate(`/agenda?detalle=${p.evento.id}`)}
-                    >
-                      Ver evento
-                    </Button>
-                  </td>
-                </tr>
-              ))}
+              pedidosPaginados.map((p) => {
+                const puedeOperar = puedeOperarPedidosEvento(p.evento.etapa);
+                return (
+                  <tr key={p.id} className={TABLE_ROW_CLASS}>
+                    <td className="px-4 py-3 text-xs text-outline whitespace-nowrap">
+                      {p.creadoEn ? formatFechaHora(p.creadoEn) : '—'}
+                    </td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      {formatFecha(p.evento.fechaEvento)}
+                      <span className="block text-xs text-outline">
+                        {TURNO_LABEL[p.evento.turno] ?? p.evento.turno}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3">{p.evento.cliente.nombreCompleto}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-medium">{p.nombre}</span>
+                      {p.proveedor && (
+                        <span className="block text-xs text-outline">{p.proveedor.nombre}</span>
+                      )}
+                    </td>
+                    <td className="px-4 py-3 text-outline">
+                      {AREA_PEDIDO_LABEL[p.area]}
+                    </td>
+                    <td className="px-4 py-3">
+                      <select
+                        className="min-w-[120px] rounded-lg border border-surface-variant bg-surface-container-low px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
+                        value={p.etapa}
+                        disabled={!puedeOperar || actualizarEtapaMut.isPending}
+                        title={
+                          puedeOperar
+                            ? 'Cambiar estado del pedido'
+                            : 'El evento no permite editar pedidos'
+                        }
+                        onChange={(e) =>
+                          actualizarEtapaMut.mutate({
+                            id: p.id,
+                            etapa: e.target.value as EtapaPedido,
+                            eventoId: p.evento.id,
+                          })
+                        }
+                      >
+                        {ETAPAS_PEDIDO_OPCIONES.map((o) => (
+                          <option key={o.value} value={o.value}>
+                            {o.label}
+                          </option>
+                        ))}
+                      </select>
+                    </td>
+                    <td className="px-4 py-3 text-right">S/ {p.costo.toFixed(2)}</td>
+                    <td className="px-4 py-3">
+                      <PedidoOperacionesRowActions
+                        pedido={p}
+                        onVerEvento={(eventoId) => navigate(`/agenda?detalle=${eventoId}`)}
+                      />
+                    </td>
+                  </tr>
+                );
+              })}
             {!isLoading && pedidosFiltrados.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-outline">
                   {pedidos.length === 0
                     ? 'No hay pedidos pendientes en el rango seleccionado.'
-                    : 'Ningún pedido coincide con la búsqueda.'}
+                    : 'Ningún pedido coincide con los filtros.'}
                 </td>
               </tr>
             )}

@@ -306,11 +306,7 @@ enum EtapaPedido {
 
   confirmado
 
-  en_proceso
-
   entregado
-
-  cerrado
 
   cancelado
 

@@ -36,6 +36,8 @@ import { formatFechaHora } from '../lib/format';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
+import { FilterSelect } from '../components/ui/FilterSelect';
+import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import {
@@ -47,14 +49,17 @@ import {
 
 type Tab = 'tarifas' | 'catalogo' | 'proveedores';
 type CategoriaFiltro = 'todas' | 'paquete' | 'show' | 'catering' | 'extra' | 'espacio';
+type EstadoCatalogoFiltro = '' | 'activo' | 'inactivo';
 
 const LABELS: Record<string, string> = {
   'tarifas.base_lunes_viernes': 'Base lunes–viernes (S/)',
   'tarifas.base_fin_semana': 'Base fin de semana (S/)',
-  'tarifas.precio_nino_extra': 'Precio niño extra 26–35 (S/)',
   'ninos.minimo': 'Mínimo de niños',
-  'ninos.maximo_base': 'Capacidad base (sin extra)',
+  'ninos.maximo_base': 'Capacidad base',
   'ninos.maximo_permitido': 'Máximo permitido',
+  'shows.ninos_incluidos': 'Niños incluidos',
+  'shows.precio_nino_extra': 'Precio por niño extra (S/)',
+  'extras.precio_nino_extra': 'Precio por niño excedente (S/)',
   'contrato.adelanto_referencial': 'Adelanto referencial (S/)',
   'contrato.garantia_referencial': 'Garantía referencial (S/)',
   'catering.minimo_unidades': 'Mínimo catering (unidades)',
@@ -62,7 +67,89 @@ const LABELS: Record<string, string> = {
   'paquetes.cajitas_incluidas': 'Cajitas incluidas por paquete',
   'paquetes.cajitas_precio_excedente': 'Precio cajita adicional (S/)',
   'paquetes.piqueos_credito_premium': 'Crédito piqueos Premium (S/)',
+  'paquetes.snack_premium_unidades_incluidas': 'Snack Premium incluido (unidades)',
+  'paquetes.snack_premium_precio_excedente': 'Snack Premium adicional por unidad (S/)',
 };
+
+const AYUDA: Record<string, string> = {
+  'tarifas.base_lunes_viernes': 'Referencia paquete Básico de lunes a viernes.',
+  'tarifas.base_fin_semana': 'Referencia paquete Básico sábado, domingo y feriados.',
+  'ninos.minimo': 'Cantidad mínima para reservar un evento.',
+  'ninos.maximo_base': 'Shows cubren hasta esta cantidad sin cargo extra por niño.',
+  'ninos.maximo_permitido': 'Tope máximo de niños; cierra el rango extra del show.',
+  'shows.ninos_incluidos': 'Primeros niños incluidos en el show sin cargo adicional.',
+  'shows.precio_nino_extra': 'Cargo por cada niño dentro del rango extra configurado.',
+  'extras.precio_nino_extra': 'Aplica en Pintacaritas, Uñitas y Hora loca cuando se supera el límite del servicio.',
+  'contrato.adelanto_referencial': 'Monto referencial para separar la fecha del evento.',
+  'contrato.garantia_referencial': 'Monto referencial de garantía al confirmar.',
+  'catering.minimo_unidades': 'Mínimo por ítem de catering genérico (no piqueos ni cajitas).',
+  'solicitud.min_dias_anticipacion': 'Días mínimos antes de la fecha del evento.',
+  'paquetes.cajitas_incluidas': 'Cajitas Bosque Mágico incluidas en cada paquete.',
+  'paquetes.cajitas_precio_excedente': 'Precio por cajita adicional.',
+  'paquetes.piqueos_credito_premium': 'Crédito incluido en paquete Premium para piqueos.',
+  'paquetes.snack_premium_unidades_incluidas': 'Unidades del carrito snack Premium incluidas.',
+  'paquetes.snack_premium_precio_excedente': 'Precio por unidad adicional del carrito snack.',
+};
+
+type ConfigGrupo = {
+  titulo: string;
+  descripcion?: string;
+  claves: string[];
+  preview?: (valores: Record<string, string>) => string | undefined;
+};
+
+const CONFIG_GRUPOS_NUMERICOS: ConfigGrupo[] = [
+  {
+    titulo: 'Tarifas base',
+    descripcion: 'Referencia para el paquete Básico según día de la semana.',
+    claves: ['tarifas.base_lunes_viernes', 'tarifas.base_fin_semana'],
+  },
+  {
+    titulo: 'Capacidad del evento',
+    descripcion: 'Límites de niños para reservas regulares.',
+    claves: ['ninos.minimo', 'ninos.maximo_base', 'ninos.maximo_permitido'],
+  },
+  {
+    titulo: 'Show — niños adicionales',
+    descripcion: 'Aplica cuando la cotización incluye show.',
+    claves: ['shows.ninos_incluidos', 'shows.precio_nino_extra'],
+    preview: (v) => {
+      const incluidos = Number(v['shows.ninos_incluidos'] ?? 20);
+      const maximo = Number(v['ninos.maximo_permitido'] ?? 30);
+      if (!Number.isFinite(incluidos) || !Number.isFinite(maximo) || maximo <= incluidos) {
+        return undefined;
+      }
+      return `Rango con cargo extra: del niño #${incluidos + 1} al #${maximo}`;
+    },
+  },
+  {
+    titulo: 'Servicios extra — niños adicionales',
+    descripcion: 'Cargo por niño excedente en Pintacaritas, Uñitas y Hora loca.',
+    claves: ['extras.precio_nino_extra'],
+  },
+  {
+    titulo: 'Contrato referencial',
+    descripcion: 'Montos orientativos para adelanto y garantía.',
+    claves: ['contrato.adelanto_referencial', 'contrato.garantia_referencial'],
+  },
+  {
+    titulo: 'Paquetes',
+    descripcion: 'Cajitas, piqueos y snack Premium incluidos en composición de paquetes.',
+    claves: [
+      'paquetes.cajitas_incluidas',
+      'paquetes.cajitas_precio_excedente',
+      'paquetes.piqueos_credito_premium',
+      'paquetes.snack_premium_unidades_incluidas',
+      'paquetes.snack_premium_precio_excedente',
+    ],
+  },
+  {
+    titulo: 'Otros',
+    claves: ['catering.minimo_unidades', 'solicitud.min_dias_anticipacion'],
+  },
+];
+
+const CLAVES_NUMERICAS_EDITABLES = new Set(Object.keys(LABELS));
 
 const TURNO_KEY_LABEL: Record<string, string> = {
   'turnos.turno_1': 'Turno 1',
@@ -102,7 +189,7 @@ const POSTVENTA_ORDEN = [
 ] as const;
 
 const PEDIDOS_PROVEEDOR_LABELS: Record<string, string> = {
-  'pedidos_proveedor.notificar_correo': 'Notificar por correo al crear pedido a proveedor',
+  'pedidos_proveedor.notificar_correo': 'Notificar por correo al marcar pedido como Solicitado',
   'pedidos_proveedor.asunto': 'Asunto del correo',
   'pedidos_proveedor.cuerpo': 'Cuerpo del correo',
 };
@@ -162,9 +249,12 @@ const ORIGEN_LABEL: Record<string, string> = {
 
 function configLabel(item: ConfigItem) {
   const titulo = LABELS[item.clave] ?? item.clave;
-  const ayuda = item.descripcion?.trim();
+  const ayudaApi = item.descripcion?.trim();
+  const ayuda = AYUDA[item.clave] ?? ayudaApi;
   const redundante =
     ayuda &&
+    ayudaApi &&
+    AYUDA[item.clave] == null &&
     (ayuda.toLowerCase() === titulo.toLowerCase() ||
       titulo.toLowerCase().includes(ayuda.toLowerCase().slice(0, 12)));
   return { titulo, ayuda: redundante ? undefined : ayuda };
@@ -204,7 +294,7 @@ export function ConfiguracionPage() {
     Record<string, string>
   >({});
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
-  const [showInactivos, setShowInactivos] = useState(true);
+  const [estadoCatalogoFiltro, setEstadoCatalogoFiltro] = useState<EstadoCatalogoFiltro>('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
   const [catalogoBusqueda, setCatalogoBusqueda] = useState('');
   const [catalogoPage, setCatalogoPage] = useState(1);
@@ -219,8 +309,9 @@ export function ConfiguracionPage() {
   });
 
   const { data: productos = [], isLoading: loadingProd } = useQuery({
-    queryKey: ['productos-catalogo', showInactivos],
-    queryFn: () => fetchProductosCatalogo(showInactivos ? undefined : false),
+    queryKey: ['productos-catalogo', estadoCatalogoFiltro],
+    queryFn: () =>
+      fetchProductosCatalogo(estadoCatalogoFiltro === 'activo' ? false : undefined),
   });
 
   const valoresIniciales = useMemo(() => {
@@ -349,6 +440,9 @@ export function ConfiguracionPage() {
 
   const productosFiltrados = useMemo(() => {
     let rows = productos;
+    if (estadoCatalogoFiltro === 'inactivo') {
+      rows = rows.filter((p) => p.etapa === 'inactivo');
+    }
     if (categoriaFiltro !== 'todas') {
       rows = rows.filter((p) => p.categoria === categoriaFiltro);
     }
@@ -360,11 +454,22 @@ export function ConfiguracionPage() {
         p.codigo.toLowerCase().includes(q) ||
         (p.descripcion?.toLowerCase().includes(q) ?? false),
     );
-  }, [productos, categoriaFiltro, catalogoBusqueda]);
+  }, [productos, categoriaFiltro, catalogoBusqueda, estadoCatalogoFiltro]);
+
+  const hayFiltrosCatalogo =
+    catalogoBusqueda.trim().length > 0 ||
+    estadoCatalogoFiltro !== '' ||
+    categoriaFiltro !== 'todas';
+
+  const limpiarFiltrosCatalogo = () => {
+    setCatalogoBusqueda('');
+    setEstadoCatalogoFiltro('');
+    setCategoriaFiltro('todas');
+  };
 
   useEffect(() => {
     setCatalogoPage(1);
-  }, [categoriaFiltro, showInactivos, catalogoBusqueda, catalogoPageSize]);
+  }, [categoriaFiltro, estadoCatalogoFiltro, catalogoBusqueda, catalogoPageSize]);
 
   const catalogoTotalPages = Math.max(
     1,
@@ -379,7 +484,9 @@ export function ConfiguracionPage() {
   const guardarConfigMut = useMutation({
     mutationFn: () => {
       const actualizaciones = [
-        ...Object.entries(valoresActuales).map(([clave, v]) => ({
+        ...Object.entries(valoresActuales)
+          .filter(([clave]) => CLAVES_NUMERICAS_EDITABLES.has(clave))
+          .map(([clave, v]) => ({
           clave,
           valor: Number(v),
         })),
@@ -579,26 +686,57 @@ export function ConfiguracionPage() {
           >
             <section className={`w-full p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Tarifas y límites</h3>
-              <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
-                {config?.numericas.map((item: ConfigItem) => {
-                  const { titulo, ayuda } = configLabel(item);
+              <p className="mt-1 text-body-sm text-outline">
+                Valores usados por el cotizador y la landing. Los rangos de show extra se calculan
+                a partir de niños incluidos y máximo permitido.
+              </p>
+              <div className="mt-6 space-y-6">
+                {CONFIG_GRUPOS_NUMERICOS.map((grupo) => {
+                  const items = grupo.claves
+                    .map((clave) => config?.numericas.find((i) => i.clave === clave))
+                    .filter((item): item is ConfigItem => !!item);
+                  if (!items.length) return null;
+                  const preview = grupo.preview?.(valoresActuales);
                   return (
-                    <label key={item.clave} className="block">
-                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
-                      {ayuda && <span className="block text-body-sm text-outline">{ayuda}</span>}
-                      <input
-                        type="number"
-                        step="0.01"
-                        className={`mt-1 w-full ${INPUT_CLASS}`}
-                        value={valoresActuales[item.clave] ?? ''}
-                        onChange={(e) =>
-                          setValores((prev) => ({
-                            ...Object.keys(prev).length ? prev : valoresIniciales,
-                            [item.clave]: e.target.value,
-                          }))
-                        }
-                      />
-                    </label>
+                    <div
+                      key={grupo.titulo}
+                      className="rounded-xl border border-surface-variant/80 bg-surface-container-low/40 p-4"
+                    >
+                      <h4 className="font-semibold text-secondary">{grupo.titulo}</h4>
+                      {grupo.descripcion && (
+                        <p className="mt-1 text-body-sm text-outline">{grupo.descripcion}</p>
+                      )}
+                      {preview && (
+                        <p className="mt-2 text-xs font-medium text-primary">{preview}</p>
+                      )}
+                      <div className="mt-4 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
+                        {items.map((item) => {
+                          const { titulo, ayuda } = configLabel(item);
+                          return (
+                            <label key={item.clave} className="block">
+                              <span className="text-body-sm font-medium text-on-surface">
+                                {titulo}
+                              </span>
+                              {ayuda && (
+                                <span className="mt-0.5 block text-xs text-outline">{ayuda}</span>
+                              )}
+                              <input
+                                type="number"
+                                step="0.01"
+                                className={`mt-1.5 w-full ${INPUT_CLASS}`}
+                                value={valoresActuales[item.clave] ?? ''}
+                                onChange={(e) =>
+                                  setValores((prev) => ({
+                                    ...Object.keys(prev).length ? prev : valoresIniciales,
+                                    [item.clave]: e.target.value,
+                                  }))
+                                }
+                              />
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
                   );
                 })}
               </div>
@@ -910,20 +1048,16 @@ export function ConfiguracionPage() {
 
       {tab === 'catalogo' && (
         <div className="mt-6 w-full">
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <label className="flex items-center gap-2 text-body-sm text-on-surface">
-              <input
-                type="checkbox"
-                checked={showInactivos}
-                onChange={(e) => setShowInactivos(e.target.checked)}
-              />
-              Mostrar inactivos
-            </label>
+          <div className="mb-4 flex flex-wrap items-center justify-end gap-3">
             {puedeGestionarCatalogo && (
               <Button onClick={abrirNuevoProducto}>+ Nuevo producto</Button>
             )}
           </div>
-          <div className="mb-4 flex flex-wrap items-center gap-3">
+
+          <TableFiltersPanel
+            className="mb-4"
+            onRefresh={() => void qc.invalidateQueries({ queryKey: ['productos-catalogo'] })}
+          >
             <FilterSearchInput
               inline
               value={catalogoBusqueda}
@@ -931,7 +1065,24 @@ export function ConfiguracionPage() {
               placeholder="Nombre, código o descripción…"
               className="min-w-[240px] flex-1"
             />
-          </div>
+            <FilterSelect<EstadoCatalogoFiltro>
+              inline
+              label="Estado"
+              value={estadoCatalogoFiltro}
+              onChange={setEstadoCatalogoFiltro}
+              options={[
+                { value: '', label: 'Todos los estados' },
+                { value: 'activo', label: 'Activos' },
+                { value: 'inactivo', label: 'Inactivos' },
+              ]}
+            />
+            {hayFiltrosCatalogo && (
+              <Button variant="ghost" className="!h-[42px]" onClick={limpiarFiltrosCatalogo}>
+                Limpiar
+              </Button>
+            )}
+          </TableFiltersPanel>
+
           <div className="mb-4 flex flex-wrap items-center gap-2">
             {(Object.keys(CATEGORIA_LABEL) as CategoriaFiltro[]).map((categoria) => {
               const active = categoriaFiltro === categoria;

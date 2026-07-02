@@ -10,6 +10,7 @@ export type SeleccionPaqueteState = {
   showIds: string[];
   extraIds: string[];
   snackId: string;
+  snackCantidad: number;
   cajitasCantidad: number;
   piqueoIds: string[];
   piqueosCantidades: Record<string, number>;
@@ -21,6 +22,7 @@ export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
   showIds: [],
   extraIds: [],
   snackId: '',
+  snackCantidad: 25,
   cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
   piqueoIds: [],
   piqueosCantidades: {},
@@ -45,11 +47,23 @@ export function esPaqueteEstandarOMayor(paquete: string): boolean {
   return n.includes('standar') || n.includes('estandar') || n.includes('premiu');
 }
 
-export function seleccionToPayload(state: SeleccionPaqueteState): SeleccionPaquetePayload {
+export function seleccionToPayload(
+  state: SeleccionPaqueteState,
+  productos?: Pick<Producto, 'id' | 'categoria' | 'subtipo' | 'cantidadMinima'>[],
+): SeleccionPaquetePayload {
+  const minimoCatering = (id: string) => {
+    const p = productos?.find((x) => x.id === id);
+    if (p?.categoria === 'catering' && p.subtipo === 'general') {
+      return Math.max(p.cantidadMinima, 18);
+    }
+    return Math.max(p?.cantidadMinima ?? 1, 1);
+  };
+
   return {
     showIds: state.showIds.length ? state.showIds : undefined,
     extraIds: state.extraIds.length ? state.extraIds : undefined,
     snackId: state.snackId || undefined,
+    snackCantidad: state.snackId ? Math.max(state.snackCantidad ?? 25, 25) : undefined,
     cajitasCantidad: state.cajitasCantidad,
     piqueos: state.piqueoIds.length
       ? state.piqueoIds.map((id) => ({
@@ -58,10 +72,13 @@ export function seleccionToPayload(state: SeleccionPaqueteState): SeleccionPaque
         }))
       : undefined,
     adicionales: state.adicionalIds.length
-      ? state.adicionalIds.map((id) => ({
-          productoId: id,
-          cantidad: Math.max(state.adicionalCantidades[id] ?? 1, 1),
-        }))
+      ? state.adicionalIds.map((id) => {
+          const min = minimoCatering(id);
+          return {
+            productoId: id,
+            cantidad: Math.max(state.adicionalCantidades[id] ?? min, min),
+          };
+        })
       : undefined,
   };
 }
@@ -70,6 +87,7 @@ type PreferenciasSeleccion = {
   showIds?: string[];
   extraIds?: string[];
   snackId?: string;
+  snackCantidad?: number;
   cajitasCantidad?: number;
   piqueos?: Array<{ productoId: string; cantidad: number }>;
   cateringIds?: string[];
@@ -91,6 +109,7 @@ export function seleccionDesdePreferenciasLanding(
     showIds: sel.showIds ?? [],
     extraIds: sel.extraIds ?? [],
     snackId: sel.snackId ?? '',
+    snackCantidad: Math.max(sel.snackCantidad ?? 25, 25),
     cajitasCantidad: sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT,
     piqueoIds,
     piqueosCantidades,
@@ -111,6 +130,7 @@ export function seleccionDesdeItemsCotizacion(
   const adicionalIds: string[] = [];
   const adicionalCantidades: Record<string, number> = {};
   let snackId = '';
+  let snackCantidad = 0;
   let cajitasCantidad = 0;
 
   for (const item of items) {
@@ -130,6 +150,7 @@ export function seleccionDesdeItemsCotizacion(
     }
     if (p.subtipo === 'snack' && item.origenItem !== 'adicional') {
       snackId = item.productoId;
+      snackCantidad += item.cantidad;
       continue;
     }
     if (p.categoria === 'show') {
@@ -153,6 +174,7 @@ export function seleccionDesdeItemsCotizacion(
     showIds,
     extraIds,
     snackId,
+    snackCantidad: Math.max(snackCantidad, 25),
     cajitasCantidad: cajitasCantidad || CAJITAS_INCLUIDAS_DEFAULT,
     piqueoIds,
     piqueosCantidades,

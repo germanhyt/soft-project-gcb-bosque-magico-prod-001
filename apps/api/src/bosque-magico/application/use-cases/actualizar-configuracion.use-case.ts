@@ -4,23 +4,9 @@ import { ActualizarConfiguracionDto } from '../dto/actualizar-configuracion.dto'
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
 import { parseFeriadosConfig } from '../../domain/utils/tarifa-calendario';
+import { CLAVES_NUMERICAS_EDITABLES } from '../../domain/constants/configuracion-claves';
 
-const CLAVES_NUMERICAS_PERMITIDAS = new Set([
-  'tarifas.base_lunes_viernes',
-  'tarifas.base_fin_semana',
-  'tarifas.precio_nino_extra',
-  'ninos.minimo',
-  'ninos.maximo_base',
-  'ninos.maximo_permitido',
-  'contrato.adelanto_referencial',
-  'contrato.garantia_referencial',
-  'catering.minimo_unidades',
-  'solicitud.min_dias_anticipacion',
-  'paquetes.cajitas_incluidas',
-  'paquetes.cajitas_precio_excedente',
-  'paquetes.piqueos_credito_premium',
-  'smtp.port',
-]);
+const CLAVES_NUMERICAS_PERMITIDAS = CLAVES_NUMERICAS_EDITABLES;
 
 const CLAVES_TURNOS = new Set([
   'turnos.turno_1',

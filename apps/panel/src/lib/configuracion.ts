@@ -59,7 +59,7 @@ export async function fetchProductosCatalogo(soloActivos?: boolean) {
 }
 
 export async function crearProducto(payload: {
-  codigo: string;
+  codigo?: string;
   nombre: string;
   categoria: string;
   precioLunesViernes: number;

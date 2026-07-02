@@ -10,9 +10,7 @@ const ETAPAS_CONTRATO_VALIDAS: EtapaContrato[] = [
 
 const ETAPAS_PEDIDO_PROVEEDOR_OK: EtapaPedido[] = [
   EtapaPedido.confirmado,
-  EtapaPedido.en_proceso,
   EtapaPedido.entregado,
-  EtapaPedido.cerrado,
 ];
 
 @Injectable()

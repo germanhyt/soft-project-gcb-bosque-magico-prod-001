@@ -9,7 +9,7 @@ export function LoginPage() {
   const { authRequired, user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/';
+  const from = (location.state as { from?: string } | null)?.from ?? '/solicitudes';
 
   const [email, setEmail] = useState('admin@bosquemagico.test');
   const [password, setPassword] = useState('');
@@ -18,7 +18,7 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   if (!authRequired) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/solicitudes" replace />;
   }
 
   if (user) {

@@ -4,15 +4,24 @@ import { CARD_CATALOG, GRID_CATALOG } from '../../constants/design';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { StatusBadge } from '../ui/StatusBadge';
+import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
 
 type Props = {
   selection: QuoteBuilderSelection;
   onSelectSnack: (snackId: string) => void;
+  onSnackCantidad: (cantidad: number) => void;
 };
 
-export function SnackPremiumSelector({ selection, onSelectSnack }: Props) {
+export function SnackPremiumSelector({
+  selection,
+  onSelectSnack,
+  onSnackCantidad,
+}: Props) {
   const { data } = useConfiguracion();
   const snacks = data?.productos.snacks ?? [];
+  const paquetesConfig = paquetesConfigDesdeItems(data?.items);
+  const unidadesIncluidas = paquetesConfig.snackPremiumUnidadesIncluidas;
+  const precioExcedente = paquetesConfig.snackPremiumPrecioExcedente;
 
   if (!selection.paquete || !esPaquetePremium(selection.paquete)) return null;
 
@@ -21,7 +30,7 @@ export function SnackPremiumSelector({ selection, onSelectSnack }: Props) {
       <SectionTitle
         pill="Snack Premium"
         title="Popcorn o algodón de azúcar"
-        subtitle="Elige uno incluido en tu paquete Premium."
+        subtitle={`Incluye ${unidadesIncluidas} unidades del carrito snack. Unidades adicionales: S/ ${precioExcedente} c/u.`}
       />
       <div className={GRID_CATALOG}>
         {snacks.map((s) => {
@@ -42,6 +51,25 @@ export function SnackPremiumSelector({ selection, onSelectSnack }: Props) {
           );
         })}
       </div>
+      {selection.snackId && (
+        <label className="mt-3 block max-w-xs">
+          <span className="text-sm font-medium text-on-surface">Unidades de snack</span>
+          <input
+            type="number"
+            min={unidadesIncluidas}
+            value={Math.max(selection.snackCantidad, unidadesIncluidas)}
+            onChange={(e) =>
+              onSnackCantidad(
+                Math.max(Number(e.target.value) || unidadesIncluidas, unidadesIncluidas),
+              )
+            }
+            className="mt-1 w-full rounded-lg border border-surface-variant bg-surface px-3 py-2 text-sm text-on-surface"
+          />
+          <span className="mt-1 block text-xs text-on-surface-variant">
+            {unidadesIncluidas} unidades incluidas en Premium; cada unidad adicional cuesta S/ {precioExcedente}.
+          </span>
+        </label>
+      )}
     </SectionShell>
   );
 }
