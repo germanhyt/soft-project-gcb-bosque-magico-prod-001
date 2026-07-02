@@ -12,6 +12,7 @@ import { CerrarSolicitudUseCase } from './application/use-cases/cerrar-solicitud
 import { ConfirmarEventoUseCase } from './application/use-cases/confirmar-evento.use-case';
 import { GenerarPedidosEventoUseCase } from './application/use-cases/generar-pedidos-evento.use-case';
 import { CrearCotizacionUseCase } from './application/use-cases/crear-cotizacion.use-case';
+import { EnviarCotizacionUseCase } from './application/use-cases/enviar-cotizacion.use-case';
 import { CrearProductoUseCase } from './application/use-cases/crear-producto.use-case';
 import { CrearProveedorUseCase } from './application/use-cases/crear-proveedor.use-case';
 import { ActualizarProveedorUseCase } from './application/use-cases/actualizar-proveedor.use-case';
