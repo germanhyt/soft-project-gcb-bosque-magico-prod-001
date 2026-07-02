@@ -1,4 +1,4 @@
-# Documentación de avance — Bosque Mágico (junio 2026)
+# Documentación de avance — Bosque Mágico (julio 2026)
 
 Carpeta de entrega con dos documentos complementarios:
 
@@ -7,8 +7,8 @@ Carpeta de entrega con dos documentos complementarios:
 | [01-INFORME-GERENCIA.md](./01-INFORME-GERENCIA.md) | Dirección / gerencia | Objetivos, alcance, casos de uso, flujos, arquitectura, contratos, estado del MVP, entornos y roadmap |
 | [02-MANUAL-OPERARIO.md](./02-MANUAL-OPERARIO.md) | Equipo comercial y operación | Guía paso a paso del panel y la landing: pantallas, botones, estados, contratos y flujo diario |
 
-**Versión:** 1.1  
-**Fecha:** 2026-06-11  
+**Versión:** 1.2  
+**Fecha:** 2026-07-02  
 **Estado del producto:** MVP comercial operativo + módulo de contratos (local + sandbox)
 
 Documentos técnicos de referencia en `.docs/`:

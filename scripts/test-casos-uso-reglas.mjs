@@ -6,9 +6,9 @@
  * Uso: node scripts/test-casos-uso-reglas.mjs
  * Requiere API :3000 + seed.
  */
-import { api, loginAdmin, celularUnico, BASE } from './test-helpers.mjs';
+import { api, loginAdmin, celularUnico, BASE, tddMarca, fechaLaboralFutura, fechaFinSemanaFutura } from './test-helpers.mjs';
 
-const TDD = 'CU-TDD-2026-07-01';
+const TDD = tddMarca('CU-TDD');
 const results = [];
 
 function cu(id, name, pass, detail = '') {
@@ -16,8 +16,8 @@ function cu(id, name, pass, detail = '') {
   console.log(`${pass ? '✓' : '✗'} [${id}] ${name}${detail ? ` — ${detail}` : ''}`);
 }
 
-const FECHA_LV = '2026-07-08';
-const FECHA_FDS = '2026-07-11';
+const FECHA_LV = fechaLaboralFutura(14);
+const FECHA_FDS = fechaFinSemanaFutura(14);
 
 async function preview(body) {
   return api('/public/bosque-magico/cotizaciones/preview', {

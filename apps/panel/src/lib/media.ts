@@ -2,14 +2,22 @@
 export function resolveAssetUrl(path: string | null | undefined): string | undefined {
   if (!path?.trim()) return undefined;
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
-  const base = import.meta.env.VITE_API_URL ?? '';
-  if (base) {
+
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  const base = (import.meta.env.VITE_API_URL as string | undefined)?.trim() ?? '';
+
+  if (base.startsWith('http://') || base.startsWith('https://')) {
     try {
       const origin = new URL(base).origin;
-      return `${origin}${path.startsWith('/') ? path : `/${path}`}`;
+      return `${origin}${normalized}`;
     } catch {
-      /* usar path relativo */
+      /* fallback abajo */
     }
   }
-  return path;
+
+  if (typeof window !== 'undefined') {
+    return `${window.location.origin}${normalized}`;
+  }
+
+  return normalized;
 }

@@ -23,8 +23,7 @@ import {
   marcarContratoEnviado,
   marcarContratoFirmado,
 } from '../../lib/contratos';
-import { contratoToPrintPayload } from '../../lib/contrato';
-import { imprimirContratoPdf } from '../../lib/contrato-print';
+import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import { formatFecha, formatFechaHora } from '../../lib/format';
 import { fetchTareasEvento } from '../../lib/tareas-api';
 
@@ -129,7 +128,7 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
           cotizacionId={ev.cotizacionId}
           evento={ev}
           fullWidth
-          label={contrato ? 'Ver / reimprimir contrato' : 'Generar contrato'}
+          label={contrato ? 'Ver / editar contrato' : 'Generar contrato'}
           onGenerado={() => void refetchContrato()}
         />
         {contrato && (
@@ -165,10 +164,11 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
               variant="ghost"
               className="w-full"
               onClick={() => {
-                const ok = imprimirContratoPdf(contratoToPrintPayload(contrato, ev));
-                if (!ok) {
-                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
-                }
+                void imprimirContratoDesdeRegistro(contrato, ev).then((ok) => {
+                  if (!ok) {
+                    void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                  }
+                });
               }}
             >
               Imprimir contrato

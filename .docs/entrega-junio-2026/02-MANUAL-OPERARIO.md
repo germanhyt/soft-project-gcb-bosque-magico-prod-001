@@ -1,8 +1,8 @@
 # Manual del operario — Panel Bosque Mágico
 
 **Para:** Equipo comercial y operación  
-**Versión:** 1.1  
-**Fecha:** 2026-06-11  
+**Versión:** 1.2  
+**Fecha:** 2026-07-02  
 
 Este manual explica **cómo usar el sistema en el día a día**: qué hace cada pantalla, en qué orden trabajar y qué significa cada estado.
 
@@ -625,4 +625,4 @@ Si algo del panel no coincide con este manual (botón renombrado, pantalla nueva
 
 ---
 
-*Manual operativo — Bosque Mágico. Última revisión: 2026-06-11.*
+*Manual operativo — Bosque Mágico. Última revisión: 2026-07-02.*

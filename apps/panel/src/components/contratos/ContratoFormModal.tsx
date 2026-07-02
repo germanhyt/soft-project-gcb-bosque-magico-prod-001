@@ -6,12 +6,10 @@ import { fetchConfiguracionPanel } from '../../lib/configuracion';
 import { fetchCotizacion } from '../../lib/cotizaciones';
 import {
   configNumero,
-  contratoToPrintPayload,
   type ContratoFormDatos,
   type CotizacionClienteExtendido,
   type TipoComprobante,
 } from '../../lib/contrato';
-import { imprimirContratoPdf } from '../../lib/contrato-print';
 import {
   fetchContratoEvento,
   generarContratoEvento,
@@ -167,22 +165,15 @@ export function ContratoFormModal({
       await qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] });
       onGenerado?.(contrato);
 
-      const ok = imprimirContratoPdf(contratoToPrintPayload(contrato, evento));
-      if (!ok) {
-        await Swal.fire({
-          icon: 'warning',
-          title: 'Contrato guardado',
-          text: 'No se pudo abrir la vista de impresión. Permite ventanas emergentes e imprime desde el detalle.',
-        });
-      } else if (contrato.reimpresion) {
-        await Swal.fire({
-          icon: 'info',
-          title: 'Reimpresión',
-          text: 'El contrato ya estaba enviado o firmado; se imprimió la versión registrada.',
-          timer: 2500,
-          showConfirmButton: false,
-        });
-      }
+      await Swal.fire({
+        icon: 'success',
+        title: contrato.reimpresion ? 'Contrato registrado' : 'Contrato guardado',
+        text: contrato.reimpresion
+          ? 'El contrato ya estaba enviado o firmado. Usa «Imprimir / PDF» en el detalle del contrato.'
+          : 'Datos guardados. Sube las firmas si aplica e imprime el PDF desde el detalle del contrato.',
+        timer: 3500,
+        showConfirmButton: true,
+      });
       onClose();
     },
   });
@@ -242,8 +233,8 @@ export function ContratoFormModal({
       title="Generar contrato"
       description={
         bloqueado
-          ? 'Contrato registrado. Puedes reimprimir; los datos no se modifican.'
-          : 'Completa los datos legales. Se guardará en el sistema y se abrirá la vista imprimible.'
+          ? 'Contrato registrado. Para imprimir o subir firmas, abre el detalle del contrato.'
+          : 'Completa los datos legales y guarda. El PDF se genera desde el detalle con «Imprimir / PDF».'
       }
       size="lg"
     >
@@ -380,15 +371,13 @@ export function ContratoFormModal({
 
           <div className="flex flex-col gap-2 sm:flex-row sm:justify-end">
             <Button type="button" variant="ghost" onClick={onClose}>
-              Cancelar
+              {bloqueado ? 'Cerrar' : 'Cancelar'}
             </Button>
-            <Button type="submit" disabled={generarMut.isPending}>
-              {generarMut.isPending
-                ? 'Guardando…'
-                : bloqueado
-                  ? 'Reimprimir PDF'
-                  : 'Guardar y generar PDF'}
-            </Button>
+            {!bloqueado && (
+              <Button type="submit" disabled={generarMut.isPending}>
+                {generarMut.isPending ? 'Guardando…' : 'Guardar contrato'}
+              </Button>
+            )}
           </div>
         </form>
       )}

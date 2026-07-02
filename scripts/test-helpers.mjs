@@ -31,6 +31,65 @@ export function fechaFutura(dias = 14) {
   return new Date(Date.now() + dias * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
 }
 
+/** Fecha ISO de hoy (zona local del runner). */
+export function tddHoy() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+/** Marca TDD con fecha del día: `TDD-2026-07-02`. */
+export function tddMarca(prefijo = 'TDD') {
+  return `${prefijo}-${tddHoy()}`;
+}
+
+/** Próximo día laboral (lun–vie) al menos `diasMin` días desde hoy. */
+export function fechaLaboralFutura(diasMin = 14) {
+  const d = new Date();
+  d.setDate(d.getDate() + diasMin);
+  while (d.getDay() === 0 || d.getDay() === 6) {
+    d.setDate(d.getDate() + 1);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** Próximo sábado al menos `diasMin` días desde hoy. */
+export function fechaFinSemanaFutura(diasMin = 14) {
+  const d = new Date();
+  d.setDate(d.getDate() + diasMin);
+  while (d.getDay() !== 6) {
+    d.setDate(d.getDate() + 1);
+  }
+  return d.toISOString().slice(0, 10);
+}
+
+/** PNG 1×1 mínimo para adjuntos de firma en QA. */
+export const PNG_FIRMA_QA = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAAD0lEQVQ42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+  'base64',
+);
+
+/** Sube imagen de firma al contrato (multipart). */
+export async function subirFirmaContrato(contratoId, tipo, token) {
+  const form = new FormData();
+  form.append(
+    'archivo',
+    new Blob([PNG_FIRMA_QA], { type: 'image/png' }),
+    `firma-qa-${tipo}.png`,
+  );
+  const res = await fetch(`${BASE}/bosque-magico/contratos/${contratoId}/adjuntos/${tipo}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  const text = await res.text();
+  let body = null;
+  try {
+    body = text ? JSON.parse(text) : null;
+  } catch {
+    body = text;
+  }
+  return { status: res.status, body, ok: res.ok };
+}
+
 /**
  * @param {string} path
  * @param {{ method?: string, token?: string, body?: unknown, retries?: number, retryDelayMs?: number }} opts

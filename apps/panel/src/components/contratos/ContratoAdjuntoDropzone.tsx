@@ -8,6 +8,8 @@ import type { ContratoAdjunto, TipoAdjuntoContrato } from '../../lib/contratos';
 const LABEL: Record<TipoAdjuntoContrato, string> = {
   comprobante_pago: 'Comprobante de pago',
   documento_contabilidad: 'Documento de contabilidad',
+  firma_cliente: 'Firma del cliente',
+  firma_empresa: 'Firma Bosque Mágico',
 };
 
 type Props = {
@@ -66,14 +68,22 @@ export function ContratoAdjuntoDropzone({
     [onUpload],
   );
 
+  const esFirma = tipo === 'firma_cliente' || tipo === 'firma_empresa';
+
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop: (accepted) => void onDrop(accepted),
-    accept: {
-      'application/pdf': ['.pdf'],
-      'image/jpeg': ['.jpg', '.jpeg'],
-      'image/png': ['.png'],
-      'image/webp': ['.webp'],
-    },
+    accept: esFirma
+      ? {
+          'image/jpeg': ['.jpg', '.jpeg'],
+          'image/png': ['.png'],
+          'image/webp': ['.webp'],
+        }
+      : {
+          'application/pdf': ['.pdf'],
+          'image/jpeg': ['.jpg', '.jpeg'],
+          'image/png': ['.png'],
+          'image/webp': ['.webp'],
+        },
     maxFiles: 1,
     maxSize: 5 * 1024 * 1024,
     disabled: disabled || pending,
@@ -90,6 +100,13 @@ export function ContratoAdjuntoDropzone({
         </p>
       )}
       <div className="flex flex-wrap items-center gap-2">
+        {src && esFirma && (
+          <img
+            src={src}
+            alt={LABEL[tipo]}
+            className="max-h-16 max-w-full rounded border border-surface-variant bg-white object-contain"
+          />
+        )}
         {src && (
           <a
             href={src}
@@ -109,7 +126,7 @@ export function ContratoAdjuntoDropzone({
           } ${disabled || pending ? 'pointer-events-none opacity-60' : ''}`}
         >
           <input {...getInputProps()} />
-          {pending ? 'Procesando…' : isDragActive ? 'Suelta aquí' : 'Arrastra o clic (5 MB)'}
+          {pending ? 'Procesando…' : isDragActive ? 'Suelta aquí' : esFirma ? 'Imagen firma (5 MB)' : 'Arrastra o clic (5 MB)'}
         </div>
         {adjunto && onRemove && !disabled && (
           <button

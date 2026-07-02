@@ -1,8 +1,8 @@
 # Informe de avance — Bosque Mágico
 
 **Para:** Gerencia  
-**Versión:** 1.1  
-**Fecha:** 2026-06-11  
+**Versión:** 1.2  
+**Fecha:** 2026-07-02  
 **Producto:** Sistema comercial Bosque Mágico (landing + panel CRM + API)
 
 ---

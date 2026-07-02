@@ -11,8 +11,7 @@ import { Button } from '../ui/Button';
 import { puedeEnviarContrato, puedeMarcarContratoFirmado } from '../../lib/flujo-estados';
 import { CARD_CLASS } from '../../constants/design';
 import { TURNO_LABEL } from '../../constants/solicitudes';
-import { contratoToPrintPayload } from '../../lib/contrato';
-import { imprimirContratoPdf } from '../../lib/contrato-print';
+import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import {
   fetchContrato,
   marcarContratoFirmado,
@@ -69,10 +68,11 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
               variant="ghost"
               className="w-full"
               onClick={() => {
-                const ok = imprimirContratoPdf(contratoToPrintPayload(c));
-                if (!ok) {
-                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
-                }
+                void imprimirContratoDesdeRegistro(c).then((ok) => {
+                  if (!ok) {
+                    void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                  }
+                });
               }}
             >
               Imprimir / PDF
@@ -84,10 +84,11 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
               variant="ghost"
               className="w-full"
               onClick={() => {
-                const ok = imprimirContratoPdf(contratoToPrintPayload(c));
-                if (!ok) {
-                  void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
-                }
+                void imprimirContratoDesdeRegistro(c).then((ok) => {
+                  if (!ok) {
+                    void Swal.fire({ icon: 'error', title: 'No se pudo abrir la impresión' });
+                  }
+                });
               }}
             >
               Imprimir / PDF

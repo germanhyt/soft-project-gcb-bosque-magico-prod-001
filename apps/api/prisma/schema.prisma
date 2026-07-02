@@ -344,6 +344,10 @@ enum TipoAdjuntoContrato {
 
   documento_contabilidad
 
+  firma_cliente
+
+  firma_empresa
+
 }
 
 

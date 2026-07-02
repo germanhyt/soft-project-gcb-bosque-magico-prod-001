@@ -106,6 +106,8 @@ export type ContratoPrintOptions = {
   autoPrint?: boolean;
   /** Enlace opcional a vista pública del contrato */
   viewLink?: string;
+  firmaClienteUrl?: string;
+  firmaEmpresaUrl?: string;
 };
 
 const TURNO_LABEL: Record<string, string> = {
@@ -374,6 +376,16 @@ function buildExtrasContratadosHtml(items: ReturnType<typeof buildContratoContex
   return `<h2>Detalle shows y extras</h2>${parts.join('')}`;
 }
 
+function buildFirmaCell(label: string, imageUrl?: string) {
+  const img = imageUrl?.trim()
+    ? `<img class="firma-img" src="${escapeHtml(imageUrl)}" alt="${escapeHtml(label)}" />`
+    : '';
+  return `<div class="firma-cell">
+    <div class="firma-pad">${img}<div class="firma-line"></div></div>
+    <p class="firma-caption">${escapeHtml(label)}</p>
+  </div>`;
+}
+
 /** HTML imprimible unificado (panel + link público). */
 export function buildContratoPrintHtml(
   payload: ContratoPrintPayload,
@@ -386,7 +398,7 @@ export function buildContratoPrintHtml(
   const horario = `${escapeHtml(form.horarioInicio)} — ${escapeHtml(form.horarioFin)}`;
 
   const clausulas = CONTRATO_TERMINOS_CLAUSULAS.map(
-    (c, i) => `<li><strong>${i + 1}.-</strong> ${escapeHtml(c)}</li>`,
+    (c) => `<li>${escapeHtml(c)}</li>`,
   ).join('');
 
   const extrasPermitidos = CONTRATO_EXTRAS_PERMITIDOS.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
@@ -401,12 +413,24 @@ export function buildContratoPrintHtml(
   const autoPrintScript = options.autoPrint
     ? `<script>
     function imprimirCuandoListo() {
-      var img = document.querySelector('img');
-      var lanzar = function () { setTimeout(function () { window.print(); }, 300); };
-      if (!img) return lanzar();
-      if (img.complete) return lanzar();
-      img.onload = lanzar;
-      img.onerror = lanzar;
+      var lanzar = function () { setTimeout(function () { window.print(); }, 400); };
+      var imgs = document.querySelectorAll('img');
+      if (!imgs.length) return lanzar();
+      var pendientes = 0;
+      for (var i = 0; i < imgs.length; i++) {
+        if (!imgs[i].complete) pendientes++;
+      }
+      if (!pendientes) return lanzar();
+      var restantes = pendientes;
+      for (var j = 0; j < imgs.length; j++) {
+        (function (img) {
+          if (img.complete) return;
+          img.onload = img.onerror = function () {
+            restantes--;
+            if (restantes <= 0) lanzar();
+          };
+        })(imgs[j]);
+      }
     }
     if (document.readyState === 'complete') imprimirCuandoListo();
     else window.addEventListener('load', imprimirCuandoListo);
@@ -421,8 +445,8 @@ export function buildContratoPrintHtml(
   <style>
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #1a2e1f; margin: 0; padding: 24px 32px; font-size: 12px; line-height: 1.45; }
-    .page { page-break-after: always; }
-    .page:last-child { page-break-after: auto; }
+    .sheet { }
+    .sheet-break { page-break-before: always; }
     .header { text-align: center; border-bottom: 2px solid #2d5a3d; padding-bottom: 12px; margin-bottom: 16px; }
     .header img { width: 56px; height: 56px; object-fit: contain; }
     h1 { margin: 8px 0 0; font-size: 18px; color: #2d5a3d; letter-spacing: 0.02em; }
@@ -444,24 +468,47 @@ export function buildContratoPrintHtml(
     .totals { margin: 12px 0 16px; margin-left: auto; width: 300px; font-size: 12px; }
     .totals div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #e8efe9; }
     .totals .grand { font-size: 15px; font-weight: 700; color: #2d5a3d; border-bottom: none; padding-top: 8px; }
-    .terms ol { padding-left: 18px; }
+    .terms ol { padding-left: 22px; margin: 8px 0 0; list-style: decimal; }
     .terms li { margin-bottom: 8px; }
+    .terms li::marker { font-weight: 700; color: #2d5a3d; }
     .factura { margin-top: 20px; }
     .factura .row { display: flex; justify-content: space-between; border-bottom: 1px dotted #c5d4c9; padding: 6px 0; }
     .factura .total { font-size: 15px; font-weight: 700; color: #2d5a3d; }
-    .firma { margin-top: 40px; display: grid; grid-template-columns: 1fr 1fr; gap: 40px; }
-    .firma-line { border-top: 1px solid #2d5a3d; padding-top: 6px; text-align: center; }
+    .firma { margin-top: 32px; display: grid; grid-template-columns: 1fr 1fr; gap: 48px; align-items: end; }
+    .firma-cell { text-align: center; min-width: 0; }
+    .firma-pad {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 76px;
+      margin-bottom: 2px;
+    }
+    .firma-line { border-top: 1px solid #2d5a3d; width: 100%; flex-shrink: 0; }
+    .firma-img {
+      max-height: 58px;
+      max-width: min(240px, 100%);
+      width: auto;
+      object-fit: contain;
+      object-position: bottom center;
+      display: block;
+      margin: 0 auto 1px;
+      flex-shrink: 0;
+    }
+    .firma-caption { font-size: 10px; color: #6b7c6f; margin: 4px 0 0; line-height: 1.3; }
     .meta, .muted { font-size: 10px; color: #6b7c6f; margin-top: 8px; }
     .view-link { margin-top: 8px; font-size: 10px; word-break: break-all; }
     @media print {
       @page { size: A4 portrait; margin: 12mm; }
-      html, body { width: 210mm; min-height: 297mm; }
+      html, body { width: 210mm; }
       body { padding: 0; }
+      .sheet-break { page-break-before: always; }
+      h2, h3.sub { break-after: avoid; }
+      .factura, .firma { break-inside: avoid-page; page-break-inside: avoid; }
     }
   </style>
 </head>
 <body>
-  <div class="page">
+  <div class="sheet">
     <div class="header">
       <img src="${escapeHtml(options.logoUrl)}" alt="Bosque Mágico" />
       <h1>CONTRATO FIESTAS INFANTILES</h1>
@@ -506,7 +553,7 @@ export function buildContratoPrintHtml(
     <ul class="compact">${espacioIncluye}</ul>
   </div>
 
-  <div class="page">
+  <div class="sheet sheet-break">
     ${cateringHtml}
     ${extrasHtml}
 
@@ -519,7 +566,7 @@ export function buildContratoPrintHtml(
     <p class="meta">Versión ${CONTRATO_TERMINOS_VERSION} · Horario acordado: ${horario}</p>
   </div>
 
-  <div class="page">
+  <div class="sheet sheet-break">
     <h2>Facturación</h2>
     <div class="grid">
       <div class="field">
@@ -545,8 +592,8 @@ export function buildContratoPrintHtml(
     </div>
 
     <div class="firma">
-      <div><div class="firma-line">Firma del cliente</div></div>
-      <div><div class="firma-line">Bosque Mágico</div></div>
+      ${buildFirmaCell('Firma del cliente', options.firmaClienteUrl)}
+      ${buildFirmaCell('Bosque Mágico', options.firmaEmpresaUrl)}
     </div>
     <div class="grid" style="margin-top:24px">
       <div class="field"><div class="lbl">Nombre</div><div class="val">${escapeHtml(ctx.cliente.nombreCompleto)}</div></div>

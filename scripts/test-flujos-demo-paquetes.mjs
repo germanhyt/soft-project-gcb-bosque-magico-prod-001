@@ -1,8 +1,10 @@
 /**
- * Integración E2E con mock/seed — landing → borrador + datos demo (TDD 2026-07-01).
+ * Integración E2E con mock/seed — landing → borrador + datos demo (TDD fecha del día).
  * Uso: node scripts/test-flujos-demo-paquetes.mjs
  * Requiere: API :3000, seed aplicado. Crea solicitud real en BD.
  */
+import { tddMarca, fechaLaboralFutura } from './test-helpers.mjs';
+
 const BASE = process.env.API_URL ?? 'http://localhost:3000/api';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL ?? 'admin@bosquemagico.test';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD ?? 'BosqueDev123!';
@@ -94,7 +96,7 @@ async function main() {
 
   // PASO 5B — Preview mock (misma selección que landing)
   section('PASO 5B — Preview mock Premium + selección landing');
-  const fechaLv = '2026-07-08';
+  const fechaLv = fechaLaboralFutura(14);
   const seleccionMock = {
     cajitasCantidad: 12,
     showIds: show1 ? [show1.id] : [],
@@ -115,8 +117,8 @@ async function main() {
   ok(5, 'Preview mock → 200', preview.status === 200 || preview.status === 201);
   ok(
     5,
-    'Preview mock ninosExtra=0 (Premium show incluido, 25 niños)',
-    (preview.body?.montos?.ninosExtra ?? 0) === 0,
+    'Preview mock ninosExtra=75 (Premium 25 niños, extra capacidad 5×15)',
+    Math.abs(Number(preview.body?.montos?.ninosExtra ?? -1) - 75) < 0.01,
     `ninosExtra=${preview.body?.montos?.ninosExtra}`,
   );
   const exCaj = preview.body?.resumenPaquete?.cajitasExcedente;
@@ -169,7 +171,7 @@ async function main() {
         ...seleccionMock,
       },
     },
-    observaciones: 'Test mock E2E paquetes TDD-2026-07-01',
+    observaciones: `Test mock E2E paquetes ${tddMarca('TDD')}`,
   });
   ok(5, 'POST solicitud → 201/200', solicitud.status === 201 || solicitud.status === 200, `status=${solicitud.status}`);
   const cotBorrador = solicitud.body?.cotizacion;

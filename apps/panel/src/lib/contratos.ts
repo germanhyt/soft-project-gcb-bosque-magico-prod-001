@@ -4,7 +4,11 @@ import type { TipoComprobante } from './contrato';
 
 export type EtapaContrato = 'borrador' | 'enviado' | 'firmado' | 'anulado';
 
-export type TipoAdjuntoContrato = 'comprobante_pago' | 'documento_contabilidad';
+export type TipoAdjuntoContrato =
+  | 'comprobante_pago'
+  | 'documento_contabilidad'
+  | 'firma_cliente'
+  | 'firma_empresa';
 
 export type ContratoAdjunto = {
   id: string;

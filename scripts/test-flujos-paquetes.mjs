@@ -3,9 +3,9 @@
  * Uso: node scripts/test-flujos-paquetes.mjs
  * Requiere API en http://localhost:3000 con seed aplicado.
  */
-import { api, loginAdmin, celularUnico, BASE } from './test-helpers.mjs';
+import { api, loginAdmin, celularUnico, BASE, tddMarca, fechaLaboralFutura, fechaFinSemanaFutura } from './test-helpers.mjs';
 
-const TDD_MARCA = 'TDD-2026-07-01';
+const TDD_MARCA = tddMarca('TDD');
 const results = [];
 
 function ok(name, cond, detail = '') {
@@ -99,8 +99,8 @@ async function main() {
   const piq2 = piqueos.find((p) => p.codigo === 'PIQ-002') ?? piqueos[1];
   const piq3 = piqueos.find((p) => p.codigo === 'PIQ-020') ?? piqueos[2];
 
-  const fechaLv = '2026-07-08'; // martes
-  const fechaFds = '2026-07-11'; // sábado
+  const fechaLv = fechaLaboralFutura(14);
+  const fechaFds = fechaFinSemanaFutura(14);
 
   // 3. Preview Básico L-V
   const prevBasico = await post('/public/bosque-magico/cotizaciones/preview', {

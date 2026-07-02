@@ -472,15 +472,27 @@ Tenemos el siguiente workflow y el system prompt, el tema es analizar si es conv
 - permitir al usuario que pueda editar el detalle de composición de cada paquete o no es necesario? (analicemos esta funcionalidad)
 
 
-(X) TDD 2026-07-01 — suite preparada
+(X) TDD 2026-07-02 — suite preparada
 - `npm run test:unit` — Jest API (**sin registros** en BD; mocks) — 75 tests
 - `npm run test:integracion` — preview + solicitudes E2E cortas — 53 checks
 - `npm run test:casos-uso` — matriz CU-01…CU-11 (reglas negocio) — 41 checks
-- `npm run test:flujo-comercial` — **E2E landing → evento realizado** — 25 pasos
+- `npm run test:flujo-comercial` — **E2E landing → evento realizado** (+ firmas contrato) — 28 pasos
 - `npm run test:flujo-manual` — **E2E WhatsApp (n8n) → tomar → realizado** — 20 pasos
-- `npm run test:qa-completo` — **suite orquestada** (unit + integración + CU + ambos E2E)
-- `npm run test:e2e` — demo Premium + borrador
+- `npm run qa:pedidos` — **operaciones / pedidos proveedor** — 20 pasos (ítem proveedor, vista /operaciones)
+- `npm run qa:fases` — fases F1–F5 (anticipación, contrato antes agenda, adjuntos, catálogo, postventa) — 27 checks
+- `npm run test:qa-completo` — **suite orquestada** (unit + integración + CU + E2E + qa:pedidos)
+- `npm run test:e2e` — demo Premium + borrador — 23 checks
 - `npm run test:tdd` — unit + integración + casos-uso (rápido, sin E2E largos)
-- Doc: `.docs/TDD-2026-07-01.md`
+- Marcas TDD con fecha del día: `TDD-YYYY-MM-DD`, `E2E-FULL-YYYY-MM-DD`, etc.
+- Doc histórico: `.docs/TDD-2026-07-01.md`
+
+
+()
+accedeiendo a mivps, los registros de solicitudes asociadas con el número 910139973 anteriores lo vamos actualizar con otro dato de qa (con sus asociaciones con los otros módulos), la idea es el último registro de solicitudes d4310d4e-5ae6-44eb-9b31-3d068ccad0d7 para quede como identidad única
+
+()
+hiciste pruebas con el flujo con operaciones cuando se realiza pedidos a proveedores?, y en qué momento se agenda el evento luego del contrato cierto?
+
+
 
 

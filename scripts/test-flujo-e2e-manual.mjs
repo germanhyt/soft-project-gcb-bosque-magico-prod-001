@@ -13,9 +13,10 @@ import {
   fechaFutura,
   CELULAR_QA,
   BASE,
+  tddMarca,
 } from './test-helpers.mjs';
 
-const MARCA = 'E2E-MANUAL-2026-07-01';
+const MARCA = tddMarca('E2E-MANUAL');
 const suffix = Date.now().toString().slice(-6);
 const fechaEvento = fechaFutura(21);
 const celular = celularUnico();

@@ -11,7 +11,8 @@ type Props = {
   contrato: Contrato;
 };
 
-const TIPOS: TipoAdjuntoContrato[] = ['comprobante_pago', 'documento_contabilidad'];
+const TIPOS_DOCUMENTO: TipoAdjuntoContrato[] = ['comprobante_pago', 'documento_contabilidad'];
+const TIPOS_FIRMA: TipoAdjuntoContrato[] = ['firma_cliente', 'firma_empresa'];
 
 export function ContratoAdjuntosSection({ contrato }: Props) {
   const qc = useQueryClient();
@@ -33,31 +34,41 @@ export function ContratoAdjuntosSection({ contrato }: Props) {
     onSuccess: invalidate,
   });
 
-  return (
-    <section className="space-y-3">
-      <h3 className="font-bold text-primary">Documentos del contrato</h3>
-      <p className="text-body-sm text-outline">
-        Comprobante de pago y documento de contabilidad (PDF o imagen).
-      </p>
-      <div className="grid gap-3 sm:grid-cols-2">
-        {TIPOS.map((tipo) => (
-          <ContratoAdjuntoDropzone
-            key={tipo}
-            tipo={tipo}
-            adjunto={contrato.adjuntos?.find((a) => a.tipo === tipo)}
-            disabled={uploadMut.isPending || removeMut.isPending}
-            onUpload={async (file) => {
-              await uploadMut.mutateAsync({ tipo, file });
-            }}
-            onRemove={
-              contrato.adjuntos?.some((a) => a.tipo === tipo)
-                ? async () => {
-                    await removeMut.mutateAsync(tipo);
-                  }
-                : undefined
+  const renderDropzone = (tipo: TipoAdjuntoContrato) => (
+    <ContratoAdjuntoDropzone
+      key={tipo}
+      tipo={tipo}
+      adjunto={contrato.adjuntos?.find((a) => a.tipo === tipo)}
+      disabled={uploadMut.isPending || removeMut.isPending}
+      onUpload={async (file) => {
+        await uploadMut.mutateAsync({ tipo, file });
+      }}
+      onRemove={
+        contrato.adjuntos?.some((a) => a.tipo === tipo)
+          ? async () => {
+              await removeMut.mutateAsync(tipo);
             }
-          />
-        ))}
+          : undefined
+      }
+    />
+  );
+
+  return (
+    <section className="space-y-4">
+      <div>
+        <h3 className="font-bold text-primary">Documentos del contrato</h3>
+        <p className="text-body-sm text-outline">
+          Comprobante de pago y documento de contabilidad (PDF o imagen).
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">{TIPOS_DOCUMENTO.map(renderDropzone)}</div>
+      </div>
+
+      <div>
+        <h3 className="font-bold text-primary">Firmas (imagen)</h3>
+        <p className="text-body-sm text-outline">
+          Sube la firma del cliente y de Bosque Mágico. Aparecerán en el PDF al imprimir.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">{TIPOS_FIRMA.map(renderDropzone)}</div>
       </div>
     </section>
   );

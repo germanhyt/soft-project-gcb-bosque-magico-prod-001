@@ -279,19 +279,33 @@ async function main() {
   const patchGen = await call(`/bosque-magico/pedidos/${pedidoGenId}`, {
     method: 'PATCH',
     token,
-    body: { etapa: 'entregado' },
+    body: { etapa: 'confirmado' },
   });
-  paso('P17', 'PATCH pedido generado → entregado', patchGen);
+  paso('P17', 'PATCH pedido generado → confirmado', patchGen);
 
   listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${fechaEventoGen}`, { token });
-  paso('P18', `Operaciones incluye pedido generado (evento ${fechaEventoGen})`, listOps);
+  paso('P18', `Operaciones incluye pedido confirmado (evento ${fechaEventoGen})`, listOps);
   const idsFinal = new Set((listOps.data ?? []).map((p) => p.id));
   if (!idsFinal.has(pedidoGenId)) {
-    console.error('❌ Pedido generado no visible en /operaciones');
+    console.error('❌ Pedido confirmado no visible en /operaciones');
     process.exit(1);
   }
 
-  console.log('\n✅ QA pedidos OK (18 pasos)');
+  const patchEntregado = await call(`/bosque-magico/pedidos/${pedidoGenId}`, {
+    method: 'PATCH',
+    token,
+    body: { etapa: 'entregado' },
+  });
+  paso('P19', 'PATCH pedido → entregado (sale de operaciones pendientes)', patchEntregado);
+
+  listOps = await call(`/bosque-magico/pedidos?desde=${desde}&hasta=${fechaEventoGen}`, { token });
+  const idsTrasEntregado = new Set((listOps.data ?? []).map((p) => p.id));
+  if (idsTrasEntregado.has(pedidoGenId)) {
+    console.error('❌ Pedido entregado no debería listarse en operaciones pendientes');
+    process.exit(1);
+  }
+  console.log('✅ P20: Operaciones ya no lista pedido entregado');
+  console.log('\n✅ QA pedidos OK (20 pasos)');
   if (eventoDemoId) console.log(`   Evento demo: /agenda?detalle=${eventoDemoId}`);
   console.log(`   Evento generar: /agenda?detalle=${eventoGenId}\n`);
 }

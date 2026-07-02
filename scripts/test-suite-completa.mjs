@@ -6,8 +6,9 @@
  *   1. Unit (Jest, sin BD)
  *   2. Integración reglas paquetes
  *   3. Casos de uso CU-01…CU-11
- *   4. E2E landing → realizado
+ *   4. E2E landing → realizado (+ firmas contrato)
  *   5. E2E manual WhatsApp → realizado
+ *   6. Operaciones — pedidos a proveedores (qa:pedidos)
  *
  * Uso: node scripts/test-suite-completa.mjs
  * Requiere API :3000 + seed.
@@ -15,7 +16,7 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
-import { waitForApi, sleep, cooldownThrottler, BASE } from './test-helpers.mjs';
+import { waitForApi, sleep, cooldownThrottler, BASE, tddMarca } from './test-helpers.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -81,15 +82,20 @@ async function main() {
     });
     await fase(4, 'E2E landing → evento realizado', () => runNode('test-flujo-e2e-completo.mjs'));
     await fase(5, 'E2E manual WhatsApp → realizado', () => runNode('test-flujo-e2e-manual.mjs'));
+    await fase(6, 'Operaciones — pedidos proveedor', () => runNpm('qa:pedidos'), {
+      cooldownAntes: 5,
+    });
 
     const sec = ((Date.now() - started) / 1000).toFixed(1);
     console.log('\n' + '═'.repeat(54));
     console.log(` SUITE COMPLETA OK — ${sec}s`);
     console.log('═'.repeat(54));
     console.log('\nVerificar en panel:');
-    console.log('  · E2E-FULL-2026-07-01  (landing)');
-    console.log('  · E2E-MANUAL-2026-07-01 (WhatsApp/manual)');
-    console.log('  · CU-TDD-2026-07-01     (casos de uso)\n');
+    console.log(`  · ${tddMarca('E2E-FULL')}  (landing)`);
+    console.log(`  · ${tddMarca('E2E-MANUAL')} (WhatsApp/manual)`);
+    console.log(`  · ${tddMarca('CU-TDD')}     (casos de uso)`);
+    console.log('  · /operaciones — pedido proveedor generado en fase 6');
+    console.log('  · /agenda — eventos confirmados tras contrato enviado\n');
   } catch (err) {
     console.error('\n❌ Suite interrumpida:', err.message);
     process.exit(1);

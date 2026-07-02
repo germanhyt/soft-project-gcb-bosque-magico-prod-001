@@ -1,22 +1,24 @@
 #!/usr/bin/env node
 /**
- * Flujo comercial E2E completo — landing → evento realizado (TDD 2026-07-01).
+ * Flujo comercial E2E completo — landing → evento realizado (TDD fecha del día).
  *
  * Cadena:
- *   Solicitud landing → borrador → enviar → aceptar → contrato → confirmar evento → realizar
+ *   Solicitud landing → borrador → enviar → aceptar → contrato + firmas → confirmar → realizado
  *
  * Reglas validadas en camino: Estándar 25 niños + show → extra 5×15 = 75
  *
  * Uso: node scripts/test-flujo-e2e-completo.mjs
  * Requiere: API :3000 + seed + admin login
  */
+import { subirFirmaContrato, tddMarca } from './test-helpers.mjs';
+
 const BASE = (process.env.QA_API_URL || process.env.API_URL || 'http://localhost:3000/api').replace(
   /\/+$/,
   '',
 );
 const ADMIN_EMAIL = process.env.QA_EMAIL || process.env.ADMIN_EMAIL || 'admin@bosquemagico.test';
 const ADMIN_PASSWORD = process.env.QA_PASSWORD || process.env.ADMIN_PASSWORD || 'BosqueDev123!';
-const MARCA = 'E2E-FULL-2026-07-01';
+const MARCA = tddMarca('E2E-FULL');
 /** WhatsApp evita SMTP en envío de cotización (correo de solicitud puede ser ficticio). */
 const CELULAR_ENVIO = process.env.QA_CELULAR || '910139973';
 
@@ -244,6 +246,48 @@ async function main() {
     process.exit(1);
 
   n++;
+  const firmaCli = await subirFirmaContrato(contratoId, 'firma_cliente', token);
+  if (
+    !step(
+      n,
+      'Subir firma cliente (adjunto)',
+      { status: firmaCli.status, data: firmaCli.body },
+      [200, 201],
+    )
+  )
+    process.exit(1);
+
+  n++;
+  const firmaEmp = await subirFirmaContrato(contratoId, 'firma_empresa', token);
+  if (
+    !step(
+      n,
+      'Subir firma empresa (adjunto)',
+      { status: firmaEmp.status, data: firmaEmp.body },
+      [200, 201],
+    )
+  )
+    process.exit(1);
+
+  n++;
+  const detContrato = await call(`/bosque-magico/contratos/${contratoId}`, { token });
+  const adjuntos = detContrato.data?.adjuntos ?? [];
+  const tieneFirmas =
+    adjuntos.some((a) => a.tipo === 'firma_cliente') &&
+    adjuntos.some((a) => a.tipo === 'firma_empresa');
+  if (
+    !step(
+      n,
+      'Contrato con adjuntos de firma',
+      detContrato,
+      [200],
+      `firmas=${tieneFirmas}`,
+    )
+  )
+    process.exit(1);
+  if (!tieneFirmas) process.exit(1);
+
+  n++;
   if (
     !step(
       n,
@@ -256,14 +300,22 @@ async function main() {
 
   if (contrato.data?.tokenPublico) {
     n++;
+    const pub = await call(`/public/bosque-magico/contratos/${contrato.data.tokenPublico}`);
+    const pubAdj = pub.data?.adjuntos ?? [];
+    const pubFirmas =
+      pubAdj.some((a) => a.tipo === 'firma_cliente') &&
+      pubAdj.some((a) => a.tipo === 'firma_empresa');
     if (
       !step(
         n,
-        'Ver contrato público por token',
-        await call(`/public/bosque-magico/contratos/${contrato.data.tokenPublico}`),
+        'Contrato público incluye firmas',
+        pub,
+        [200],
+        `firmas=${pubFirmas}`,
       )
     )
       process.exit(1);
+    if (!pubFirmas) process.exit(1);
   }
 
   n++;
