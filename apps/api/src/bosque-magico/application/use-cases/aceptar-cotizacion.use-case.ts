@@ -95,7 +95,12 @@ export class AceptarCotizacionUseCase {
         `Solicitud ganada — ${cot.codigo}`,
       );
     }
-    this.events.cotizacionAceptada(cot.id, cot.codigo);
+    this.events.cotizacionAceptada(
+      cot.id,
+      cot.codigo,
+      actorTipo === 'cliente' ? 'cliente' : 'equipo',
+      evento.id,
+    );
 
     return {
       ...mapCotizacionResponse(despues),

@@ -5,6 +5,7 @@ import {
 } from '@nestjs/common';
 import { EtapaContrato, Prisma } from '@prisma/client';
 import { mapContratoResponse } from '../../domain/mappers/contrato.mapper';
+import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
 
@@ -50,6 +51,7 @@ export class MarcarContratoFirmadoUseCase {
   constructor(
     private readonly contratos: ContratosRepository,
     private readonly auditoria: AuditoriaRepository,
+    private readonly events: EventsService,
   ) {}
 
   async ejecutar(id: string) {
@@ -72,6 +74,11 @@ export class MarcarContratoFirmadoUseCase {
       antes: JSON.parse(JSON.stringify(antes)) as Prisma.InputJsonValue,
       despues: JSON.parse(JSON.stringify(despues)) as Prisma.InputJsonValue,
     });
+
+    this.events.eventoActualizado(
+      antes.eventoId,
+      `Contrato ${antes.numero} firmado`,
+    );
 
     return mapContratoResponse(despues);
   }

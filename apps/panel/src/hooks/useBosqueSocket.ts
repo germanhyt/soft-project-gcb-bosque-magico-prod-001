@@ -8,6 +8,16 @@ import { getStoredToken } from '../lib/auth-storage';
 import { resolveSocketServerUrl } from '../lib/socket-url';
 import type { BosquePanelEvent } from '../types/bosque-panel-event';
 
+function invalidateEventoRelacionado(
+  qc: ReturnType<typeof useQueryClient>,
+  eventoId: string,
+) {
+  void qc.invalidateQueries({ queryKey: ['evento', eventoId] });
+  void qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] });
+  void qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] });
+  void qc.invalidateQueries({ queryKey: ['tareas-evento', eventoId] });
+}
+
 function invalidateForEvent(qc: ReturnType<typeof useQueryClient>, event: BosquePanelEvent) {
   if (event.type.startsWith('solicitud.')) {
     void qc.invalidateQueries({ queryKey: ['solicitudes'] });
@@ -22,8 +32,16 @@ function invalidateForEvent(qc: ReturnType<typeof useQueryClient>, event: Bosque
     void qc.invalidateQueries({ queryKey: ['agenda'] });
     void qc.invalidateQueries({ queryKey: ['eventos-resumen'] });
     void qc.invalidateQueries({ queryKey: ['eventos'] });
+    void qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] });
+    void qc.invalidateQueries({ queryKey: ['contratos'] });
+    if (event.type.startsWith('cotizacion.')) {
+      void qc.invalidateQueries({ queryKey: ['cotizacion'] });
+    }
     if (event.entidad?.tipo === 'cotizacion') {
       void qc.invalidateQueries({ queryKey: ['cotizacion', event.entidad.id] });
+    }
+    if (event.entidad?.tipo === 'evento') {
+      invalidateEventoRelacionado(qc, event.entidad.id);
     }
   }
 }

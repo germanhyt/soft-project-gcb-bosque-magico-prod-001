@@ -200,7 +200,7 @@ export function SolicitudDetalle({
               cotizacionId={cotizacionActiva.id}
               etapa={cotizacionActiva.etapa}
               fullWidth
-              onSuccess={() => onClose()}
+              preferQuedarse
             />
           </DetalleActionGroup>
         ) : null}

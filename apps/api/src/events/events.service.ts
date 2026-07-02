@@ -98,11 +98,19 @@ export class EventsService {
     });
   }
 
-  cotizacionAceptada(id: string, codigo: string) {
-    this.emit('cotizacion.aceptada', 'Cotización aceptada', codigo, {
-      tipo: 'cotizacion',
-      id,
-    });
+  cotizacionAceptada(
+    id: string,
+    codigo: string,
+    origen: 'cliente' | 'equipo' = 'equipo',
+    eventoId?: string,
+  ) {
+    const detalle =
+      origen === 'cliente'
+        ? `${codigo} aceptada por el cliente — evento en Agenda (por confirmar)`
+        : `${codigo} aceptada por el equipo — evento en Agenda (por confirmar)`;
+    this.emit('cotizacion.aceptada', 'Cotización aceptada', detalle, eventoId
+      ? { tipo: 'evento', id: eventoId }
+      : { tipo: 'cotizacion', id });
   }
 
   eventoActualizado(id: string, detalle: string) {

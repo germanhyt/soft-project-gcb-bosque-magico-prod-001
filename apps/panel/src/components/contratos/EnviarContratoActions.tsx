@@ -1,15 +1,24 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 import { marcarContratoEnviado, type Contrato, type EtapaContrato } from '../../lib/contratos';
-import { waMeUrlContrato } from '../../lib/whatsapp-contrato';
-import { abrirWhatsApp } from '../../lib/whatsapp-cotizacion';
+import { mensajeWhatsAppContrato } from '../../lib/whatsapp-contrato';
+import { abrirWhatsApp, waMeUrlCotizacion } from '../../lib/whatsapp-cotizacion';
+import { Modal } from '../ui/Modal';
+import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { Icon } from '../ui/Icon';
+import { linkMailto } from '../../lib/contacto-links';
+import {
+  asuntoCorreoContrato,
+  mensajeCorreoContrato,
+} from '../../lib/mensajes-contrato-correo';
 
 type Props = {
   contrato: Contrato;
   celular: string;
+  correo?: string;
   className?: string;
   onSuccess?: () => void;
 };
@@ -17,13 +26,21 @@ type Props = {
 export function EnviarContratoActions({
   contrato,
   celular,
+  correo,
   className = '',
   onSuccess,
 }: Props) {
   const qc = useQueryClient();
   const [enviandoWa, setEnviandoWa] = useState(false);
+  const [enviandoCorreo, setEnviandoCorreo] = useState(false);
+  const [waModalOpen, setWaModalOpen] = useState(false);
+  const [correoModalOpen, setCorreoModalOpen] = useState(false);
+  const [mensajeWa, setMensajeWa] = useState('');
+  const [asuntoCorreo, setAsuntoCorreo] = useState('');
+  const [mensajeCorreo, setMensajeCorreo] = useState('');
   const puedeEnviar =
     contrato.etapa === 'borrador' || contrato.etapa === 'enviado';
+  const correoDestino = correo?.trim() ?? contrato.snapshotJson?.cliente?.correo?.trim() ?? '';
 
   const invalidar = async () => {
     await Promise.all([
@@ -32,14 +49,6 @@ export function EnviarContratoActions({
       qc.invalidateQueries({ queryKey: ['contrato-evento', contrato.eventoId] }),
     ]);
   };
-
-  const enviarMut = useMutation({
-    mutationFn: () => marcarContratoEnviado(contrato.id),
-    onSuccess: async () => {
-      await invalidar();
-      onSuccess?.();
-    },
-  });
 
   const enviarWhatsApp = async () => {
     setEnviandoWa(true);
@@ -50,7 +59,7 @@ export function EnviarContratoActions({
         await invalidar();
       }
 
-      const waUrl = waMeUrlContrato(celular, contrato);
+      const waUrl = waMeUrlCotizacion(celular, mensajeWa.trim());
       const abierto = abrirWhatsApp(waUrl, waTab);
       if (!abierto) {
         await Swal.fire({
@@ -63,10 +72,11 @@ export function EnviarContratoActions({
       await Swal.fire({
         icon: 'success',
         title: contrato.etapa === 'borrador' ? 'Contrato enviado' : 'WhatsApp abierto',
-        html: '<p class="text-sm">WhatsApp abierto con links de resumen y PDF del contrato.</p>',
+        html: '<p class="text-sm">WhatsApp abierto con el mensaje del contrato.</p>',
         timer: 2400,
         showConfirmButton: false,
       });
+      setWaModalOpen(false);
       onSuccess?.();
     } catch (err: unknown) {
       waTab?.close();
@@ -80,21 +90,163 @@ export function EnviarContratoActions({
     }
   };
 
+  const enviarCorreo = async () => {
+    if (!correoDestino) return;
+    setEnviandoCorreo(true);
+    try {
+      if (contrato.etapa === 'borrador') {
+        await marcarContratoEnviado(contrato.id);
+        await invalidar();
+      }
+      window.location.href = linkMailto(correoDestino, asuntoCorreo.trim(), mensajeCorreo.trim());
+      await Swal.fire({
+        icon: 'info',
+        title: 'Cliente de correo',
+        html: '<p class="text-sm">Se abrió tu aplicación de correo para revisar y enviar el mensaje.</p>',
+        timer: 2600,
+        showConfirmButton: false,
+      });
+      setCorreoModalOpen(false);
+      onSuccess?.();
+    } catch (err: unknown) {
+      const msg =
+        err && typeof err === 'object' && 'response' in err
+          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
+          : 'No se pudo preparar el envío por correo';
+      await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
+    } finally {
+      setEnviandoCorreo(false);
+    }
+  };
+
   if (!puedeEnviar) return null;
 
-  const pendiente = enviandoWa || enviarMut.isPending;
+  const pendiente = enviandoWa || enviandoCorreo;
   const etapa = contrato.etapa as EtapaContrato;
 
   return (
-    <div className={`flex flex-col gap-2 ${className}`}>
-      <Button
-        className="inline-flex w-full gap-2"
-        disabled={pendiente}
-        onClick={() => void enviarWhatsApp()}
+    <>
+      <div className={`flex flex-col gap-2 ${className}`}>
+        <Button
+          className="inline-flex w-full gap-2"
+          disabled={pendiente}
+          onClick={() => {
+            setMensajeWa(mensajeWhatsAppContrato(contrato));
+            setWaModalOpen(true);
+          }}
+        >
+          <WhatsAppIcon size={20} className="text-on-primary" />
+          {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
+        </Button>
+        {correoDestino && (
+          <Button
+            variant="secondary"
+            className="inline-flex w-full gap-2"
+            disabled={pendiente}
+            onClick={() => {
+              const link = contrato.linkPublico || contrato.tokenPublico;
+              const linkPdf = contrato.linkPdfPublico || contrato.tokenPublico;
+              const nombreCliente = contrato.snapshotJson?.cliente?.nombreCompleto ?? 'cliente';
+              setAsuntoCorreo(asuntoCorreoContrato(contrato.numero));
+              setMensajeCorreo(
+                mensajeCorreoContrato(nombreCliente, contrato.numero, link, linkPdf),
+              );
+              setCorreoModalOpen(true);
+            }}
+          >
+            <Icon name="mail" size={20} />
+            {etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo'}
+          </Button>
+        )}
+      </div>
+      <Modal
+        open={waModalOpen}
+        onClose={() => setWaModalOpen(false)}
+        title="Enviar contrato por WhatsApp"
+        description="Revisa el mensaje antes de abrir WhatsApp."
+        size="lg"
       >
-        <WhatsAppIcon size={20} className="text-on-primary" />
-        {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
-      </Button>
-    </div>
+        <div className="space-y-4">
+          <label className="block">
+            <span className={LABEL_CLASS}>Mensaje</span>
+            <textarea
+              className={`${INPUT_CLASS} min-h-[180px] resize-y`}
+              value={mensajeWa}
+              onChange={(ev) => setMensajeWa(ev.target.value)}
+              rows={10}
+            />
+          </label>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setWaModalOpen(false)}
+            disabled={enviandoWa}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="inline-flex gap-2"
+            disabled={!mensajeWa.trim() || enviandoWa}
+            onClick={() => void enviarWhatsApp()}
+          >
+            <WhatsAppIcon size={20} className="text-on-primary" />
+            {enviandoWa ? 'Abriendo…' : 'Abrir WhatsApp'}
+          </Button>
+        </div>
+      </Modal>
+      <Modal
+        open={correoModalOpen}
+        onClose={() => setCorreoModalOpen(false)}
+        title="Enviar contrato por correo"
+        description="Revisa el asunto y el mensaje. Se abrirá tu cliente de correo."
+        size="lg"
+      >
+        <div className="space-y-4">
+          <div className="rounded-lg border border-surface-variant bg-surface-container-low/50 px-3 py-2 text-body-sm">
+            <span className="text-outline">Para: </span>
+            <span className="font-medium text-on-surface">{correoDestino}</span>
+          </div>
+          <label className="block">
+            <span className={LABEL_CLASS}>Asunto</span>
+            <input
+              className={INPUT_CLASS}
+              value={asuntoCorreo}
+              onChange={(e) => setAsuntoCorreo(e.target.value)}
+            />
+          </label>
+          <label className="block">
+            <span className={LABEL_CLASS}>Mensaje</span>
+            <textarea
+              className={`${INPUT_CLASS} min-h-[180px] resize-y`}
+              value={mensajeCorreo}
+              onChange={(e) => setMensajeCorreo(e.target.value)}
+              rows={10}
+            />
+          </label>
+        </div>
+        <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setCorreoModalOpen(false)}
+            disabled={enviandoCorreo}
+          >
+            Cancelar
+          </Button>
+          <Button
+            type="button"
+            className="inline-flex gap-2"
+            disabled={!asuntoCorreo.trim() || !mensajeCorreo.trim() || enviandoCorreo}
+            onClick={() => void enviarCorreo()}
+          >
+            <Icon name="mail" size={20} />
+            {enviandoCorreo ? 'Abriendo…' : 'Abrir correo'}
+          </Button>
+        </div>
+      </Modal>
+    </>
   );
 }

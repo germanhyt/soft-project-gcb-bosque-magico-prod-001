@@ -27,28 +27,50 @@ export async function confirmarAceptacionCotizacion() {
   return confirm.isConfirmed;
 }
 
+type AceptarCotizacionOptions = {
+  /** Si true, el botón principal cierra la alerta y deja al usuario en pantalla (p. ej. generar contrato). */
+  preferQuedarse?: boolean;
+};
+
 export function useAceptarCotizacionMutation(
   cotizacionId: string,
   onSuccess?: (eventoId?: string) => void,
+  options?: AceptarCotizacionOptions,
 ) {
   const qc = useQueryClient();
   const navigate = useNavigate();
+  const preferQuedarse = options?.preferQuedarse ?? false;
 
   return useMutation({
     mutationFn: () => aceptarCotizacionPanel(cotizacionId),
     onSuccess: async (res: { eventoId?: string }) => {
       await invalidateTrasAceptar(qc, cotizacionId);
+
+      if (!res.eventoId) {
+        await Swal.fire({
+          icon: 'success',
+          title: 'Cotización aceptada',
+          confirmButtonText: 'Entendido',
+        });
+        onSuccess?.(res.eventoId);
+        return;
+      }
+
+      const htmlQuedarse = preferQuedarse
+        ? '<p class="text-sm">Se creó el evento en <strong>Agenda</strong> (por confirmar). Puedes generar el contrato desde aquí o ir a Agenda.</p>'
+        : '<p class="text-sm">Se creó el evento en <strong>Agenda</strong> (por confirmar).</p>';
+
       const result = await Swal.fire({
         icon: 'success',
         title: 'Cotización aceptada',
-        html: res.eventoId
-          ? '<p class="text-sm">Se creó el evento en <strong>Agenda</strong> (por confirmar).</p>'
-          : undefined,
-        showCancelButton: !!res.eventoId,
-        confirmButtonText: res.eventoId ? 'Ir a Agenda' : 'Entendido',
-        cancelButtonText: 'Cerrar',
+        html: htmlQuedarse,
+        showCancelButton: true,
+        confirmButtonText: 'Continuar aquí',
+        cancelButtonText: 'Ir a Agenda',
+        reverseButtons: true,
       });
-      if (res.eventoId && result.isConfirmed) {
+
+      if (result.dismiss === Swal.DismissReason.cancel) {
         navigate(`/agenda?detalle=${res.eventoId}`);
       }
       onSuccess?.(res.eventoId);
@@ -68,6 +90,8 @@ type Props = {
   etapa: EtapaCotizacion;
   className?: string;
   fullWidth?: boolean;
+  /** Mantener el detalle abierto tras aceptar (p. ej. para generar contrato). */
+  preferQuedarse?: boolean;
   onSuccess?: (eventoId?: string) => void;
 };
 
@@ -76,9 +100,12 @@ export function AceptarCotizacionAction({
   etapa,
   className = '',
   fullWidth = false,
+  preferQuedarse = false,
   onSuccess,
 }: Props) {
-  const aceptarMut = useAceptarCotizacionMutation(cotizacionId, onSuccess);
+  const aceptarMut = useAceptarCotizacionMutation(cotizacionId, onSuccess, {
+    preferQuedarse,
+  });
 
   if (etapa !== 'enviada') return null;
 

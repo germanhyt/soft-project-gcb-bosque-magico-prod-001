@@ -19,6 +19,8 @@ import {
   type Cotizacion,
   type Producto,
 } from '../../lib/cotizaciones';
+import { fetchContratoEvento } from '../../lib/contratos';
+import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
 import { descripcionCantidadProducto, etiquetaOrigenItem } from '../../lib/origen-item';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
@@ -65,6 +67,14 @@ export function CotizacionDetalle({
   });
 
   const productosById = useMemo(() => new Map(productos.map((p) => [p.id, p])), [productos]);
+
+  const eventoId = cot?.eventos?.[0]?.id;
+
+  const { data: contratoEvento } = useQuery({
+    queryKey: ['contrato-evento', eventoId],
+    queryFn: () => fetchContratoEvento(eventoId!),
+    enabled: open && !!eventoId,
+  });
 
   const copiarLink = async () => {
     if (!cot) return;
@@ -151,15 +161,32 @@ export function CotizacionDetalle({
                 cotizacionId={cot.id}
                 etapa={cot.etapa}
                 fullWidth
-                onSuccess={() => onClose()}
+                preferQuedarse
               />
             )}
             {puedeGenerarContrato(cot.etapa) && cot.eventos?.[0]?.id && (
-              <GenerarContratoAction
-                eventoId={cot.eventos[0].id}
-                cotizacionId={cot.id}
-                fullWidth
-              />
+              contratoEvento?.etapa === 'firmado' ? (
+                <Button
+                  variant="secondary"
+                  className="w-full"
+                  onClick={() => navigate(`/contratos?detalle=${contratoEvento.id}`)}
+                >
+                  Ver contrato (firmado)
+                </Button>
+              ) : contratoEvento ? (
+                <GenerarContratoAction
+                  eventoId={cot.eventos[0].id}
+                  cotizacionId={cot.id}
+                  fullWidth
+                  label="Ver / editar contrato"
+                />
+              ) : (
+                <GenerarContratoAction
+                  eventoId={cot.eventos[0].id}
+                  cotizacionId={cot.id}
+                  fullWidth
+                />
+              )
             )}
           </DetalleActionGroup>
         )}
@@ -207,7 +234,7 @@ export function CotizacionDetalle({
             </span>
           </div>
 
-          {(solicitud || evento) && (
+          {(solicitud || evento || contratoEvento) && (
             <div className={`flex flex-wrap gap-3 p-4 ${CARD_CLASS}`}>
               {solicitud && onAbrirSolicitud && (
                 <button
@@ -219,9 +246,36 @@ export function CotizacionDetalle({
                 </button>
               )}
               {evento && (
-                <span className="text-body-sm text-on-surface-variant">
-                  Evento en agenda ({evento.etapa})
-                </span>
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-body-sm text-on-surface-variant">
+                    Evento en Agenda ({evento.etapa === 'por_confirmar' ? 'por confirmar' : evento.etapa})
+                  </span>
+                  <Button
+                    variant="ghost"
+                    className="h-auto min-h-0 px-2 py-1 text-body-sm"
+                    onClick={() => {
+                      onClose();
+                      navigate(`/agenda?detalle=${evento.id}`);
+                    }}
+                  >
+                    Ver en Agenda
+                  </Button>
+                </div>
+              )}
+              {contratoEvento && (
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="text-body-sm text-on-surface-variant">
+                    Contrato {contratoEvento.numero} ·{' '}
+                    {ETAPA_CONTRATO_LABEL[contratoEvento.etapa] ?? contratoEvento.etapa}
+                  </span>
+                  <Button
+                    variant="ghost"
+                    className="h-auto min-h-0 px-2 py-1 text-body-sm"
+                    onClick={() => navigate(`/contratos?detalle=${contratoEvento.id}`)}
+                  >
+                    Ver contrato
+                  </Button>
+                </div>
               )}
             </div>
           )}

@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { ContratoBadge } from './ContratoBadge';
@@ -29,6 +30,7 @@ type Props = {
 
 export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [editarOpen, setEditarOpen] = useState(false);
 
   const { data: contrato, isLoading, isError } = useQuery({
@@ -41,14 +43,32 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const firmarMut = useMutation({
     mutationFn: () => marcarContratoFirmado(contrato!.id),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['contrato', contratoId] });
-      await qc.invalidateQueries({ queryKey: ['contratos'] });
-      await Swal.fire({
+      const eventoId = contrato!.eventoId;
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['contrato', contratoId] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['evento', eventoId] }),
+        qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] }),
+        qc.invalidateQueries({ queryKey: ['cotizacion', contrato!.cotizacionId] }),
+      ]);
+
+      const result = await Swal.fire({
         icon: 'success',
         title: 'Contrato firmado',
-        timer: 1500,
-        showConfirmButton: false,
+        html: eventoId
+          ? '<p class="text-sm">El contrato quedó firmado. Puedes continuar en Agenda para confirmar el evento cuando operaciones estén listas.</p>'
+          : '<p class="text-sm">El contrato quedó firmado.</p>',
+        showCancelButton: !!eventoId,
+        confirmButtonText: 'Continuar aquí',
+        cancelButtonText: 'Ir a Agenda',
+        reverseButtons: true,
       });
+
+      if (eventoId && result.dismiss === Swal.DismissReason.cancel) {
+        onClose();
+        navigate(`/agenda?detalle=${eventoId}`);
+      }
     },
   });
 
@@ -57,13 +77,14 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const c = contrato;
   const snap = c?.snapshotJson;
   const celular = snap?.cliente.celular ?? c?.evento?.cliente.celular ?? '';
+  const correo = snap?.cliente.correo ?? undefined;
 
   const footer =
     c && !isLoading ? (
       <DetalleActionsFooter>
         {celular && puedeEnviarContrato(c.etapa) ? (
           <DetalleActionGroup label="Compartir con el cliente">
-            <EnviarContratoActions contrato={c} celular={celular} />
+            <EnviarContratoActions contrato={c} celular={celular} correo={correo} />
             <Button
               variant="ghost"
               className="w-full"
@@ -113,6 +134,21 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           <DetalleActionGroup label="Editar">
             <Button variant="secondary" className="w-full" onClick={() => setEditarOpen(true)}>
               Editar datos
+            </Button>
+          </DetalleActionGroup>
+        ) : null}
+
+        {c.etapa === 'firmado' && c.eventoId ? (
+          <DetalleActionGroup label="Siguiente paso">
+            <Button
+              variant="accent"
+              className="w-full"
+              onClick={() => {
+                onClose();
+                navigate(`/agenda?detalle=${c.eventoId}`);
+              }}
+            >
+              Ir a Agenda
             </Button>
           </DetalleActionGroup>
         ) : null}

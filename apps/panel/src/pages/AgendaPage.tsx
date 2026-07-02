@@ -212,9 +212,7 @@ export function AgendaPage() {
 
       const filtrados = etapaFiltro
         ? dia.eventos.filter((e) => e.etapa === etapaFiltro)
-        : vista === 'mes'
-          ? dia.eventos.filter((e) => e.etapa === 'confirmado' || e.etapa === 'realizado')
-          : dia.eventos;
+        : dia.eventos;
 
       if (filtrados.length) map.set(dia.fecha, filtrados);
 

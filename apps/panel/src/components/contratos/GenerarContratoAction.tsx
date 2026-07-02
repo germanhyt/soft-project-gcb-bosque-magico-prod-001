@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { ContratoFormModal } from './ContratoFormModal';
 import { Button } from '../ui/Button';
 import type { Evento } from '../../lib/eventos';
@@ -13,6 +14,7 @@ type Props = {
   fullWidth?: boolean;
   label?: string;
   onGenerado?: (contrato: Contrato) => void;
+  redirectToContratos?: boolean;
 };
 
 export function GenerarContratoAction({
@@ -24,7 +26,9 @@ export function GenerarContratoAction({
   fullWidth,
   label = 'Generar contrato',
   onGenerado,
+  redirectToContratos = true,
 }: Props) {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
 
   if (disabled) return null;
@@ -44,7 +48,12 @@ export function GenerarContratoAction({
         eventoId={eventoId}
         cotizacionId={cotizacionId}
         evento={evento}
-        onGenerado={onGenerado}
+        onGenerado={(contrato) => {
+          onGenerado?.(contrato);
+          if (redirectToContratos) {
+            navigate(`/contratos?detalle=${contrato.id}`);
+          }
+        }}
       />
     </>
   );
