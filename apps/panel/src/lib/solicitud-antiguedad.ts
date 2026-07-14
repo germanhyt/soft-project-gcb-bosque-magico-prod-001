@@ -21,13 +21,14 @@ export function nivelAntiguedadSolicitudNueva(
 }
 
 export function etiquetaAntiguedad(nivel: NivelAntiguedadSolicitud): string {
-  if (nivel === 'urgente') return 'Sin tomar · +24h';
-  if (nivel === 'atencion') return 'Sin tomar · +1h';
-  return 'Sin tomar';
+  if (nivel === 'urgente') return '+24h';
+  if (nivel === 'atencion') return '+1h';
+  return '';
 }
 
-export function claseAntiguedadBadge(nivel: NivelAntiguedadSolicitud): string {
-  if (nivel === 'urgente') return 'bg-error/15 text-error';
-  if (nivel === 'atencion') return 'bg-tertiary-fixed/60 text-tertiary';
-  return 'bg-primary-fixed/40 text-primary';
+/** Clase discreta para el hint de antigüedad junto al badge de estado. */
+export function claseAntiguedadHint(nivel: NivelAntiguedadSolicitud): string {
+  if (nivel === 'urgente') return 'text-error/80';
+  if (nivel === 'atencion') return 'text-tertiary/90';
+  return 'text-outline';
 }

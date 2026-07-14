@@ -533,4 +533,12 @@ hiciste pruebas con el flujo con operaciones cuando se realiza pedidos a proveed
 (x) Recordatorios automáticos: config `recordatorios.*` (habilitado, dias_antes=7, plantillas, correo operador). Job diario ~08:00 Lima + endpoint admin `POST /jobs/recordatorios-eventos`. Canales: email cliente, email operador (config o ADMIN_EMAIL), notificación panel `evento.recordatorio`. Idempotencia por auditoría.
 
 
+()
+- (x) UI label solicitudes: sin chip superior «Sin tomar»; en tabla badge Nueva + hint discreto `+1h`/`+24h` (solo si aplica).
 
+
+()
+- Desplegamos un versión limpia de tablas transaccionales como el de solicitudes/cotixaciones/operaciones/contratos/agente/clientes, y solo quedarnos con las tablas maestras
+Nuevos sub-dominios:
+bosquemagico.gcbprojects.site (landing)
+admin.bosquemagico.gcbprojects.site (pamel)

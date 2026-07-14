@@ -39,7 +39,6 @@ import { CANAL_LABEL, ETAPAS_FILTRO, TURNO_LABEL } from '../constants/solicitude
 import Swal from 'sweetalert2';
 import {
   actualizarSolicitud,
-  fetchResumenSolicitudes,
   fetchSolicitud,
   fetchSolicitudes,
   type EtapaSolicitud,
@@ -47,7 +46,7 @@ import {
 } from '../lib/api';
 import { formatFecha, formatFechaHora } from '../lib/format';
 import {
-  claseAntiguedadBadge,
+  claseAntiguedadHint,
   etiquetaAntiguedad,
   nivelAntiguedadSolicitudNueva,
 } from '../lib/solicitud-antiguedad';
@@ -123,14 +122,6 @@ export function SolicitudesPage() {
       }),
   });
 
-  const { data: resumen } = useQuery({
-    queryKey: ['solicitudes-resumen'],
-    queryFn: fetchResumenSolicitudes,
-  });
-
-  const sinTomarCount =
-    resumen?.find((r) => r.etapa === 'nueva')?._count._all ?? 0;
-
   const data = paginated?.items ?? [];
   const meta = paginated?.meta;
   const selectedRow = data.find((r) => r.id === selectedId);
@@ -149,7 +140,6 @@ export function SolicitudesPage() {
         await qc.invalidateQueries({ queryKey: ['solicitud', editSolicitudId] });
       }
       await qc.invalidateQueries({ queryKey: ['solicitudes'] });
-      await qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] });
       await qc.invalidateQueries({ queryKey: ['clientes'] });
       await Swal.fire({
         icon: 'success',
@@ -208,15 +198,23 @@ export function SolicitudesPage() {
           const etapa = info.getValue();
           if (etapa !== 'nueva') return <EtapaBadge etapa={etapa} />;
           const nivel = nivelAntiguedadSolicitudNueva(s.creadoEn);
+          const hint = etiquetaAntiguedad(nivel);
           return (
-            <div className="flex flex-col gap-1">
+            <span className="inline-flex items-center gap-1.5">
               <EtapaBadge etapa={etapa} />
-              <span
-                className={`inline-flex w-fit rounded px-1.5 py-0.5 text-[10px] font-semibold ${claseAntiguedadBadge(nivel)}`}
-              >
-                {etiquetaAntiguedad(nivel)}
-              </span>
-            </div>
+              {hint ? (
+                <span
+                  className={`text-[10px] font-medium tabular-nums ${claseAntiguedadHint(nivel)}`}
+                  title={
+                    nivel === 'urgente'
+                      ? 'Sin tomar · más de 24 h'
+                      : 'Sin tomar · más de 1 h'
+                  }
+                >
+                  {hint}
+                </span>
+              ) : null}
+            </span>
           );
         },
       }),
@@ -299,39 +297,9 @@ export function SolicitudesPage() {
         </Button>
       </PageHeader>
 
-      {sinTomarCount > 0 && (
-        <div className="mb-4 flex flex-wrap gap-3">
-          <button
-            type="button"
-            onClick={() => {
-              const next = new URLSearchParams(searchParams);
-              next.set('etapa', 'nueva');
-              next.delete('page');
-              setSearchParams(next);
-            }}
-            className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-body-sm shadow-ambient ${
-              etapaFiltro === 'nueva'
-                ? 'border-primary bg-primary-fixed/30'
-                : 'border-surface-variant bg-surface-container-lowest'
-            }`}
-          >
-            <span className="font-semibold text-primary">Sin tomar</span>
-            <span className="font-bold text-primary">{sinTomarCount}</span>
-            <span className="text-xs text-on-surface-variant">
-              · revisar antigüedad en la tabla
-            </span>
-          </button>
-        </div>
-      )}
-
       <TableFiltersPanel
         className="mb-4"
-        onRefresh={() =>
-          void Promise.all([
-            qc.invalidateQueries({ queryKey: ['solicitudes'] }),
-            qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
-          ])
-        }
+        onRefresh={() => void qc.invalidateQueries({ queryKey: ['solicitudes'] })}
       >
         <FilterSearchInput
           inline

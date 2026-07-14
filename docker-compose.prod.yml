@@ -1,0 +1,77 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: prod-postgres-bosque
+    restart: unless-stopped
+    entrypoint: ["/bin/sh", "/sandbox-entrypoint.sh"]
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${PROD_POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: bosque_magico
+    volumes:
+      - prod_pg_data:/var/lib/postgresql/data
+      - ./deploy/postgres-sandbox-entrypoint.sh:/sandbox-entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bosque_magico"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    ports:
+      - "127.0.0.1:5435:5432"
+
+  api:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.api
+    container_name: prod-api-bosque
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://postgres:${PROD_POSTGRES_PASSWORD:-postgres}@postgres:5432/bosque_magico?schema=public
+      JWT_SECRET: ${PROD_JWT_SECRET:-prod-secret-change-me}
+      API_CORS_ORIGINS: https://bosquemagico.gcbprojects.site,https://admin.bosquemagico.gcbprojects.site
+      PUBLIC_SITE_URL: https://bosquemagico.gcbprojects.site
+      ADMIN_EMAIL: ${PROD_ADMIN_EMAIL:-admin@bosquemagico.test}
+      ADMIN_PASSWORD: ${PROD_ADMIN_PASSWORD:-BosqueDev123!}
+      # Primera subida con volumen vacío: seed maestras. Luego dejar en false.
+      API_RUN_DB_SEED: ${PROD_API_RUN_DB_SEED:-true}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "3011:3000"
+    volumes:
+      - prod_api_uploads:/app/apps/api/uploads
+
+  panel:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.panel
+      args:
+        # Mismo origen que el panel (nginx proxy /api → backend)
+        VITE_API_URL: https://admin.bosquemagico.gcbprojects.site/api
+        VITE_PUBLIC_SITE_URL: https://bosquemagico.gcbprojects.site
+    container_name: prod-panel-bosque
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "4183:80"
+
+  landing:
+    build:
+      context: .
+      dockerfile: deploy/Dockerfile.landing
+      args:
+        VITE_API_URL: https://bosquemagico.gcbprojects.site/api
+    container_name: prod-landing-bosque
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      - "4184:80"
+
+volumes:
+  prod_pg_data:
+  prod_api_uploads:

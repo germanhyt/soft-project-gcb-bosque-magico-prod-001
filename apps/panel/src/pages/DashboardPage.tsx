@@ -71,7 +71,7 @@ export function DashboardPage() {
             to={`/solicitudes?etapa=${etapa}`}
             title={ETAPA_LABEL[etapa]}
             value={isLoading ? '…' : (counts.get(etapa) ?? 0)}
-            hint={etapa === 'nueva' ? 'sin tomar · priorizar' : undefined}
+            hint={etapa === 'nueva' ? 'leads nuevos' : undefined}
             icon={icon}
             watermarkIcon={watermark}
             accent={accent}
