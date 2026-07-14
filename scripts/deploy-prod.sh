@@ -4,16 +4,16 @@
 #   cd /home/projects/proyecto-bosque-magico
 #   bash scripts/deploy-prod.sh
 #
-# Variables opcionales: PROD_JWT_SECRET, PROD_ADMIN_PASSWORD, PROD_POSTGRES_PASSWORD,
-#   PROD_API_RUN_DB_SEED (default true en primera vez; poner false tras seed).
+# Usa COMPOSE_PROJECT_NAME=bosque-prod para NO mezclar servicios con sandbox.
 
 set -euo pipefail
 
+export COMPOSE_PROJECT_NAME="${COMPOSE_PROJECT_NAME:-bosque-prod}"
 COMPOSE_FILE="${COMPOSE_FILE:-docker-compose.prod.yml}"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-echo "==> Rama"
+echo "==> Rama (proyecto compose: $COMPOSE_PROJECT_NAME)"
 git fetch --all
 git checkout sandbox
 git pull origin sandbox

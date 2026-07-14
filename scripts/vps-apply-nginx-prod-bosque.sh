@@ -31,7 +31,9 @@ insert_before_panini() {
     printf '\n' >> "$tmp"
     cat "$snip" >> "$tmp"
   fi
-  mv "$tmp" "$NGINX_CONF"
+  # Escribir in-place para no romper el bind-mount (mismo inode)
+  cat "$tmp" > "$NGINX_CONF"
+  rm -f "$tmp"
 }
 
 reload_nginx() {
@@ -41,9 +43,18 @@ reload_nginx() {
 
 cp -a "$NGINX_CONF" "${NGINX_CONF}.bak.$(date +%Y%m%d%H%M%S)"
 
+# Importante: no usar `mv` sobre nginx.conf (rompe el bind-mount del contenedor).
+# Si se reemplazó el inode, recrear nginx_proxy: cd /home/projects/shared && docker compose up -d --force-recreate nginx
+
 if ! grep -qF "$MARKER_HTTP" "$NGINX_CONF"; then
   echo "==> Insertando bloque HTTP prod"
   insert_before_panini "$HTTP_SNIP"
+  # Preservar inode: si awk usó mv, forzar recreate del proxy
+  if ! docker exec nginx_proxy grep -qF "$MARKER_HTTP" /etc/nginx/conf.d/default.conf 2>/dev/null; then
+    echo "==> Bind-mount desincronizado — recreando nginx_proxy"
+    (cd /home/projects/shared && docker compose up -d --force-recreate nginx)
+    sleep 2
+  fi
   reload_nginx
 else
   echo "==> Bloque HTTP prod ya presente"
