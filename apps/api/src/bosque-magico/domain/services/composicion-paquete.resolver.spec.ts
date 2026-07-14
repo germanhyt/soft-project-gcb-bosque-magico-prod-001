@@ -178,7 +178,7 @@ describe('resolverComposicionPaquete', () => {
     expect(r.montoBasePaquete).toBe(1770);
   });
 
-  it('aplica crédito S/200 en piqueos y cobra packs que exceden', () => {
+  it('aplica crédito S/200 acumulado y solo cobra el excedente final', () => {
     const r = resolverComposicionPaquete({
       paquete: paquetePremium,
       reglas: reglasPremium,
@@ -194,14 +194,15 @@ describe('resolverComposicionPaquete', () => {
     });
 
     expect(r.resumen.piqueosValorSeleccionado).toBe(225);
-    expect(r.resumen.piqueosExcedente).toBe(62.5);
+    expect(r.resumen.piqueosExcedente).toBe(25);
     const cobrablesPiqueos = r.items.filter(
       (i) =>
         i.origenItem === OrigenItemCotizacion.excedente_paquete &&
         i.nombre === 'Tequeños',
     );
     expect(cobrablesPiqueos).toHaveLength(1);
-    expect(cobrablesPiqueos[0].precioUnitario).toBe(62.5);
+    expect(cobrablesPiqueos[0].precioUnitario).toBe(25);
+    expect(cobrablesPiqueos[0].creditoAplicado).toBe(37.5);
   });
 
   it('cobra 2 packs del mismo piqueo aplicando crédito pack a pack', () => {
@@ -224,7 +225,7 @@ describe('resolverComposicionPaquete', () => {
     expect(r.resumen.piqueosExcedente).toBe(0);
   });
 
-  it('segundo pack del mismo piqueo pasa a excedente si no hay crédito', () => {
+  it('cuando el crédito se agota parcialmente, solo cobra la diferencia pendiente', () => {
     const r = resolverComposicionPaquete({
       paquete: paquetePremium,
       reglas: reglasPremium,
@@ -239,7 +240,7 @@ describe('resolverComposicionPaquete', () => {
     });
 
     expect(r.resumen.piqueosValorSeleccionado).toBe(112.5 + 50 + 50);
-    expect(r.resumen.piqueosExcedente).toBe(50);
+    expect(r.resumen.piqueosExcedente).toBe(12.5);
   });
 
   it('snack Premium incluye 25 unidades y cobra excedente por unidad', () => {

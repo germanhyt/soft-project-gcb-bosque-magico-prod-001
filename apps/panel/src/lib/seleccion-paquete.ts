@@ -1,5 +1,11 @@
 import type { ItemCotizacion, Producto, SeleccionPaquetePayload } from './cotizaciones';
 import { PAQUETES_CONFIG_DEFAULT } from './paquetes-config';
+import {
+  NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO,
+  NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO,
+  NOMBRE_ITEM_INGRESO_SHOW_EXTERNO,
+  NOMBRE_ITEM_SALITA_LOUNGE,
+} from '@bosque/shared';
 
 /** @deprecated Usar paquetesConfigDesdeItems() cuando haya config de API. */
 export const CAJITAS_INCLUIDAS_DEFAULT = PAQUETES_CONFIG_DEFAULT.cajitasIncluidas;
@@ -12,10 +18,16 @@ export type SeleccionPaqueteState = {
   snackId: string;
   snackCantidad: number;
   cajitasCantidad: number;
+  cajitasClasica: number;
+  cajitasSaludable: number;
   piqueoIds: string[];
   piqueosCantidades: Record<string, number>;
   adicionalIds: string[];
   adicionalCantidades: Record<string, number>;
+  salitaLoungeCantidad: number;
+  derechoIngresoShowExterno: boolean;
+  derechoIngresoDecoracionExterno: boolean;
+  derechoIngresoCarritoSnackExterno: boolean;
 };
 
 export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
@@ -24,10 +36,16 @@ export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
   snackId: '',
   snackCantidad: 25,
   cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
+  cajitasClasica: CAJITAS_INCLUIDAS_DEFAULT,
+  cajitasSaludable: 0,
   piqueoIds: [],
   piqueosCantidades: {},
   adicionalIds: [],
   adicionalCantidades: {},
+  salitaLoungeCantidad: 0,
+  derechoIngresoShowExterno: false,
+  derechoIngresoDecoracionExterno: false,
+  derechoIngresoCarritoSnackExterno: false,
 };
 
 export function normalizarPaqueteNombre(paquete: string): string {
@@ -51,6 +69,9 @@ export function seleccionToPayload(
   state: SeleccionPaqueteState,
   productos?: Pick<Producto, 'id' | 'categoria' | 'subtipo' | 'cantidadMinima'>[],
 ): SeleccionPaquetePayload {
+  const cajitasClasica = Math.max(state.cajitasClasica ?? 0, 0);
+  const cajitasSaludable = Math.max(state.cajitasSaludable ?? 0, 0);
+  const cajitasCantidad = Math.max(cajitasClasica + cajitasSaludable, state.cajitasCantidad);
   const minimoCatering = (id: string) => {
     const p = productos?.find((x) => x.id === id);
     if (p?.categoria === 'catering' && p.subtipo === 'general') {
@@ -64,7 +85,9 @@ export function seleccionToPayload(
     extraIds: state.extraIds.length ? state.extraIds : undefined,
     snackId: state.snackId || undefined,
     snackCantidad: state.snackId ? Math.max(state.snackCantidad ?? 25, 25) : undefined,
-    cajitasCantidad: state.cajitasCantidad,
+    cajitasCantidad,
+    cajitasClasica,
+    cajitasSaludable,
     piqueos: state.piqueoIds.length
       ? state.piqueoIds.map((id) => ({
           productoId: id,
@@ -80,6 +103,10 @@ export function seleccionToPayload(
           };
         })
       : undefined,
+    salitaLoungeCantidad: state.salitaLoungeCantidad > 0 ? state.salitaLoungeCantidad : undefined,
+    derechoIngresoShowExterno: state.derechoIngresoShowExterno || undefined,
+    derechoIngresoDecoracionExterno: state.derechoIngresoDecoracionExterno || undefined,
+    derechoIngresoCarritoSnackExterno: state.derechoIngresoCarritoSnackExterno || undefined,
   };
 }
 
@@ -89,9 +116,15 @@ type PreferenciasSeleccion = {
   snackId?: string;
   snackCantidad?: number;
   cajitasCantidad?: number;
+  cajitasClasica?: number;
+  cajitasSaludable?: number;
   piqueos?: Array<{ productoId: string; cantidad: number }>;
   cateringIds?: string[];
   cateringCantidades?: Record<string, number>;
+  salitaLoungeCantidad?: number;
+  derechoIngresoShowExterno?: boolean;
+  derechoIngresoDecoracionExterno?: boolean;
+  derechoIngresoCarritoSnackExterno?: boolean;
 };
 
 export function seleccionDesdePreferenciasLanding(
@@ -111,11 +144,21 @@ export function seleccionDesdePreferenciasLanding(
     snackId: sel.snackId ?? '',
     snackCantidad: Math.max(sel.snackCantidad ?? 25, 25),
     cajitasCantidad: sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT,
+    cajitasClasica: sel.cajitasClasica ?? (sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT),
+    cajitasSaludable: sel.cajitasSaludable ?? 0,
     piqueoIds,
     piqueosCantidades,
     adicionalIds: sel.cateringIds ?? [],
     adicionalCantidades: { ...(sel.cateringCantidades ?? {}) },
+    salitaLoungeCantidad: Math.max(sel.salitaLoungeCantidad ?? 0, 0),
+    derechoIngresoShowExterno: Boolean(sel.derechoIngresoShowExterno),
+    derechoIngresoDecoracionExterno: Boolean(sel.derechoIngresoDecoracionExterno),
+    derechoIngresoCarritoSnackExterno: Boolean(sel.derechoIngresoCarritoSnackExterno),
   };
+}
+
+function coincideNombreItem(nombre: string, esperado: string) {
+  return nombre.trim().toLowerCase() === esperado.toLowerCase();
 }
 
 export function seleccionDesdeItemsCotizacion(
@@ -132,14 +175,36 @@ export function seleccionDesdeItemsCotizacion(
   let snackId = '';
   let snackCantidad = 0;
   let cajitasCantidad = 0;
+  let cajitasClasica = 0;
+  let cajitasSaludable = 0;
+  let salitaLoungeCantidad = 0;
+  let derechoIngresoShowExterno = false;
+  let derechoIngresoDecoracionExterno = false;
+  let derechoIngresoCarritoSnackExterno = false;
 
   for (const item of items) {
-    if (!item.productoId) continue;
+    if (!item.productoId) {
+      if (coincideNombreItem(item.nombre, NOMBRE_ITEM_SALITA_LOUNGE)) {
+        salitaLoungeCantidad += item.cantidad;
+      } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_SHOW_EXTERNO)) {
+        derechoIngresoShowExterno = true;
+      } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO)) {
+        derechoIngresoDecoracionExterno = true;
+      } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO)) {
+        derechoIngresoCarritoSnackExterno = true;
+      }
+      continue;
+    }
     const p = byId.get(item.productoId);
     if (!p) continue;
 
     if (p.subtipo === 'cajita') {
       cajitasCantidad += item.cantidad;
+      if (item.nombre.toLowerCase().includes('saludable')) {
+        cajitasSaludable += item.cantidad;
+      } else {
+        cajitasClasica += item.cantidad;
+      }
       continue;
     }
     if (p.subtipo === 'piqueo') {
@@ -176,10 +241,16 @@ export function seleccionDesdeItemsCotizacion(
     snackId,
     snackCantidad: Math.max(snackCantidad, 25),
     cajitasCantidad: cajitasCantidad || CAJITAS_INCLUIDAS_DEFAULT,
+    cajitasClasica: cajitasCantidad > 0 ? cajitasClasica : CAJITAS_INCLUIDAS_DEFAULT,
+    cajitasSaludable,
     piqueoIds,
     piqueosCantidades,
     adicionalIds,
     adicionalCantidades,
+    salitaLoungeCantidad,
+    derechoIngresoShowExterno,
+    derechoIngresoDecoracionExterno,
+    derechoIngresoCarritoSnackExterno,
   };
 }
 

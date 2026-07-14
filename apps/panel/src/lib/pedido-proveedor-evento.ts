@@ -6,6 +6,9 @@ export type PedidoProveedorEventoResumen = {
   clienteNombre: string;
   fechaEvento: string;
   turnoLabel: string;
+  cumpleaneroEdad?: number | null;
+  cantidadNinos?: number;
+  tematica?: string | null;
 };
 
 export function buildPedidoProveedorEventoResumen(
@@ -14,6 +17,9 @@ export function buildPedidoProveedorEventoResumen(
       id: string;
       fechaEvento: string;
       turno: string;
+      cantidadNinos?: number;
+      tematica?: string | null;
+      cumpleanero?: { edad?: number | null };
       cliente?: { nombreCompleto: string };
     };
   },
@@ -22,6 +28,9 @@ export function buildPedidoProveedorEventoResumen(
     clienteNombre: string;
     fechaEvento: string;
     turnoLabel?: string;
+    cumpleaneroEdad?: number | null;
+    cantidadNinos?: number;
+    tematica?: string | null;
   },
 ): PedidoProveedorEventoResumen {
   const evento = pedido.evento;
@@ -34,5 +43,8 @@ export function buildPedidoProveedorEventoResumen(
     turnoLabel:
       fallback?.turnoLabel ??
       (turno ? (TURNO_LABEL[turno] ?? turno) : ''),
+    cumpleaneroEdad: evento?.cumpleanero?.edad ?? fallback?.cumpleaneroEdad,
+    cantidadNinos: evento?.cantidadNinos ?? fallback?.cantidadNinos,
+    tematica: evento?.tematica ?? fallback?.tematica,
   };
 }

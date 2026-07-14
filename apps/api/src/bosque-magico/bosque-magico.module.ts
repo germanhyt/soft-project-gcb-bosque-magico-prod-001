@@ -69,6 +69,7 @@ import { ProductoMediaRepository } from './infrastructure/repositories/producto-
 import { ProductosRepository } from './infrastructure/repositories/productos.repository';
 import { ProductoMediaSyncService } from './domain/services/producto-media-sync.service';
 import { PostventaService } from './domain/services/postventa.service';
+import { RecordatorioEventoService } from './domain/services/recordatorio-evento.service';
 import { NotificacionProveedorService } from './domain/services/notificacion-proveedor.service';
 import { PedidosRepository } from './infrastructure/repositories/pedidos.repository';
 import { ProveedoresRepository } from './infrastructure/repositories/proveedores.repository';
@@ -87,6 +88,9 @@ import { TareasEventoController } from './presentation/tareas-evento.controller'
 import { SolicitudesController } from './presentation/solicitudes.controller';
 import { ContratosController } from './presentation/contratos.controller';
 import { ClientesController } from './presentation/clientes.controller';
+import { JobsController } from './presentation/jobs.controller';
+import { ProcesarRecordatoriosEventoUseCase } from './application/use-cases/procesar-recordatorios-evento.use-case';
+import { RecordatoriosScheduler } from './infrastructure/schedulers/recordatorios.scheduler';
 import { ListarClientesUseCase } from './application/use-cases/listar-clientes.use-case';
 import { ObtenerClienteUseCase } from './application/use-cases/obtener-cliente.use-case';
 import { ResolverIdentidadContactoUseCase } from './application/use-cases/resolver-identidad-contacto.use-case';
@@ -120,6 +124,7 @@ import {
     PedidosController,
     TareasEventoController,
     AuditoriaController,
+    JobsController,
   ],
   providers: [
     SolicitudesRepository,
@@ -143,6 +148,7 @@ import {
     SolicitudCotizacionSyncService,
     SmtpService,
     PostventaService,
+    RecordatorioEventoService,
     NotificacionProveedorService,
     ProductoMediaSyncService,
     AnticipacionEventoService,
@@ -208,6 +214,8 @@ import {
     ResponderPedidoPublicoUseCase,
     SubirAdjuntoContratoUseCase,
     EliminarAdjuntoContratoUseCase,
+    ProcesarRecordatoriosEventoUseCase,
+    RecordatoriosScheduler,
   ],
 })
 export class BosqueMagicoModule {}

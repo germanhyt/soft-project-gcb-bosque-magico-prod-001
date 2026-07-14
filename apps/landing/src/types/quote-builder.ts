@@ -10,6 +10,8 @@ export type QuoteBuilderSelection = {
   snackCantidad: number;
   /** Mínimo 10 incluidas en paquete */
   cajitasCantidad: number;
+  cajitasClasica: number;
+  cajitasSaludable: number;
   piqueoIds: string[];
   piqueosCantidades: Record<string, number>;
   /** Catering genérico adicional (fuera de piqueos/cajitas) */
@@ -32,6 +34,8 @@ export const INITIAL_QUOTE_SELECTION: QuoteBuilderSelection = {
   snackId: '',
   snackCantidad: 25,
   cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
+  cajitasClasica: CAJITAS_INCLUIDAS_DEFAULT,
+  cajitasSaludable: 0,
   piqueoIds: [],
   piqueosCantidades: {},
   cateringIds: [],

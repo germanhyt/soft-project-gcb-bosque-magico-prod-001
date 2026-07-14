@@ -119,6 +119,9 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
   });
 
   const ev = evento;
+  const tieneFirmaCliente = !!contrato?.adjuntos?.some((a) => a.tipo === 'firma_cliente');
+  const tieneFirmaEmpresa = !!contrato?.adjuntos?.some((a) => a.tipo === 'firma_empresa');
+  const firmasCompletasContrato = tieneFirmaCliente && tieneFirmaEmpresa;
 
   const footer =
     ev && ev.etapa !== 'cancelado' ? (
@@ -151,14 +154,21 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
               </Button>
             )}
             {(contrato.etapa === 'borrador' || contrato.etapa === 'enviado') && (
-              <Button
-                variant="accent"
-                className="w-full"
-                disabled={firmarContratoMut.isPending}
-                onClick={() => firmarContratoMut.mutate()}
-              >
-                Marcar firmado
-              </Button>
+              <>
+                <Button
+                  variant="accent"
+                  className="w-full"
+                  disabled={firmarContratoMut.isPending || !firmasCompletasContrato}
+                  onClick={() => firmarContratoMut.mutate()}
+                >
+                  Marcar firmado
+                </Button>
+                {!firmasCompletasContrato && (
+                  <p className="text-center text-xs text-tertiary">
+                    Falta subir firma del cliente y firma de Bosque Mágico.
+                  </p>
+                )}
+              </>
             )}
             <Button
               variant="ghost"
@@ -269,6 +279,9 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
               etapaEvento={ev.etapa}
               clienteNombre={ev.cliente.nombreCompleto}
               turnoLabel={TURNO_LABEL[ev.turno] ?? ev.turno}
+              cumpleaneroEdad={ev.cumpleanero.edad}
+              cantidadNinos={ev.cantidadNinos}
+              tematica={ev.tematica}
             />
             <EventoTareasSection eventoId={ev.id} etapaEvento={ev.etapa} />
             <p className="text-center text-body-sm text-outline">{ETAPA_EVENTO_LABEL[ev.etapa]}</p>

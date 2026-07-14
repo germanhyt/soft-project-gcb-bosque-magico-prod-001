@@ -77,8 +77,16 @@ export class ActualizarCotizacionUseCase {
       snackId: dto.seleccion.snackId,
       snackCantidad: dto.seleccion.snackCantidad,
       cajitasCantidad: dto.seleccion.cajitasCantidad,
+      cajitasClasica: dto.seleccion.cajitasClasica,
+      cajitasSaludable: dto.seleccion.cajitasSaludable,
       piqueos: dto.seleccion.piqueos,
       adicionales: [...(dto.seleccion.adicionales ?? []), ...adicionalesManuales],
+      salitaLoungeCantidad: dto.seleccion.salitaLoungeCantidad,
+      derechoIngresoShowExterno: dto.seleccion.derechoIngresoShowExterno,
+      derechoIngresoDecoracionExterno:
+        dto.seleccion.derechoIngresoDecoracionExterno,
+      derechoIngresoCarritoSnackExterno:
+        dto.seleccion.derechoIngresoCarritoSnackExterno,
     };
   }
 
@@ -147,6 +155,10 @@ export class ActualizarCotizacionUseCase {
     }
 
     const seleccion = this.mapearSeleccion(dto);
+    const horasAdicionalesDesdeAntes = antes.items
+      .filter((i) => i.nombre.toLowerCase().includes('hora adicional de espacio'))
+      .reduce((sum, i) => sum + i.cantidad, 0);
+    const horasAdicionales = dto.horasAdicionales ?? horasAdicionalesDesdeAntes;
     let items: ItemCotizacionInput[];
     let montos;
     let resumenPaquete;
@@ -157,6 +169,7 @@ export class ActualizarCotizacionUseCase {
         fechaEvento,
         cantidadNinos,
         seleccion,
+        horasAdicionales,
       });
       items = this.itemsDesdeComposicion(resultado.composicion.items);
       montos = resultado.montos;
@@ -178,6 +191,21 @@ export class ActualizarCotizacionUseCase {
       const paqueteProducto =
         await this.composicionPaquete.resolverPaquetePorNombreOCodigo(paquete);
       const esFin = this.calculo.esTarifaFinSemana(fechaEvento, feriados);
+      const tarifasHoraExtra = await this.calculo.obtenerTarifasHoraExtraEspacio();
+      if (horasAdicionales > 0) {
+        const tarifaHora = esFin
+          ? tarifasHoraExtra.finSemana
+          : tarifasHoraExtra.lunesViernes;
+        items.push({
+          productoId: undefined,
+          tipo: TipoItemCotizacion.extra,
+          nombre: 'Hora adicional de espacio',
+          cantidad: horasAdicionales,
+          precioUnitario: tarifaHora,
+          notas: `Horario extra del espacio (${horasAdicionales} hora(s))`,
+          origenItem: OrigenItemCotizacion.adicional,
+        });
+      }
       const montoBasePaquete = esFin
         ? fromDecimal(paqueteProducto.precioFinSemana)
         : fromDecimal(paqueteProducto.precioLunesViernes);

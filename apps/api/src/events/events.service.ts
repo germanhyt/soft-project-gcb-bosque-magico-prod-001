@@ -119,4 +119,11 @@ export class EventsService {
       id,
     });
   }
+
+  eventoRecordatorio(id: string, detalle: string) {
+    this.emit('evento.recordatorio', 'Recordatorio de evento', detalle, {
+      tipo: 'evento',
+      id,
+    });
+  }
 }

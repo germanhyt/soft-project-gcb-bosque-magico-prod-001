@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import Swal from 'sweetalert2';
 import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
@@ -14,6 +14,9 @@ export type PedidoOperaciones = Pedido & {
     fechaEvento: string;
     turno: string;
     etapa: string;
+    cantidadNinos: number;
+    tematica: string | null;
+    cumpleanero: { edad: number | null };
     cliente: { nombreCompleto: string };
   };
 };
@@ -28,10 +31,16 @@ export function puedeOperarPedidosEvento(etapaEvento: string) {
 
 type Props = {
   pedido: PedidoOperaciones;
+  /** Otros pedidos del mismo evento+proveedor (incluye el actual). */
+  pedidosMismoProveedor?: PedidoOperaciones[];
   onVerEvento: (eventoId: string) => void;
 };
 
-export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
+export function PedidoOperacionesRowActions({
+  pedido,
+  pedidosMismoProveedor,
+  onVerEvento,
+}: Props) {
   const [waOpen, setWaOpen] = useState(false);
   const [correoOpen, setCorreoOpen] = useState(false);
   const puedeOperar = puedeOperarPedidosEvento(pedido.evento.etapa);
@@ -40,7 +49,15 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
   const celular = pedido.proveedor?.celular;
   const correo = pedido.proveedor?.correo;
 
+  const grupo = useMemo(() => {
+    const list = pedidosMismoProveedor?.length
+      ? pedidosMismoProveedor
+      : [pedido];
+    return list.filter((p) => p.tipo === 'proveedor');
+  }, [pedido, pedidosMismoProveedor]);
+
   const eventoResumen = buildPedidoProveedorEventoResumen(pedido);
+  const n = grupo.length;
 
   const mostrarProveedor =
     puedeOperar && esProveedor && (tieneEnlace || celular || correo);
@@ -61,7 +78,7 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
             {tieneEnlace && (
               <RowIconButton
                 icon="link"
-                title="Copiar enlace proveedor"
+                title="Copiar enlace de este ítem"
                 aria-label="Copiar enlace proveedor"
                 onClick={async () => {
                   const url = linkPedidoProveedorCompleto(
@@ -81,7 +98,11 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
             {celular && (
               <RowIconButton
                 whatsapp
-                title="WhatsApp al proveedor"
+                title={
+                  n > 1
+                    ? `WhatsApp proveedor (${n} servicios del evento)`
+                    : 'WhatsApp al proveedor'
+                }
                 aria-label="WhatsApp al proveedor"
                 onClick={() => setWaOpen(true)}
               />
@@ -89,7 +110,11 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
             {correo && (
               <RowIconButton
                 icon="mail"
-                title="Correo al proveedor"
+                title={
+                  n > 1
+                    ? `Correo proveedor (${n} servicios del evento)`
+                    : 'Correo al proveedor'
+                }
                 aria-label="Correo al proveedor"
                 onClick={() => setCorreoOpen(true)}
               />
@@ -102,7 +127,7 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
         <PedidoProveedorWhatsAppModal
           open={waOpen}
           onClose={() => setWaOpen(false)}
-          pedido={pedido}
+          pedidos={grupo}
           evento={eventoResumen}
         />
       )}
@@ -110,7 +135,7 @@ export function PedidoOperacionesRowActions({ pedido, onVerEvento }: Props) {
         <EnviarPedidoProveedorCorreoModal
           open={correoOpen}
           onClose={() => setCorreoOpen(false)}
-          pedido={pedido}
+          pedidos={grupo}
           evento={eventoResumen}
         />
       )}

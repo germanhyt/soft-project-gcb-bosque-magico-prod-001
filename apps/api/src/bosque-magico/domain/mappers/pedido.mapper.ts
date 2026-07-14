@@ -31,6 +31,9 @@ type PedidoPublicoRow = {
   evento: {
     fechaEvento: Date;
     turno: string;
+    cantidadNinos: number;
+    tematica: string | null;
+    cumpleanero: { edad: number | null };
     cliente: { nombreCompleto: string };
   };
 };
@@ -49,6 +52,9 @@ export function mapPedidoPublicoResponse(pedido: PedidoPublicoRow) {
       fechaEvento: pedido.evento.fechaEvento.toISOString().slice(0, 10),
       turno: pedido.evento.turno,
       clienteNombre: pedido.evento.cliente.nombreCompleto,
+      cumpleaneroEdad: pedido.evento.cumpleanero.edad,
+      cantidadNinos: pedido.evento.cantidadNinos,
+      tematica: pedido.evento.tematica,
     },
     puedeConfirmar: puedeResponder,
     puedeRechazar: puedeResponder,

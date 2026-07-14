@@ -105,4 +105,17 @@ export class EventosRepository {
       include: this.includeRelaciones,
     });
   }
+
+  /** Eventos activos en una fecha de calendario exacta (YYYY-MM-DD). */
+  listarEnFecha(fechaCalendario: string, etapas: EtapaEvento[]) {
+    const dia = inicioDiaCalendarioUtc(fechaCalendario);
+    return this.prisma.bosqueMagicoEvento.findMany({
+      where: {
+        fechaEvento: dia,
+        etapa: { in: etapas },
+      },
+      orderBy: [{ turno: 'asc' }],
+      include: this.includeRelaciones,
+    });
+  }
 }

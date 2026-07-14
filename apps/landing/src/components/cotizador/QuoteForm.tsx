@@ -158,6 +158,8 @@ function toPayload(
       snackId: selection.snackId || undefined,
       snackCantidad: selection.snackId ? Math.max(selection.snackCantidad, 25) : undefined,
       cajitasCantidad: selection.cajitasCantidad,
+      cajitasClasica: selection.cajitasClasica,
+      cajitasSaludable: selection.cajitasSaludable,
       piqueos: seleccion.piqueos,
       cateringIds: selection.cateringIds,
       cateringCantidades: Object.fromEntries(
@@ -530,7 +532,11 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
       onSelectionChange((prev) => {
         switch (edit.kind) {
           case 'cajitas':
-            return { ...prev, cajitasCantidad: nextQty };
+            return {
+              ...prev,
+              cajitasCantidad: nextQty,
+              cajitasClasica: Math.max(0, nextQty - prev.cajitasSaludable),
+            };
           case 'piqueo':
             return {
               ...prev,
@@ -751,7 +757,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                         : 'Sin show'}
                     </span>
                     <span className={chip(selection.cajitasCantidad >= 10)}>
-                      Cajitas: {selection.cajitasCantidad}
+                      Cajitas: {selection.cajitasCantidad} ({selection.cajitasClasica} C / {selection.cajitasSaludable} S)
                     </span>
                     <span className={chip(selection.piqueoIds.length > 0)}>
                       Piqueos: {selection.piqueoIds.length || '—'}

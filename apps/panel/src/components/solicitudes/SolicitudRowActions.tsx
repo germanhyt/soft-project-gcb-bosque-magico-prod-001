@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
 import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
@@ -44,7 +43,6 @@ export function SolicitudRowActions({
   onEditarSolicitud,
 }: Props) {
   const qc = useQueryClient();
-  const navigate = useNavigate();
   const [cerrarOpen, setCerrarOpen] = useState(false);
   const [cerrarError, setCerrarError] = useState('');
 
@@ -122,14 +120,12 @@ export function SolicitudRowActions({
   const mostrarTomar = !esCerrada && solicitud.etapa === 'nueva';
   const mostrarGenerarBorrador = !esCerrada && puedeGenerarBorradorDesdePayload(solicitud);
   const mostrarCrearCotizacion = !esCerrada && puedeCrearCotizacionManual(solicitud);
-  const mostrarRevisarCotizacion = !esCerrada && !!cotizacionActiva;
   const mostrarEditarCotizacion =
     !esCerrada && cotizacionActiva?.etapa === 'borrador';
   const tieneFlujo =
     mostrarTomar ||
     mostrarGenerarBorrador ||
     mostrarCrearCotizacion ||
-    mostrarRevisarCotizacion ||
     mostrarEditarCotizacion;
 
   return (
@@ -197,14 +193,6 @@ export function SolicitudRowActions({
                 }
               />
             )} */}
-            {mostrarRevisarCotizacion && (
-              <RowIconButton
-                icon="receipt_long"
-                title="Revisar cotización"
-                aria-label="Revisar cotización"
-                onClick={() => navigate(`/cotizaciones?detalle=${cotizacionActiva!.id}`)}
-              />
-            )}
             {/* {mostrarEditarCotizacion && (
               <RowIconButton
                 icon="edit"

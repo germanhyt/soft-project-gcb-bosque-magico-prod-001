@@ -16,3 +16,10 @@ export const ETAPAS_EVENTO_FILTRO: { value: '' | EtapaEvento; label: string }[] 
   { value: 'realizado', label: 'Realizado' },
   { value: 'cancelado', label: 'Cancelado' },
 ];
+
+export const ETAPAS_EVENTO_RESUMEN_ORDEN: EtapaEvento[] = [
+  'por_confirmar',
+  'confirmado',
+  'realizado',
+  'cancelado',
+];

@@ -12,6 +12,12 @@ export function buildSeleccionPaquete(
   selection: QuoteBuilderSelection,
   options?: BuildSeleccionPaqueteOptions,
 ): SeleccionPaquetePayload {
+  const cajitasClasica = Math.max(selection.cajitasClasica ?? 0, 0);
+  const cajitasSaludable = Math.max(selection.cajitasSaludable ?? 0, 0);
+  const cajitasCantidad = Math.max(
+    selection.cajitasCantidad,
+    cajitasClasica + cajitasSaludable,
+  );
   const showIds = expandIdsFromQty(selection.showIds, selection.showCantidades);
   const extraIds = expandIdsFromQty(selection.extraIds, selection.extraCantidades);
   const minGlobal = options?.minimoCateringGlobal;
@@ -28,7 +34,9 @@ export function buildSeleccionPaquete(
     snackCantidad: selection.snackId
       ? Math.max(selection.snackCantidad ?? 25, 25)
       : undefined,
-    cajitasCantidad: selection.cajitasCantidad,
+    cajitasCantidad,
+    cajitasClasica,
+    cajitasSaludable,
     piqueos: selection.piqueoIds.length
       ? selection.piqueoIds.map((id) => ({
           productoId: id,

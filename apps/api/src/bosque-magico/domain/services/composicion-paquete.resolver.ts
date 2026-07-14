@@ -129,10 +129,19 @@ function resolverCajitas(
   const cajita = [...productos.values()].find(
     (p) => p.subtipo === SubtipoProducto.cajita,
   );
-  const solicitadas = Math.max(
-    seleccion.cajitasCantidad ?? incluidasConfig,
-    incluidasConfig,
-  );
+  const detallePorTipo =
+    seleccion.cajitasClasica != null || seleccion.cajitasSaludable != null;
+  let cajitasClasica = Math.max(seleccion.cajitasClasica ?? 0, 0);
+  const cajitasSaludable = Math.max(seleccion.cajitasSaludable ?? 0, 0);
+  let solicitadas = detallePorTipo
+    ? cajitasClasica + cajitasSaludable
+    : (seleccion.cajitasCantidad ?? incluidasConfig);
+  solicitadas = Math.max(solicitadas, incluidasConfig);
+  if (!detallePorTipo) {
+    cajitasClasica = solicitadas;
+  } else if (cajitasClasica + cajitasSaludable < solicitadas) {
+    cajitasClasica += solicitadas - (cajitasClasica + cajitasSaludable);
+  }
   const incluidas = Math.min(incluidasConfig, solicitadas);
   const excedente = Math.max(0, solicitadas - incluidasConfig);
   const items: ItemPaqueteResuelto[] = [];
@@ -148,25 +157,65 @@ function resolverCajitas(
     };
   }
 
-  if (incluidas > 0) {
+  let incluidasRestantes = incluidas;
+  const clasicaIncluida = Math.min(cajitasClasica, incluidasRestantes);
+  incluidasRestantes -= clasicaIncluida;
+  const saludableIncluida = Math.min(cajitasSaludable, incluidasRestantes);
+  const clasicaExcedente = Math.max(0, cajitasClasica - clasicaIncluida);
+  const saludableExcedente = Math.max(0, cajitasSaludable - saludableIncluida);
+
+  if (clasicaIncluida > 0) {
     items.push(
-      itemIncluido(
-        cajita,
-        incluidas,
-        esFinSemana,
-        `${incluidas} incluidas en paquete`,
-      ),
+      {
+        ...itemIncluido(
+          cajita,
+          clasicaIncluida,
+          esFinSemana,
+          `${clasicaIncluida} incluidas en paquete`,
+        ),
+        nombre: `${cajita.nombre} Clásica`,
+      },
     );
   }
-  if (excedente > 0) {
+  if (saludableIncluida > 0) {
     items.push(
-      itemExcedente(
-        cajita,
-        excedente,
-        precioExcedente,
-        esFinSemana,
-        'Cajitas adicionales',
-      ),
+      {
+        ...itemIncluido(
+          cajita,
+          saludableIncluida,
+          esFinSemana,
+          `${saludableIncluida} incluidas en paquete`,
+        ),
+        nombre: `${cajita.nombre} Saludable`,
+      },
+    );
+  }
+  if (clasicaExcedente > 0) {
+    items.push(
+      {
+        ...itemExcedente(
+          cajita,
+          clasicaExcedente,
+          precioExcedente,
+          esFinSemana,
+          'Cajitas adicionales',
+        ),
+        nombre: `${cajita.nombre} Clásica`,
+      },
+    );
+  }
+  if (saludableExcedente > 0) {
+    items.push(
+      {
+        ...itemExcedente(
+          cajita,
+          saludableExcedente,
+          precioExcedente,
+          esFinSemana,
+          'Cajitas adicionales',
+        ),
+        nombre: `${cajita.nombre} Saludable`,
+      },
     );
   }
 
@@ -203,7 +252,9 @@ function resolverPiqueos(
     const precioPack = precioProducto(producto, esFinSemana);
     for (let u = 0; u < entrada.cantidad; u++) {
       valorSeleccionado += precioPack;
-      if (creditoRestante >= precioPack) {
+      const creditoAplicado = Math.min(creditoRestante, precioPack);
+      const precioExcedente = Math.max(precioPack - creditoAplicado, 0);
+      if (precioExcedente <= 0) {
         items.push({
           ...itemIncluido(
             producto,
@@ -211,20 +262,22 @@ function resolverPiqueos(
             esFinSemana,
             'Incluido en crédito Premium',
           ),
-          creditoAplicado: precioPack,
+          creditoAplicado,
         });
-        creditoRestante -= precioPack;
+        creditoRestante -= creditoAplicado;
       } else {
-        items.push(
-          itemExcedente(
+        items.push({
+          ...itemExcedente(
             producto,
             1,
-            precioPack,
+            precioExcedente,
             esFinSemana,
             'Excede crédito de piqueos Premium',
           ),
-        );
-        excedente += precioPack;
+          creditoAplicado,
+        });
+        excedente += precioExcedente;
+        creditoRestante = 0;
       }
     }
   }

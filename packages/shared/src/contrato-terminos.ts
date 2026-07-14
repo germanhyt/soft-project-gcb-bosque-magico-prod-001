@@ -12,15 +12,30 @@ export const CONTRATO_TERMINOS_CLAUSULAS = [
   'Garantía por el evento: El cliente se compromete a entregar una garantía de S/ 500.00 (quinientos soles) al inicio del evento. Este monto será devuelto en un plazo máximo de 2 días hábiles posteriores al evento, previa verificación de que no se hayan generado daños en las instalaciones, mobiliario o cualquier otro bien del establecimiento.',
 ] as const;
 
-export const CONTRATO_EXTRAS_PERMITIDOS = [
-  'Piñata',
-  'Torta temática',
-  'Horario extra (lun a vie S/380 — sáb, dom y fer S/580)',
+/** Permitidos sin cobro automático (el cliente puede traerlos). */
+export const CONTRATO_EXTRAS_PERMITIDOS = ['Piñata', 'Torta temática'] as const;
+
+/**
+ * Extras cobrables referenciales del contrato físico.
+ * Tarifas operativas reales viven en configuración del panel.
+ */
+export const CONTRATO_EXTRAS_COBRABLES_REFERENCIA = [
+  'Horario extra (lun a vie S/150 por hora — sáb, dom y fer S/200 por hora)',
   'Derecho de ingreso de show externo S/300.00',
   'Derecho de ingreso de decoración externo S/100.00',
   'Derecho de ingreso de carrito snack externo S/300.00',
   'Mobiliario extra (Salita lounge para 8 pax por S/50.00 x uni.)',
 ] as const;
+
+/** Nombres estables de ítems sintéticos en cotización (hidratación / matching). */
+export const NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO = 'Hora adicional de espacio';
+export const NOMBRE_ITEM_SALITA_LOUNGE = 'Salita lounge (8 pax)';
+export const NOMBRE_ITEM_INGRESO_SHOW_EXTERNO =
+  'Derecho de ingreso de show externo';
+export const NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO =
+  'Derecho de ingreso de decoración externo';
+export const NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO =
+  'Derecho de ingreso de carrito snack externo';
 
 export const CONTRATO_ESPACIO_INCLUYE = [
   '8 Mesas cuadradas de 60×60 y 24 sillas',

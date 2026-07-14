@@ -82,6 +82,9 @@ export class NotificacionProveedorService {
           '',
           'Cliente: {{cliente}}',
           'Evento: {{fecha}} · {{turno}}',
+          'Cumpleañero: {{edad}} años',
+          'Niños: {{cantidadNinos}}',
+          'Temática: {{tematica}}',
           'Servicio: {{servicio}}',
           'Cantidad: {{cantidad}}',
           'Costo referencial: S/ {{costo}}',
@@ -202,6 +205,12 @@ export class NotificacionProveedorService {
       cliente: evento.cliente.nombreCompleto,
       fecha: formatFechaEvento(evento.fechaEvento),
       turno: turnoLabel,
+      edad:
+        evento.cumpleanero?.edad != null
+          ? String(evento.cumpleanero.edad)
+          : 'No especificada',
+      cantidadNinos: String(evento.cantidadNinos),
+      tematica: evento.tematica?.trim() || 'No especificada',
       servicio: pedido.nombre,
       cantidad: String(pedido.cantidad),
       costo,

@@ -51,6 +51,9 @@ export async function fetchPedidosOperaciones(desde?: string, hasta?: string) {
           fechaEvento: string;
           turno: string;
           etapa: string;
+          cantidadNinos: number;
+          tematica: string | null;
+          cumpleanero: { edad: number | null };
           cliente: { nombreCompleto: string };
         };
       }

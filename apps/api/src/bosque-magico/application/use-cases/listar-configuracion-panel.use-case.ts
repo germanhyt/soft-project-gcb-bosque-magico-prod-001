@@ -27,6 +27,7 @@ export class ListarConfiguracionPanelUseCase {
       (i) =>
         typeof i.valor === 'number' &&
         !i.clave.startsWith('smtp.') &&
+        !i.clave.startsWith('recordatorios.') &&
         CLAVES_NUMERICAS_EDITABLES.has(i.clave),
     );
     const turnos = items.filter((i) => i.clave.startsWith('turnos.'));
@@ -37,6 +38,9 @@ export class ListarConfiguracionPanelUseCase {
     const pedidosProveedor = items.filter((i) =>
       i.clave.startsWith('pedidos_proveedor.'),
     );
+    const recordatorios = items.filter((i) =>
+      i.clave.startsWith('recordatorios.'),
+    );
     const otras = items.filter(
       (i) =>
         typeof i.valor !== 'number' &&
@@ -45,7 +49,8 @@ export class ListarConfiguracionPanelUseCase {
         !i.clave.startsWith('calendario.') &&
         !i.clave.startsWith('smtp.') &&
         !i.clave.startsWith('postventa.') &&
-        !i.clave.startsWith('pedidos_proveedor.'),
+        !i.clave.startsWith('pedidos_proveedor.') &&
+        !i.clave.startsWith('recordatorios.'),
     );
     return {
       numericas,
@@ -55,6 +60,7 @@ export class ListarConfiguracionPanelUseCase {
       smtp,
       postventa,
       pedidosProveedor,
+      recordatorios,
       otras,
       todas: items,
       meta: {

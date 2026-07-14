@@ -54,12 +54,18 @@ type EstadoCatalogoFiltro = '' | 'activo' | 'inactivo';
 const LABELS: Record<string, string> = {
   'tarifas.base_lunes_viernes': 'Base lunes–viernes (S/)',
   'tarifas.base_fin_semana': 'Base fin de semana (S/)',
+  'espacio.hora_extra_lunes_viernes': 'Hora extra espacio L-V (S/)',
+  'espacio.hora_extra_fin_semana': 'Hora extra espacio S-D/feriado (S/)',
   'ninos.minimo': 'Mínimo de niños',
   'ninos.maximo_base': 'Capacidad base',
   'ninos.maximo_permitido': 'Máximo permitido',
   'shows.ninos_incluidos': 'Niños incluidos',
   'shows.precio_nino_extra': 'Precio por niño extra (S/)',
   'extras.precio_nino_extra': 'Precio por niño excedente (S/)',
+  'extras.salita_lounge': 'Salita lounge 8 pax (S/)',
+  'extras.ingreso_show_externo': 'Ingreso show externo (S/)',
+  'extras.ingreso_decoracion_externo': 'Ingreso decoración externo (S/)',
+  'extras.ingreso_carrito_snack_externo': 'Ingreso carrito snack externo (S/)',
   'contrato.adelanto_referencial': 'Adelanto referencial (S/)',
   'contrato.garantia_referencial': 'Garantía referencial (S/)',
   'catering.minimo_unidades': 'Mínimo catering (unidades)',
@@ -74,12 +80,18 @@ const LABELS: Record<string, string> = {
 const AYUDA: Record<string, string> = {
   'tarifas.base_lunes_viernes': 'Referencia paquete Básico de lunes a viernes.',
   'tarifas.base_fin_semana': 'Referencia paquete Básico sábado, domingo y feriados.',
+  'espacio.hora_extra_lunes_viernes': 'Tarifa por hora adicional del espacio de lunes a viernes.',
+  'espacio.hora_extra_fin_semana': 'Tarifa por hora adicional del espacio en sábados, domingos y feriados.',
   'ninos.minimo': 'Cantidad mínima para reservar un evento.',
   'ninos.maximo_base': 'Shows cubren hasta esta cantidad sin cargo extra por niño.',
   'ninos.maximo_permitido': 'Tope máximo de niños; cierra el rango extra del show.',
   'shows.ninos_incluidos': 'Primeros niños incluidos en el show sin cargo adicional.',
   'shows.precio_nino_extra': 'Cargo por cada niño dentro del rango extra configurado.',
   'extras.precio_nino_extra': 'Aplica en Pintacaritas, Uñitas y Hora loca cuando se supera el límite del servicio.',
+  'extras.salita_lounge': 'Mobiliario lounge para 8 personas por unidad.',
+  'extras.ingreso_show_externo': 'Cargo por derecho de ingreso de show externo.',
+  'extras.ingreso_decoracion_externo': 'Cargo por derecho de ingreso de decoración externo.',
+  'extras.ingreso_carrito_snack_externo': 'Cargo por derecho de ingreso de carrito snack externo.',
   'contrato.adelanto_referencial': 'Monto referencial para separar la fecha del evento.',
   'contrato.garantia_referencial': 'Monto referencial de garantía al confirmar.',
   'catering.minimo_unidades': 'Mínimo por ítem de catering genérico (no piqueos ni cajitas).',
@@ -103,6 +115,21 @@ const CONFIG_GRUPOS_NUMERICOS: ConfigGrupo[] = [
     titulo: 'Tarifas base',
     descripcion: 'Referencia para el paquete Básico según día de la semana.',
     claves: ['tarifas.base_lunes_viernes', 'tarifas.base_fin_semana'],
+  },
+  {
+    titulo: 'Espacio — horas adicionales',
+    descripcion: 'Cargo por hora adicional del espacio según día (incluye feriados).',
+    claves: ['espacio.hora_extra_lunes_viernes', 'espacio.hora_extra_fin_semana'],
+  },
+  {
+    titulo: 'Extras institucionales',
+    descripcion: 'Salita lounge y derechos de ingreso externos (cotización / contrato).',
+    claves: [
+      'extras.salita_lounge',
+      'extras.ingreso_show_externo',
+      'extras.ingreso_decoracion_externo',
+      'extras.ingreso_carrito_snack_externo',
+    ],
   },
   {
     titulo: 'Capacidad del evento',
@@ -200,6 +227,41 @@ const PEDIDOS_PROVEEDOR_ORDEN = [
   'pedidos_proveedor.cuerpo',
 ] as const;
 
+const RECORDATORIOS_LABELS: Record<string, string> = {
+  'recordatorios.habilitado': 'Habilitar recordatorios automáticos',
+  'recordatorios.dias_antes': 'Días de anticipación',
+  'recordatorios.correo_operador': 'Correo del operador / sistema',
+  'recordatorios.asunto_cliente': 'Asunto (cliente)',
+  'recordatorios.cuerpo_cliente': 'Cuerpo (cliente)',
+  'recordatorios.asunto_operador': 'Asunto (operador)',
+  'recordatorios.cuerpo_operador': 'Cuerpo (operador)',
+};
+
+const RECORDATORIOS_ORDEN = [
+  'recordatorios.habilitado',
+  'recordatorios.dias_antes',
+  'recordatorios.correo_operador',
+  'recordatorios.asunto_cliente',
+  'recordatorios.cuerpo_cliente',
+  'recordatorios.asunto_operador',
+  'recordatorios.cuerpo_operador',
+] as const;
+
+function recordatoriosValoresDesdeItems(items?: ConfigItem[]) {
+  const map: Record<string, string> = {};
+  for (const clave of RECORDATORIOS_ORDEN) {
+    const item = items?.find((i) => i.clave === clave);
+    if (clave === 'recordatorios.habilitado') {
+      map[clave] = item?.valor === true ? 'true' : item?.valor === false ? 'false' : 'true';
+    } else if (clave === 'recordatorios.dias_antes') {
+      map[clave] = typeof item?.valor === 'number' ? String(item.valor) : '7';
+    } else {
+      map[clave] = typeof item?.valor === 'string' ? item.valor : '';
+    }
+  }
+  return map;
+}
+
 function postventaValoresDesdeItems(items?: ConfigItem[]) {
   const map: Record<string, string> = {};
   for (const clave of POSTVENTA_ORDEN) {
@@ -293,6 +355,9 @@ export function ConfiguracionPage() {
   const [pedidosProveedorValores, setPedidosProveedorValores] = useState<
     Record<string, string>
   >({});
+  const [recordatoriosValores, setRecordatoriosValores] = useState<
+    Record<string, string>
+  >({});
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
   const [estadoCatalogoFiltro, setEstadoCatalogoFiltro] = useState<EstadoCatalogoFiltro>('');
   const [categoriaFiltro, setCategoriaFiltro] = useState<CategoriaFiltro>('todas');
@@ -354,6 +419,11 @@ export function ConfiguracionPage() {
     [config?.pedidosProveedor],
   );
 
+  const recordatoriosIniciales = useMemo(
+    () => recordatoriosValoresDesdeItems(config?.recordatorios),
+    [config?.recordatorios],
+  );
+
   const feriadosIniciales = useMemo(() => {
     const item = config?.calendario?.find((c) => c.clave === 'calendario.feriados');
     return parseFeriadosConfig(item?.valor);
@@ -371,6 +441,11 @@ export function ConfiguracionPage() {
   const pedidosProveedorActuales = Object.keys(pedidosProveedorValores).length
     ? pedidosProveedorValores
     : pedidosProveedorIniciales;
+
+  const recordatoriosActuales = Object.keys(recordatoriosValores).length
+    ? recordatoriosValores
+    : recordatoriosIniciales;
+
   const feriadosActuales = feriadosDraft ?? feriadosIniciales;
 
   const hayCambios =
@@ -381,6 +456,8 @@ export function ConfiguracionPage() {
     JSON.stringify(postventaActuales) !== JSON.stringify(postventaIniciales) ||
     JSON.stringify(pedidosProveedorActuales) !==
       JSON.stringify(pedidosProveedorIniciales) ||
+    JSON.stringify(recordatoriosActuales) !==
+      JSON.stringify(recordatoriosIniciales) ||
     JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales);
 
   const smtpOrdenados = useMemo(() => {
@@ -405,6 +482,8 @@ export function ConfiguracionPage() {
   const postventaHabilitado = postventaActuales['postventa.habilitado'] === 'true';
   const pedidosProveedorHabilitado =
     pedidosProveedorActuales['pedidos_proveedor.notificar_correo'] === 'true';
+  const recordatoriosHabilitado =
+    recordatoriosActuales['recordatorios.habilitado'] === 'true';
 
   const postventaOrdenados = useMemo(() => {
     const items = config?.postventa ?? [];
@@ -437,6 +516,22 @@ export function ConfiguracionPage() {
       } satisfies ConfigItem;
     });
   }, [config?.pedidosProveedor, pedidosProveedorIniciales]);
+
+  const recordatoriosOrdenados = useMemo(() => {
+    const items = config?.recordatorios ?? [];
+    const byClave = new Map(items.map((i) => [i.clave, i]));
+    return RECORDATORIOS_ORDEN.map((clave) => {
+      const existente = byClave.get(clave);
+      if (existente) return existente;
+      return {
+        id: clave,
+        clave,
+        valor: recordatoriosIniciales[clave] ?? '',
+        descripcion: null,
+        esPublico: false,
+      } satisfies ConfigItem;
+    });
+  }, [config?.recordatorios, recordatoriosIniciales]);
 
   const productosFiltrados = useMemo(() => {
     let rows = productos;
@@ -516,6 +611,15 @@ export function ConfiguracionPage() {
           valor:
             clave === 'pedidos_proveedor.notificar_correo' ? v === 'true' : v,
         })),
+        ...Object.entries(recordatoriosActuales).map(([clave, v]) => ({
+          clave,
+          valor:
+            clave === 'recordatorios.habilitado'
+              ? v === 'true'
+              : clave === 'recordatorios.dias_antes'
+                ? Number(v || 7)
+                : v,
+        } as { clave: string; valor: string | number | boolean })),
         ...(JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales)
           ? [{ clave: 'calendario.feriados', valor: feriadosActuales }]
           : []),
@@ -529,6 +633,7 @@ export function ConfiguracionPage() {
       setSmtpValores({});
       setPostventaValores({});
       setPedidosProveedorValores({});
+      setRecordatoriosValores({});
       setFeriadosDraft(null);
       await qc.invalidateQueries({ queryKey: ['config-panel'] });
       await qc.invalidateQueries({ queryKey: ['configuracion-publica'] });
@@ -1024,6 +1129,72 @@ export function ConfiguracionPage() {
                       ) : (
                         <input
                           type="text"
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section className={`w-full p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Recordatorios de evento</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                {recordatoriosHabilitado
+                  ? 'Job diario (~08:00 Lima): correo al cliente, correo al operador y notificación en el panel. Por defecto 7 días antes.'
+                  : 'Desactivado: no se envían recordatorios automáticos.'}
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {recordatoriosOrdenados.map((item) => {
+                  const value = recordatoriosActuales[item.clave] ?? '';
+                  const titulo = RECORDATORIOS_LABELS[item.clave] ?? item.clave;
+                  const isBoolean = item.clave === 'recordatorios.habilitado';
+                  const isNumber = item.clave === 'recordatorios.dias_antes';
+                  const isTextarea =
+                    item.clave === 'recordatorios.cuerpo_cliente' ||
+                    item.clave === 'recordatorios.cuerpo_operador';
+                  const setValor = (next: string) =>
+                    setRecordatoriosValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : recordatoriosIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isBoolean ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'true'}
+                          onChange={(e) => setValor(e.target.value)}
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type={isNumber ? 'number' : 'text'}
+                          min={isNumber ? 0 : undefined}
+                          max={isNumber ? 60 : undefined}
+                          step={isNumber ? 1 : undefined}
                           className={`mt-1 w-full ${INPUT_CLASS}`}
                           value={value}
                           onChange={(e) => setValor(e.target.value)}

@@ -27,7 +27,7 @@ export class GenerarCotizacionBorradorSolicitudUseCase {
     private readonly events: EventsService,
   ) {}
 
-  async ejecutar(solicitudId: string) {
+  async ejecutar(solicitudId: string, usuarioAsignadoId?: string) {
     const solicitud = await this.solicitudes.obtenerPorId(solicitudId);
     if (!solicitud) throw new NotFoundException('Solicitud no encontrada');
     if (solicitud.etapa === EtapaSolicitud.cerrada) {
@@ -80,6 +80,7 @@ export class GenerarCotizacionBorradorSolicitudUseCase {
 
     const creada = await this.crearCotizacion.ejecutar(
       mapearSolicitudLandingACotizacion(solicitudId, dtoEnriquecido),
+      usuarioAsignadoId,
     );
 
     await this.auditoria.registrar({

@@ -50,4 +50,27 @@ export class TomarSolicitudUseCase {
 
     return despues;
   }
+
+  /**
+   * Toma la solicitud si sigue en Nueva (sin error si ya fue tomada).
+   * Si ya está en gestión y no tiene asignado, solo completa usuarioAsignadoId.
+   */
+  async ejecutarSiPendiente(
+    id: string | null | undefined,
+    usuarioAsignadoId?: string,
+  ) {
+    if (!id) return null;
+    const antes = await this.solicitudes.obtenerPorId(id);
+    if (!antes || antes.etapa === EtapaSolicitud.cerrada) return null;
+
+    if (antes.etapa === EtapaSolicitud.nueva) {
+      return this.ejecutar(id, usuarioAsignadoId);
+    }
+
+    if (usuarioAsignadoId && !antes.usuarioAsignadoId) {
+      return this.solicitudes.actualizar(id, { usuarioAsignadoId });
+    }
+
+    return null;
+  }
 }

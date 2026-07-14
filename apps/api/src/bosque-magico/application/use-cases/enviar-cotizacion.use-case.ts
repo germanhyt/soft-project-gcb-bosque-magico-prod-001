@@ -15,6 +15,7 @@ import { SmtpService } from '../../domain/services/smtp.service';
 import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { EnviarCotizacionDto } from '../dto/enviar-cotizacion.dto';
+import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 
 @Injectable()
 export class EnviarCotizacionUseCase {
@@ -25,9 +26,10 @@ export class EnviarCotizacionUseCase {
     private readonly events: EventsService,
     private readonly solicitudSync: SolicitudCotizacionSyncService,
     private readonly smtp: SmtpService,
+    private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
-  async ejecutar(id: string, dto: EnviarCotizacionDto) {
+  async ejecutar(id: string, dto: EnviarCotizacionDto, usuarioAsignadoId?: string) {
     const cot = await this.cotizaciones.obtenerPorId(id);
     if (!cot) throw new NotFoundException('Cotización no encontrada');
     if (
@@ -105,6 +107,10 @@ export class EnviarCotizacionUseCase {
       metadata: { canal: dto.canal, destino },
     });
 
+    await this.tomarSolicitud.ejecutarSiPendiente(
+      cot.solicitudId,
+      usuarioAsignadoId,
+    );
     await this.solicitudSync.alEnviarCotizacion(cot.solicitudId);
     this.events.cotizacionActualizada(
       id,

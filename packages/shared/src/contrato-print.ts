@@ -1,5 +1,6 @@
 import {
   CONTRATO_ESPACIO_INCLUYE,
+  CONTRATO_EXTRAS_COBRABLES_REFERENCIA,
   CONTRATO_EXTRAS_PERMITIDOS,
   CONTRATO_TERMINOS_CLAUSULAS,
   CONTRATO_TERMINOS_VERSION,
@@ -402,6 +403,9 @@ export function buildContratoPrintHtml(
   ).join('');
 
   const extrasPermitidos = CONTRATO_EXTRAS_PERMITIDOS.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
+  const extrasCobrables = CONTRATO_EXTRAS_COBRABLES_REFERENCIA.map(
+    (e) => `<li>${escapeHtml(e)}</li>`,
+  ).join('');
   const espacioIncluye = CONTRATO_ESPACIO_INCLUYE.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
 
   const serviciosHtml = buildServiciosContratadosHtml(ctx);
@@ -557,8 +561,12 @@ export function buildContratoPrintHtml(
     ${cateringHtml}
     ${extrasHtml}
 
-    <h2>Extras permitidos (referencia)</h2>
-    <p class="muted">Servicios no incluidos en la cotización; sujeto a tarifa vigente y disponibilidad.</p>
+    <h2>Extras cobrables (referencia)</h2>
+    <p class="muted">Sujeto a tarifa vigente y disponibilidad; se cobran al seleccionarlos en la cotización.</p>
+    <ul class="compact">${extrasCobrables}</ul>
+
+    <h2>Extras permitidos</h2>
+    <p class="muted">Permitidos sin cobro automático por Bosque Mágico (el cliente puede traerlos).</p>
     <ul class="compact">${extrasPermitidos}</ul>
 
     <h2>Términos y condiciones</h2>

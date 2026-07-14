@@ -27,7 +27,7 @@ function invalidateForEvent(qc: ReturnType<typeof useQueryClient>, event: Bosque
       void qc.invalidateQueries({ queryKey: ['solicitud', event.entidad.id] });
     }
   }
-  if (event.type.startsWith('cotizacion.') || event.type === 'evento.actualizado') {
+  if (event.type.startsWith('cotizacion.') || event.type === 'evento.actualizado' || event.type === 'evento.recordatorio') {
     void qc.invalidateQueries({ queryKey: ['cotizaciones'] });
     void qc.invalidateQueries({ queryKey: ['agenda'] });
     void qc.invalidateQueries({ queryKey: ['eventos-resumen'] });

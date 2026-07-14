@@ -44,6 +44,8 @@ export function notificationVisual(type: BosquePanelEventType): NotificationVisu
       return { icon: 'check_circle', iconBg: 'bg-primary-container/40', iconColor: 'text-primary' };
     case 'evento.actualizado':
       return { icon: 'calendar_month', iconBg: 'bg-tertiary-fixed/40', iconColor: 'text-tertiary' };
+    case 'evento.recordatorio':
+      return { icon: 'alarm', iconBg: 'bg-primary-fixed/40', iconColor: 'text-primary' };
     default:
       return { icon: 'notifications', iconBg: 'bg-surface-container-high', iconColor: 'text-outline' };
   }

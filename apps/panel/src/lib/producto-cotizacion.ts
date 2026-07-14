@@ -7,7 +7,9 @@ export function tipoItemDesdeProducto(categoria: string): TipoItem {
 }
 
 export function productosParaCotizacion(productos: Producto[]) {
-  const activos = productos.filter((p) => p.etapa !== 'inactivo');
+  const activos = productos.filter(
+    (p) => p.etapa !== 'inactivo' && p.codigo !== 'EXT-DECOR',
+  );
   const catering = activos.filter((p) => p.categoria === 'catering');
   return {
     paquetes: activos.filter((p) => p.categoria === 'paquete'),

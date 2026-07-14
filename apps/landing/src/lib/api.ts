@@ -91,6 +91,8 @@ export type SeleccionPaquetePayload = {
   snackId?: string;
   snackCantidad?: number;
   cajitasCantidad?: number;
+  cajitasClasica?: number;
+  cajitasSaludable?: number;
   piqueos?: PreviewCotizacionItemPayload[];
   adicionales?: PreviewCotizacionItemPayload[];
 };

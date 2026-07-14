@@ -21,6 +21,7 @@ import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { CrearCotizacionDto } from '../dto/crear-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 
 @Injectable()
 export class CrearCotizacionUseCase {
@@ -33,6 +34,7 @@ export class CrearCotizacionUseCase {
     private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly auditoria: AuditoriaRepository,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
   private itemsDesdeComposicion(
@@ -65,12 +67,19 @@ export class CrearCotizacionUseCase {
       snackId: base.snackId,
       snackCantidad: base.snackCantidad,
       cajitasCantidad: base.cajitasCantidad,
+      cajitasClasica: base.cajitasClasica,
+      cajitasSaludable: base.cajitasSaludable,
       piqueos: base.piqueos,
       adicionales: [...(base.adicionales ?? []), ...adicionalesManuales],
+      salitaLoungeCantidad: base.salitaLoungeCantidad,
+      derechoIngresoShowExterno: base.derechoIngresoShowExterno,
+      derechoIngresoDecoracionExterno: base.derechoIngresoDecoracionExterno,
+      derechoIngresoCarritoSnackExterno:
+        base.derechoIngresoCarritoSnackExterno,
     };
   }
 
-  async ejecutar(dto: CrearCotizacionDto) {
+  async ejecutar(dto: CrearCotizacionDto, usuarioAsignadoId?: string) {
     if (dto.solicitudId) {
       const sol = await this.solicitudes.obtenerPorId(dto.solicitudId);
       if (!sol) throw new NotFoundException('Solicitud no encontrada');
@@ -79,6 +88,10 @@ export class CrearCotizacionUseCase {
           'No se puede cotizar una solicitud cerrada',
         );
       }
+      await this.tomarSolicitud.ejecutarSiPendiente(
+        dto.solicitudId,
+        usuarioAsignadoId,
+      );
     }
 
     await this.anticipacion.validar(dto.fechaEvento);
@@ -111,6 +124,7 @@ export class CrearCotizacionUseCase {
         fechaEvento,
         cantidadNinos: dto.cantidadNinos,
         seleccion: this.mapearSeleccion(dto),
+        horasAdicionales: dto.horasAdicionales,
       });
 
     const items = this.itemsDesdeComposicion(composicion.items);

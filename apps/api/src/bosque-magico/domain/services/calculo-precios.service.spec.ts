@@ -149,4 +149,23 @@ describe('CalculoPreciosService', () => {
       });
     });
   });
+
+  describe('obtenerTarifasExtrasInstitucionales', () => {
+    it('lee tarifas de lounge e ingresos externos', async () => {
+      configuracion.listarPublicas = jest.fn().mockResolvedValue([
+        { clave: 'extras.salita_lounge', valor: 55 },
+        { clave: 'extras.ingreso_show_externo', valor: 310 },
+        { clave: 'extras.ingreso_decoracion_externo', valor: 110 },
+        { clave: 'extras.ingreso_carrito_snack_externo', valor: 320 },
+      ]);
+
+      const tarifas = await service.obtenerTarifasExtrasInstitucionales();
+      expect(tarifas).toEqual({
+        salitaLounge: 55,
+        ingresoShowExterno: 310,
+        ingresoDecoracionExterno: 110,
+        ingresoCarritoSnackExterno: 320,
+      });
+    });
+  });
 });

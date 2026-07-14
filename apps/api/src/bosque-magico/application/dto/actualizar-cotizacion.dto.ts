@@ -32,6 +32,13 @@ export class ActualizarCotizacionDto {
   @Max(50)
   cantidadNinos?: number;
 
+  @ApiPropertyOptional({ example: 0, description: 'Horas adicionales sobre las 3h incluidas' })
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(8)
+  horasAdicionales?: number;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

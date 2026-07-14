@@ -106,7 +106,12 @@ describe('AceptarCotizacionUseCase', () => {
     expect(auditoria.registrar).toHaveBeenCalledWith(
       expect.objectContaining({ accion: 'aceptar', entidadId: 'cot-1' }),
     );
-    expect(events.cotizacionAceptada).toHaveBeenCalledWith('cot-1', 'BM-001');
+    expect(events.cotizacionAceptada).toHaveBeenCalledWith(
+      'cot-1',
+      'BM-001',
+      'equipo',
+      'evt-1',
+    );
   });
 
   it('es idempotente si la cotización ya estaba aceptada', async () => {

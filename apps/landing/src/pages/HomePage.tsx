@@ -58,6 +58,8 @@ export function HomePage() {
               ...prev,
               paquete,
               cajitasCantidad: paquetesConfig.cajitasIncluidas,
+              cajitasClasica: paquetesConfig.cajitasIncluidas,
+              cajitasSaludable: 0,
               piqueoIds: [],
               piqueosCantidades: {},
               snackId: '',
@@ -67,7 +69,14 @@ export function HomePage() {
         />
         <CajitasSelector
           selection={selection}
-          onChange={(cajitasCantidad) => setSelection((prev) => ({ ...prev, cajitasCantidad }))}
+          onChange={({ clasica, saludable, total }) =>
+            setSelection((prev) => ({
+              ...prev,
+              cajitasClasica: clasica,
+              cajitasSaludable: saludable,
+              cajitasCantidad: total,
+            }))
+          }
         />
         <SnackPremiumSelector
           selection={selection}

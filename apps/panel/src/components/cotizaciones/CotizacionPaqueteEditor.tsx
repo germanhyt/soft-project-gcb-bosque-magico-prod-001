@@ -23,6 +23,7 @@ type Props = {
   paquete: string;
   fechaEvento: string;
   cantidadNinos: number;
+  horasAdicionales: number;
   seleccion: SeleccionPaqueteState;
   onChange: (next: SeleccionPaqueteState) => void;
   catalogo: CatalogoSplit;
@@ -36,6 +37,7 @@ export function CotizacionPaqueteEditor({
   paquete,
   fechaEvento,
   cantidadNinos,
+  horasAdicionales,
   seleccion,
   onChange,
   catalogo,
@@ -62,6 +64,7 @@ export function CotizacionPaqueteEditor({
       'preview-cotizacion-panel',
       fechaEvento,
       cantidadNinos,
+      horasAdicionales,
       paquete,
       JSON.stringify(payload),
     ],
@@ -69,6 +72,7 @@ export function CotizacionPaqueteEditor({
       previewCotizacion({
         fechaEvento,
         cantidadNinos,
+        horasAdicionales,
         paquete,
         seleccion: payload,
       }),
@@ -108,10 +112,11 @@ export function CotizacionPaqueteEditor({
   const excedentePiqueos =
     preview.data?.resumenPaquete?.piqueosExcedente ?? resumenPiqueosLocal?.excedente ?? 0;
 
-  const cajitasExcedente = Math.max(
-    0,
-    seleccion.cajitasCantidad - paquetesConfig.cajitasIncluidas,
+  const cajitasTotal = Math.max(
+    seleccion.cajitasCantidad,
+    (seleccion.cajitasClasica ?? 0) + (seleccion.cajitasSaludable ?? 0),
   );
+  const cajitasExcedente = Math.max(0, cajitasTotal - paquetesConfig.cajitasIncluidas);
   const costoCajitasExcedente = cajitasExcedente * paquetesConfig.cajitasPrecioExcedente;
 
   const patch = (partial: Partial<SeleccionPaqueteState>) =>
@@ -164,36 +169,57 @@ export function CotizacionPaqueteEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/20 bg-primary-fixed/15 p-4">
-        <p className="text-body-sm font-semibold text-primary">Composición del paquete</p>
+        <p className="text-body-sm font-semibold text-primary">Configura tu cotización manual</p>
         <p className="mt-1 text-body-sm text-on-surface-variant">
-          Piqueos: cantidad = packs (precio por pack completo). Cajitas: cantidad = unidades.
-          El servidor aplica crédito Premium y cobra excedentes según configuración.
+          1) Define cajitas y snack, 2) ajusta piqueos, 3) agrega shows/extras/catering adicional.
+          El servidor recalcula crédito y excedentes al guardar.
         </p>
       </div>
 
-      <label className="block max-w-xs">
-        <span className={LABEL_CLASS}>Cajitas Bosque Mágico (unidades)</span>
-        <input
-          type="number"
-          min={paquetesConfig.cajitasIncluidas}
-          className={INPUT_CLASS}
-          value={seleccion.cajitasCantidad}
-          onChange={(e) =>
-            patch({
-              cajitasCantidad: Math.max(
-                paquetesConfig.cajitasIncluidas,
-                Number(e.target.value) || paquetesConfig.cajitasIncluidas,
-              ),
-            })
-          }
-        />
-        <span className="mt-1 block text-xs text-on-surface-variant">
-          {paquetesConfig.cajitasIncluidas} incluidas
-          {cajitasExcedente > 0
-            ? ` · ${cajitasExcedente} adicional(es) × ${formatSoles(paquetesConfig.cajitasPrecioExcedente)} = ${formatSoles(costoCajitasExcedente)}`
-            : ''}
-        </span>
-      </label>
+      <div className="grid gap-3 sm:grid-cols-2">
+        <label className="block">
+          <span className={LABEL_CLASS}>Cajitas clásicas</span>
+          <input
+            type="number"
+            min={0}
+            className={INPUT_CLASS}
+            value={seleccion.cajitasClasica}
+            onChange={(e) => {
+              const clasica = Math.max(0, Number(e.target.value) || 0);
+              const saludable = seleccion.cajitasSaludable;
+              patch({
+                cajitasClasica: clasica,
+                cajitasCantidad: Math.max(paquetesConfig.cajitasIncluidas, clasica + saludable),
+              });
+            }}
+          />
+        </label>
+        <label className="block">
+          <span className={LABEL_CLASS}>Cajitas saludables</span>
+          <input
+            type="number"
+            min={0}
+            className={INPUT_CLASS}
+            value={seleccion.cajitasSaludable}
+            onChange={(e) => {
+              const saludable = Math.max(0, Number(e.target.value) || 0);
+              const clasica = seleccion.cajitasClasica;
+              patch({
+                cajitasSaludable: saludable,
+                cajitasCantidad: Math.max(paquetesConfig.cajitasIncluidas, clasica + saludable),
+              });
+            }}
+          />
+        </label>
+        <div className="sm:col-span-2">
+          <span className="text-xs text-on-surface-variant">
+            Total cajitas: <strong>{cajitasTotal}</strong> · {paquetesConfig.cajitasIncluidas} incluidas
+            {cajitasExcedente > 0
+              ? ` · ${cajitasExcedente} adicional(es) × ${formatSoles(paquetesConfig.cajitasPrecioExcedente)} = ${formatSoles(costoCajitasExcedente)}`
+              : ''}
+          </span>
+        </div>
+      </div>
 
       {esPremium && catalogo.snacks.length > 0 && (
         <div>
@@ -301,6 +327,75 @@ export function CotizacionPaqueteEditor({
         onToggle={toggleExtra}
         onCantidad={() => {}}
       />
+
+      <div className="rounded-xl border border-outline-variant/50 p-4">
+        <p className={LABEL_CLASS}>Extras institucionales cobrables</p>
+        <p className="mt-1 text-xs text-on-surface-variant">
+          Lounge y derechos de ingreso externos. Tarifas desde Configuración.
+        </p>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2">
+          <label className="block">
+            <span className="text-xs text-on-surface-variant">
+              Salita lounge (8 pax)
+              {configPanel?.todas
+                ? ` · S/ ${Number(
+                    configPanel.todas.find((c) => c.clave === 'extras.salita_lounge')?.valor ?? 50,
+                  ).toFixed(0)} / uni.`
+                : ''}
+            </span>
+            <input
+              type="number"
+              min={0}
+              className={INPUT_CLASS}
+              value={seleccion.salitaLoungeCantidad}
+              onChange={(e) =>
+                patch({ salitaLoungeCantidad: Math.max(0, Number(e.target.value) || 0) })
+              }
+            />
+          </label>
+          <div className="space-y-2 sm:col-span-2">
+            {(
+              [
+                {
+                  key: 'derechoIngresoShowExterno' as const,
+                  label: 'Derecho ingreso show externo',
+                  clave: 'extras.ingreso_show_externo',
+                  def: 300,
+                },
+                {
+                  key: 'derechoIngresoDecoracionExterno' as const,
+                  label: 'Derecho ingreso decoración externo',
+                  clave: 'extras.ingreso_decoracion_externo',
+                  def: 100,
+                },
+                {
+                  key: 'derechoIngresoCarritoSnackExterno' as const,
+                  label: 'Derecho ingreso carrito snack externo',
+                  clave: 'extras.ingreso_carrito_snack_externo',
+                  def: 300,
+                },
+              ] as const
+            ).map((opt) => {
+              const precio = Number(
+                configPanel?.todas.find((c) => c.clave === opt.clave)?.valor ?? opt.def,
+              );
+              return (
+                <label key={opt.key} className="flex items-center gap-2 text-sm">
+                  <input
+                    type="checkbox"
+                    checked={seleccion[opt.key]}
+                    onChange={(e) => patch({ [opt.key]: e.target.checked })}
+                  />
+                  <span>
+                    {opt.label}
+                    <span className="text-on-surface-variant"> · S/ {precio.toFixed(0)}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </div>
+      </div>
 
       <CatalogoSection
         titulo="Catering adicional (fuera del paquete)"

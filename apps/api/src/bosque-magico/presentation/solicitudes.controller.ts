@@ -102,8 +102,9 @@ export class SolicitudesController {
   actualizarSolicitud(
     @Param('id') id: string,
     @Body() dto: ActualizarSolicitudDto,
+    @CurrentUser() user?: JwtPayload,
   ) {
-    return this.actualizar.ejecutar(id, dto);
+    return this.actualizar.ejecutar(id, dto, user?.sub);
   }
 
   @Post(':id/tomar')
@@ -117,8 +118,11 @@ export class SolicitudesController {
     summary:
       'Generar cotización borrador desde payload guardado (landing antigua)',
   })
-  generarCotizacionBorradorSolicitud(@Param('id') id: string) {
-    return this.generarCotizacionBorrador.ejecutar(id);
+  generarCotizacionBorradorSolicitud(
+    @Param('id') id: string,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.generarCotizacionBorrador.ejecutar(id, user?.sub);
   }
 
   @Post(':id/cerrar')

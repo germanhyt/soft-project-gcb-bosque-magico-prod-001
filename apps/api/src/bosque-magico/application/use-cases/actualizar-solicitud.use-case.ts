@@ -12,6 +12,7 @@ import { ActualizarSolicitudDto } from '../dto/actualizar-solicitud.dto';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 
 function nullableText(value?: string) {
   if (value === undefined) return undefined;
@@ -37,9 +38,10 @@ export class ActualizarSolicitudUseCase {
     private readonly solicitudes: SolicitudesRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
-  async ejecutar(id: string, dto: ActualizarSolicitudDto) {
+  async ejecutar(id: string, dto: ActualizarSolicitudDto, usuarioAsignadoId?: string) {
     const antes = await this.solicitudes.obtenerPorId(id);
     if (!antes) throw new NotFoundException('Solicitud no encontrada');
     if (antes.etapa === EtapaSolicitud.cerrada) {
@@ -50,6 +52,10 @@ export class ActualizarSolicitudUseCase {
       dto.notas !== undefined ||
       dto.proximoSeguimientoEn !== undefined ||
       dto.ultimoContactoEn !== undefined;
+
+    if (esSeguimiento) {
+      await this.tomarSolicitud.ejecutarSiPendiente(id, usuarioAsignadoId);
+    }
 
     const esDatos =
       dto.nombreContacto !== undefined ||

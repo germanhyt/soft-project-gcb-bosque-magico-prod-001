@@ -36,8 +36,15 @@ export type SeleccionPaqueteInput = {
   snackId?: string;
   snackCantidad?: number;
   cajitasCantidad?: number;
+  cajitasClasica?: number;
+  cajitasSaludable?: number;
   piqueos?: ItemCantidadInput[];
   adicionales?: ItemCantidadInput[];
+  /** Unidades de salita lounge (8 pax) cobrables. */
+  salitaLoungeCantidad?: number;
+  derechoIngresoShowExterno?: boolean;
+  derechoIngresoDecoracionExterno?: boolean;
+  derechoIngresoCarritoSnackExterno?: boolean;
 };
 
 export type ItemPaqueteResuelto = {

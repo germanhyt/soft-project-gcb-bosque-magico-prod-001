@@ -9,6 +9,8 @@ export class ListarProductosPanelUseCase {
 
   async ejecutar(soloActivos?: boolean, categoria?: CategoriaProducto) {
     const lista = await this.productos.listar({ soloActivos, categoria });
-    return lista.map((p) => mapProductoResponse(p));
+    return lista
+      .filter((p) => p.codigo !== 'EXT-DECOR')
+      .map((p) => mapProductoResponse(p));
   }
 }

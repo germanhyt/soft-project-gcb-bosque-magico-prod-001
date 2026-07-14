@@ -78,6 +78,9 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const snap = c?.snapshotJson;
   const celular = snap?.cliente.celular ?? c?.evento?.cliente.celular ?? '';
   const correo = snap?.cliente.correo ?? undefined;
+  const tieneFirmaCliente = !!c?.adjuntos?.some((a) => a.tipo === 'firma_cliente');
+  const tieneFirmaEmpresa = !!c?.adjuntos?.some((a) => a.tipo === 'firma_empresa');
+  const firmasCompletas = tieneFirmaCliente && tieneFirmaEmpresa;
 
   const footer =
     c && !isLoading ? (
@@ -122,11 +125,16 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
             <Button
               variant="accent"
               className="w-full"
-              disabled={firmarMut.isPending}
+              disabled={firmarMut.isPending || !firmasCompletas}
               onClick={() => firmarMut.mutate()}
             >
               Marcar firmado
             </Button>
+            {!firmasCompletas && (
+              <p className="mt-2 text-center text-xs text-tertiary">
+                Sube firma del cliente y firma de Bosque Mágico para continuar.
+              </p>
+            )}
           </DetalleActionGroup>
         ) : null}
 

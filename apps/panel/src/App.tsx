@@ -26,7 +26,8 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
         <Route element={<PanelLayout />}>
-          <Route index element={<DashboardPage />} />
+          <Route index element={<Navigate to="/solicitudes" replace />} />
+          <Route path="dashboard" element={<DashboardPage />} />
           <Route path="solicitudes" element={<SolicitudesPage />} />
           <Route path="clientes" element={<ClientesPage />} />
           <Route path="clientes/:id" element={<ClienteDetallePage />} />
@@ -41,7 +42,7 @@ function App() {
           <Route element={<RequireAdmin />}>
             <Route path="usuarios" element={<UsuariosPage />} />
           </Route>
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<Navigate to="/solicitudes" replace />} />
         </Route>
         </Route>
       </Routes>

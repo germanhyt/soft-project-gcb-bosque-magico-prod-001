@@ -1,12 +1,9 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import type { Pedido } from '../../lib/pedidos';
 import { linkWaMe } from '../../lib/contacto-links';
-import {
-  buildPedidoProveedorEventoResumen,
-  type PedidoProveedorEventoResumen,
-} from '../../lib/pedido-proveedor-evento';
-import { mensajePedidoProveedor } from '../../lib/whatsapp-pedido-proveedor';
+import type { PedidoProveedorEventoResumen } from '../../lib/pedido-proveedor-evento';
+import { mensajePedidosProveedorGrupo } from '../../lib/whatsapp-pedido-proveedor';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 import { WhatsAppIcon } from '../ui/WhatsAppIcon';
@@ -14,25 +11,50 @@ import { WhatsAppIcon } from '../ui/WhatsAppIcon';
 type Props = {
   open: boolean;
   onClose: () => void;
-  pedido: Pedido;
+  /** Uno o varios pedidos del mismo proveedor / evento. */
+  pedidos: Pedido[];
   evento: PedidoProveedorEventoResumen;
 };
 
-export function PedidoProveedorWhatsAppModal({ open, onClose, pedido, evento }: Props) {
+export function PedidoProveedorWhatsAppModal({
+  open,
+  onClose,
+  pedidos,
+  evento,
+}: Props) {
   const [mensaje, setMensaje] = useState('');
-  const celular = pedido.proveedor?.celular?.trim() ?? '';
+  const principal = pedidos[0];
+  const celular = principal?.proveedor?.celular?.trim() ?? '';
+  const nombre = principal?.proveedor?.nombre;
+  const titulo =
+    pedidos.length > 1
+      ? `WhatsApp al proveedor (${pedidos.length} servicios)`
+      : 'WhatsApp al proveedor';
+
+  const eventoResumen = useMemo(
+    () => ({
+      clienteNombre: evento.clienteNombre,
+      fechaEvento: evento.fechaEvento,
+      turnoLabel: evento.turnoLabel,
+      cumpleaneroEdad: evento.cumpleaneroEdad,
+      cantidadNinos: evento.cantidadNinos,
+      tematica: evento.tematica,
+    }),
+    [
+      evento.clienteNombre,
+      evento.fechaEvento,
+      evento.turnoLabel,
+      evento.cumpleaneroEdad,
+      evento.cantidadNinos,
+      evento.tematica,
+    ],
+  );
 
   useEffect(() => {
-    if (open) {
-      setMensaje(
-        mensajePedidoProveedor(pedido, {
-          clienteNombre: evento.clienteNombre,
-          fechaEvento: evento.fechaEvento,
-          turnoLabel: evento.turnoLabel,
-        }),
-      );
+    if (open && pedidos.length) {
+      setMensaje(mensajePedidosProveedorGrupo(pedidos, eventoResumen));
     }
-  }, [open, pedido, evento.clienteNombre, evento.fechaEvento, evento.turnoLabel]);
+  }, [open, pedidos, eventoResumen]);
 
   const abrirWhatsApp = () => {
     if (!celular) return;
@@ -41,13 +63,7 @@ export function PedidoProveedorWhatsAppModal({ open, onClose, pedido, evento }: 
   };
 
   return (
-    <Modal
-      open={open}
-      onClose={onClose}
-      title="WhatsApp al proveedor"
-      description="Revisa el mensaje antes de abrir WhatsApp."
-      size="lg"
-    >
+    <Modal open={open} onClose={onClose} title={titulo} description="Revisa el mensaje antes de abrir WhatsApp." size="lg">
       <div className="space-y-4">
         {!celular ? (
           <p className="text-body-sm text-error">El proveedor no tiene celular registrado.</p>
@@ -55,9 +71,7 @@ export function PedidoProveedorWhatsAppModal({ open, onClose, pedido, evento }: 
           <div className="rounded-lg border border-surface-variant bg-surface-container-low/50 px-3 py-2 text-body-sm">
             <span className="text-outline">Para: </span>
             <span className="font-medium text-on-surface">{celular}</span>
-            {pedido.proveedor?.nombre ? (
-              <span className="block text-xs text-outline">{pedido.proveedor.nombre}</span>
-            ) : null}
+            {nombre ? <span className="block text-xs text-outline">{nombre}</span> : null}
           </div>
         )}
         <label className="block">
@@ -66,7 +80,7 @@ export function PedidoProveedorWhatsAppModal({ open, onClose, pedido, evento }: 
             className={`${INPUT_CLASS} min-h-[180px] resize-y`}
             value={mensaje}
             onChange={(e) => setMensaje(e.target.value)}
-            rows={10}
+            rows={12}
             disabled={!celular}
           />
         </label>
@@ -88,5 +102,3 @@ export function PedidoProveedorWhatsAppModal({ open, onClose, pedido, evento }: 
     </Modal>
   );
 }
-
-export { buildPedidoProveedorEventoResumen };

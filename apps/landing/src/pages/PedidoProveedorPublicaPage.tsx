@@ -17,6 +17,9 @@ type PedidoPublico = {
     fechaEvento: string;
     turno: string;
     clienteNombre: string;
+    cumpleaneroEdad: number | null;
+    cantidadNinos: number;
+    tematica: string | null;
   };
   puedeConfirmar: boolean;
   puedeRechazar: boolean;
@@ -159,6 +162,16 @@ export function PedidoProveedorPublicaPage() {
                 {data.evento.clienteNombre}
                 <br />
                 {formatFecha(data.evento.fechaEvento)} · {data.evento.turno}
+              </dd>
+            </div>
+            <div>
+              <dt className="text-outline">Datos del evento</dt>
+              <dd>
+                Cumpleañero: {data.evento.cumpleaneroEdad ?? 'No especificada'} años
+                <br />
+                Niños: {data.evento.cantidadNinos}
+                <br />
+                Temática: {data.evento.tematica || 'No especificada'}
               </dd>
             </div>
             <div>

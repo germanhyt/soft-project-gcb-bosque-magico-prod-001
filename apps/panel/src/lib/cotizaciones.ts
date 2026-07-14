@@ -61,8 +61,14 @@ export type SeleccionPaquetePayload = {
   snackId?: string;
   snackCantidad?: number;
   cajitasCantidad?: number;
+  cajitasClasica?: number;
+  cajitasSaludable?: number;
   piqueos?: Array<{ productoId: string; cantidad: number }>;
   adicionales?: Array<{ productoId: string; cantidad: number }>;
+  salitaLoungeCantidad?: number;
+  derechoIngresoShowExterno?: boolean;
+  derechoIngresoDecoracionExterno?: boolean;
+  derechoIngresoCarritoSnackExterno?: boolean;
 };
 
 export type PreviewCotizacionResponse = {
@@ -132,6 +138,7 @@ export type ActualizarCotizacionPayload = {
   fechaEvento?: string;
   turno?: string;
   cantidadNinos?: number;
+  horasAdicionales?: number;
   tematica?: string;
   paquete?: string;
   notas?: string;
@@ -152,6 +159,7 @@ export type CrearCotizacionPayload = {
   fechaEvento: string;
   turno: string;
   cantidadNinos: number;
+  horasAdicionales?: number;
   tematica?: string;
   paquete: string;
   notas?: string;
@@ -206,6 +214,7 @@ export async function previewCotizacion(payload: {
   fechaEvento: string;
   cantidadNinos: number;
   paquete: string;
+  horasAdicionales?: number;
   seleccion?: SeleccionPaquetePayload;
 }) {
   const { data } = await api.post<PreviewCotizacionResponse>(

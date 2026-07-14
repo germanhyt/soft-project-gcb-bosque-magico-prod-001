@@ -487,12 +487,50 @@ Tenemos el siguiente workflow y el system prompt, el tema es analizar si es conv
 - Doc histórico: `.docs/TDD-2026-07-01.md`
 
 
-()
+(X)
 accedeiendo a mivps, los registros de solicitudes asociadas con el número 910139973 anteriores lo vamos actualizar con otro dato de qa (con sus asociaciones con los otros módulos), la idea es el último registro de solicitudes d4310d4e-5ae6-44eb-9b31-3d068ccad0d7 para quede como identidad única
 
-()
+(x)
 hiciste pruebas con el flujo con operaciones cuando se realiza pedidos a proveedores?, y en qué momento se agenda el evento luego del contrato cierto?
 
+
+
+-----------------------------------------------
+13/07/26
+
+() Colocamos placeholders en los inputs de los formularios "cotización manual"
+() Quitamos el atajo de "revisar cotización" desde solicitudes
+() la redirección directa sin ruta debe apuntar al módul de solicitudes
+() En agenda ordenamos los labels de colores de los estados en orden (por confirmar, luego confirmado, luego realizado)
+
+() El label que aparece de verde en "Nueva cotización manual" lo ordenamos mejor (mejora UI)
+() Respecto a la lógica del crédito usado, sumamos los items hasta llegar al crédito tope, y recién apartir de ahí calcular el excedente (corregir)
+() Quitamoss el servicio extra "arco decorativo" inlcuso si está en el seeder
+() Para cajita de bosque mágico puede ser clásica o saludable, considerarlo
+() Para cuando se notifica al proveedor por algún medio, considera los datos: edad del cumpleañero, cantidad de niños, temática
+
+() Permitir tomar foto de las formas en el contrato (también considerar validar la carga de las formas como requerido)
+
+() Considera el cobro por hora adicionar del espacio alquilado (de lunes a viernes es 150 soles por hora extra, y para sábados/domingos/feriados es 200 por hora extra)
+
+
+
+() Hay unas reglas adicionales más aparte de las horas extras, es sobre lo siguiente: 
+"EXTRAS PERMITIDOS (REFERENCIA) Servicios no incluidos en la cotización; sujeto a tarifa vigente y disponibilidad. Piñata Torta temática Horario extra (lun a vie S/380 — sáb, dom y fer S/580) Derecho de ingreso de show externo S/300.00 Derecho de ingreso de decoración externo S/100.00 Derecho de ingreso de carrito snack externo S/300.00 Mobiliario extra (Salita lounge para 8 pax por S/50.00 x uni.)", cómo lo manejamos?
+(x) Separados en contrato: permitidos (piñata/torta) vs cobrables (hora extra 150/200, ingresos 300/100/300, lounge 50). Tarifas editables en Configuración; selección cobrable en cotización panel.
+
+
+
+
+
+() Consulta qué pasa si alguien no toma la solicitud (cómo funciona este proceso?)
+(x) Auto-tomar en primera acción comercial (crear/enviar cotización, seguimiento, generar borrador). Chip "Sin tomar" + badge de antigüedad (+1h / +24h) en Solicitudes. Dashboard hint "sin tomar · priorizar".
+() Analizamos la lógica de la comunicación con los proveedores, si en la cotización se tiene productos sea uno o varios del mismo proveedore se lista estos productos/servicios o la comunicación es uno a uno, analicemos
+(x) Comunicación agrupada por proveedor+evento (WhatsApp/correo listan todos los servicios; confirmación pública sigue por ítem). UI en EventoPedidosSection + Operaciones. Botón "Marcar solicitados" por grupo.
+
+
+() Notificación de recordartorio del evento automático al correo del cliente, al correo del operador del sistema, y notificación al sistema como tal, una semana antes por defecto, que sea confurable el tiempo y su habilitación
+(x) Recordatorios automáticos: config `recordatorios.*` (habilitado, dias_antes=7, plantillas, correo operador). Job diario ~08:00 Lima + endpoint admin `POST /jobs/recordatorios-eventos`. Canales: email cliente, email operador (config o ADMIN_EMAIL), notificación panel `evento.recordatorio`. Idempotencia por auditoría.
 
 
 

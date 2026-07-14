@@ -5,7 +5,8 @@ export type BosquePanelEventType =
   | 'cotizacion.actualizada'
   | 'cotizacion.enviada'
   | 'cotizacion.aceptada'
-  | 'evento.actualizado';
+  | 'evento.actualizado'
+  | 'evento.recordatorio';
 
 export type BosquePanelEvent = {
   id: string;

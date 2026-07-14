@@ -90,6 +90,9 @@ export function ContratoAdjuntoDropzone({
   });
 
   const src = adjunto?.url ? resolveAssetUrl(adjunto.url) : null;
+  const inputProps = esFirma
+    ? getInputProps({ capture: 'environment' })
+    : getInputProps();
 
   return (
     <div className="rounded-xl border border-surface-variant bg-surface-container-low/40 p-3">
@@ -125,7 +128,7 @@ export function ContratoAdjuntoDropzone({
               : 'border-surface-variant text-outline hover:border-primary'
           } ${disabled || pending ? 'pointer-events-none opacity-60' : ''}`}
         >
-          <input {...getInputProps()} />
+          <input {...inputProps} />
           {pending ? 'Procesando…' : isDragActive ? 'Suelta aquí' : esFirma ? 'Imagen firma (5 MB)' : 'Arrastra o clic (5 MB)'}
         </div>
         {adjunto && onRemove && !disabled && (

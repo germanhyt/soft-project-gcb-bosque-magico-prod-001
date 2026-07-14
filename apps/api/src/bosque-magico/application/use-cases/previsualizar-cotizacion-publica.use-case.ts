@@ -21,6 +21,8 @@ export class PrevisualizarCotizacionPublicaUseCase {
       snackId: base.snackId,
       snackCantidad: base.snackCantidad,
       cajitasCantidad: base.cajitasCantidad,
+      cajitasClasica: base.cajitasClasica,
+      cajitasSaludable: base.cajitasSaludable,
       piqueos: base.piqueos,
       adicionales: [
         ...(base.adicionales ?? []),
@@ -29,6 +31,11 @@ export class PrevisualizarCotizacionPublicaUseCase {
           cantidad: i.cantidad,
         })),
       ],
+      salitaLoungeCantidad: base.salitaLoungeCantidad,
+      derechoIngresoShowExterno: base.derechoIngresoShowExterno,
+      derechoIngresoDecoracionExterno: base.derechoIngresoDecoracionExterno,
+      derechoIngresoCarritoSnackExterno:
+        base.derechoIngresoCarritoSnackExterno,
     };
   }
 
@@ -61,6 +68,7 @@ export class PrevisualizarCotizacionPublicaUseCase {
         fechaEvento,
         cantidadNinos: dto.cantidadNinos,
         seleccion: this.mapearSeleccion(dto),
+        horasAdicionales: dto.horasAdicionales,
       }));
 
     return {

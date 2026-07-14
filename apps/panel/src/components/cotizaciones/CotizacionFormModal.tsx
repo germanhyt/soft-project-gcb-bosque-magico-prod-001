@@ -21,6 +21,7 @@ import {
 import {
   productosParaCotizacion,
 } from '../../lib/producto-cotizacion';
+import { NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO } from '@bosque/shared';
 import {
   INITIAL_SELECCION_PAQUETE,
   seleccionDesdeItemsCotizacion,
@@ -54,6 +55,7 @@ const schemaCrear = Yup.object({
   fechaEvento: Yup.string().required('Requerido'),
   turno: Yup.string().required('Requerido'),
   cantidadNinos: Yup.number().min(1).required('Requerido'),
+  horasAdicionales: Yup.number().min(0).max(8),
   paquete: Yup.string().trim().required('Indica el paquete'),
 });
 
@@ -61,8 +63,17 @@ const schemaEditar = Yup.object({
   fechaEvento: Yup.string().required('Requerido'),
   turno: Yup.string().required('Requerido'),
   cantidadNinos: Yup.number().min(1).required('Requerido'),
+  horasAdicionales: Yup.number().min(0).max(8),
   paquete: Yup.string().trim().required('Indica el paquete'),
 });
+
+function extraerHorasAdicionales(items?: Array<{ nombre: string; cantidad: number }>) {
+  return (items ?? [])
+    .filter((item) =>
+      item.nombre.trim().toLowerCase() === NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO.toLowerCase(),
+    )
+    .reduce((sum, item) => sum + item.cantidad, 0);
+}
 
 export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
   const qc = useQueryClient();
@@ -156,6 +167,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           fechaEvento: cot?.fechaEvento?.slice(0, 10) ?? '',
           turno: cot?.turno ?? 'turno_1',
           cantidadNinos: cot?.cantidadNinos ?? 25,
+          horasAdicionales: extraerHorasAdicionales(cot?.items),
           tematica: cot?.tematica ?? '',
           paquete: cot?.paquete ?? '',
           notas: cot?.notas ?? '',
@@ -169,6 +181,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           fechaEvento: solicitudActiva?.fechaTentativa?.slice(0, 10) ?? '',
           turno: solicitudActiva?.turnoInteres ?? 'turno_1',
           cantidadNinos: solicitudActiva?.cantidadNinosEstimada ?? 25,
+          horasAdicionales: 0,
           tematica: landing?.tematica ?? '',
           paquete: paqueteDefault,
           notas: solicitudActiva?.notas ?? '',
@@ -182,6 +195,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           fechaEvento: values.fechaEvento,
           turno: values.turno,
           cantidadNinos: Number(values.cantidadNinos),
+          horasAdicionales: Number((values as { horasAdicionales?: number }).horasAdicionales) || 0,
           tematica: (values as { tematica?: string }).tematica?.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: (values as { notas?: string }).notas?.trim() || undefined,
@@ -194,6 +208,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           correo: string;
           cumpleaneroNombre: string;
           cumpleaneroEdad: string;
+          horasAdicionales?: number;
           tematica: string;
           notas: string;
         };
@@ -212,6 +227,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           fechaEvento: values.fechaEvento,
           turno: values.turno,
           cantidadNinos: Number(values.cantidadNinos),
+          horasAdicionales: Number(v.horasAdicionales) || 0,
           tematica: v.tematica.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: v.notas.trim() || undefined,
@@ -392,6 +408,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <input
                     name="nombreCompleto"
                     className={INPUT_CLASS}
+                    placeholder="Ej. María López"
                     value={(formik.values as { nombreCompleto: string }).nombreCompleto}
                     onChange={formik.handleChange}
                   />
@@ -401,6 +418,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <input
                     name="celular"
                     className={INPUT_CLASS}
+                    placeholder="Ej. 999888777"
                     value={(formik.values as { celular: string }).celular}
                     onChange={formik.handleChange}
                   />
@@ -411,6 +429,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                     name="correo"
                     type="email"
                     className={INPUT_CLASS}
+                    placeholder="Ej. familia@email.com"
                     value={(formik.values as { correo: string }).correo}
                     onChange={formik.handleChange}
                   />
@@ -420,6 +439,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <input
                     name="cumpleaneroNombre"
                     className={INPUT_CLASS}
+                    placeholder="Ej. Valentina"
                     value={(formik.values as { cumpleaneroNombre: string }).cumpleaneroNombre}
                     onChange={formik.handleChange}
                   />
@@ -432,6 +452,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                     min={1}
                     max={15}
                     className={INPUT_CLASS}
+                    placeholder="Ej. 5"
                     value={(formik.values as { cumpleaneroEdad: string }).cumpleaneroEdad}
                     onChange={formik.handleChange}
                   />
@@ -470,7 +491,21 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   type="number"
                   min={1}
                   className={INPUT_CLASS}
+                  placeholder="Ej. 25"
                   value={formik.values.cantidadNinos}
+                  onChange={formik.handleChange}
+                />
+              </label>
+              <label className="block">
+                <span className={LABEL_CLASS}>Horas adicionales de espacio</span>
+                <input
+                  name="horasAdicionales"
+                  type="number"
+                  min={0}
+                  max={8}
+                  className={INPUT_CLASS}
+                  placeholder="Ej. 1"
+                  value={(formik.values as { horasAdicionales?: number }).horasAdicionales ?? 0}
                   onChange={formik.handleChange}
                 />
               </label>
@@ -501,6 +536,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <input
                     name="paquete"
                     className={INPUT_CLASS}
+                    placeholder="Ej. Estándar"
                     value={formik.values.paquete}
                     onChange={formik.handleChange}
                   />
@@ -511,6 +547,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 <input
                   name="tematica"
                   className={INPUT_CLASS}
+                  placeholder="Ej. Superhéroes"
                   value={formik.values.tematica}
                   onChange={formik.handleChange}
                 />
@@ -521,6 +558,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   name="notas"
                   rows={2}
                   className={INPUT_CLASS}
+                  placeholder="Ej. Alergias, observaciones o pedido especial"
                   value={formik.values.notas}
                   onChange={formik.handleChange}
                 />
@@ -537,6 +575,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 paquete={formik.values.paquete}
                 fechaEvento={formik.values.fechaEvento}
                 cantidadNinos={Number(formik.values.cantidadNinos) || 25}
+                horasAdicionales={Number((formik.values as { horasAdicionales?: number }).horasAdicionales) || 0}
                 seleccion={seleccion}
                 onChange={setSeleccion}
                 catalogo={catalogo}

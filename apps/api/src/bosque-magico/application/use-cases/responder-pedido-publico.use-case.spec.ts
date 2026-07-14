@@ -14,6 +14,9 @@ const pedidoBase = {
   evento: {
     fechaEvento: new Date('2026-07-15'),
     turno: 'turno_1',
+    cantidadNinos: 20,
+    tematica: null,
+    cumpleanero: { edad: 8 },
     cliente: { nombreCompleto: 'Ana' },
   },
 };

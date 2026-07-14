@@ -9,6 +9,22 @@ describe('configuracion-claves', () => {
     expect(CLAVES_NUMERICAS_EDITABLES.has('shows.precio_nino_extra')).toBe(true);
     expect(CLAVES_NUMERICAS_EDITABLES.has('extras.precio_nino_extra')).toBe(true);
     expect(CLAVES_NUMERICAS_EDITABLES.has('ninos.maximo_permitido')).toBe(true);
+    expect(
+      CLAVES_NUMERICAS_EDITABLES.has('espacio.hora_extra_lunes_viernes'),
+    ).toBe(true);
+    expect(CLAVES_NUMERICAS_EDITABLES.has('espacio.hora_extra_fin_semana')).toBe(
+      true,
+    );
+    expect(CLAVES_NUMERICAS_EDITABLES.has('extras.salita_lounge')).toBe(true);
+    expect(CLAVES_NUMERICAS_EDITABLES.has('extras.ingreso_show_externo')).toBe(
+      true,
+    );
+    expect(
+      CLAVES_NUMERICAS_EDITABLES.has('extras.ingreso_decoracion_externo'),
+    ).toBe(true);
+    expect(
+      CLAVES_NUMERICAS_EDITABLES.has('extras.ingreso_carrito_snack_externo'),
+    ).toBe(true);
   });
 
   it('no incluye clave obsoleta tarifas.precio_nino_extra como editable', () => {

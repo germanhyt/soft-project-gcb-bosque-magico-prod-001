@@ -3,10 +3,11 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EtapaContrato, Prisma } from '@prisma/client';
+import { EtapaContrato, Prisma, TipoAdjuntoContrato } from '@prisma/client';
 import { mapContratoResponse } from '../../domain/mappers/contrato.mapper';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
+import { ContratoAdjuntosRepository } from '../../infrastructure/repositories/contrato-adjuntos.repository';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
 
 @Injectable()
@@ -50,6 +51,7 @@ export class MarcarContratoEnviadoUseCase {
 export class MarcarContratoFirmadoUseCase {
   constructor(
     private readonly contratos: ContratosRepository,
+    private readonly adjuntos: ContratoAdjuntosRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
   ) {}
@@ -62,6 +64,16 @@ export class MarcarContratoFirmadoUseCase {
     }
     if (antes.etapa === EtapaContrato.firmado) {
       return mapContratoResponse(antes);
+    }
+
+    const [firmaCliente, firmaEmpresa] = await Promise.all([
+      this.adjuntos.obtenerPorContratoYTipo(id, TipoAdjuntoContrato.firma_cliente),
+      this.adjuntos.obtenerPorContratoYTipo(id, TipoAdjuntoContrato.firma_empresa),
+    ]);
+    if (!firmaCliente || !firmaEmpresa) {
+      throw new BadRequestException(
+        'Debes cargar firma del cliente y firma de Bosque Mágico antes de marcar firmado.',
+      );
     }
 
     const despues = await this.contratos.marcarFirmado(id);

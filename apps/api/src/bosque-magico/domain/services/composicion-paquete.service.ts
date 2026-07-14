@@ -2,6 +2,8 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   CategoriaProducto,
   EtapaProducto,
+  OrigenItemCotizacion,
+  TipoItemCotizacion,
   type BosqueMagicoProducto,
 } from '@prisma/client';
 import { CalculoPreciosService } from './calculo-precios.service';
@@ -11,12 +13,22 @@ import { validarSeleccionPaquete } from './validar-seleccion-paquete';
 import {
   coincidePaquete,
   type ComposicionRegla,
+  type ItemPaqueteResuelto,
   type ProductoCotizacionRef,
   type SeleccionPaqueteInput,
 } from './composicion-paquete.types';
 import { fromDecimal } from '../utils/decimal';
 import { ComposicionPaqueteRepository } from '../../infrastructure/repositories/composicion-paquete.repository';
 import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
+
+/** Nombres alineados con packages/shared contrato-terminos (hidratación panel). */
+const NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO = 'Hora adicional de espacio';
+const NOMBRE_ITEM_SALITA_LOUNGE = 'Salita lounge (8 pax)';
+const NOMBRE_ITEM_INGRESO_SHOW_EXTERNO = 'Derecho de ingreso de show externo';
+const NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO =
+  'Derecho de ingreso de decoración externo';
+const NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO =
+  'Derecho de ingreso de carrito snack externo';
 
 @Injectable()
 export class ComposicionPaqueteService {
@@ -67,6 +79,7 @@ export class ComposicionPaqueteService {
     fechaEvento: Date;
     cantidadNinos: number;
     seleccion: SeleccionPaqueteInput;
+    horasAdicionales?: number;
   }) {
     const paqueteProducto = await this.resolverPaquetePorNombreOCodigo(
       params.paquete,
@@ -93,11 +106,14 @@ export class ComposicionPaqueteService {
       metadata: (r.metadata as Record<string, unknown> | null) ?? null,
     }));
 
-    const [tarifas, reglasCapacidad, configPaquete] = await Promise.all([
-      this.calculo.obtenerTarifas(),
-      this.calculo.obtenerReglasCapacidad(),
-      this.calculo.obtenerReglasPaquete(),
-    ]);
+    const [tarifas, reglasCapacidad, configPaquete, tarifasHoraExtraEspacio, tarifasExtras] =
+      await Promise.all([
+        this.calculo.obtenerTarifas(),
+        this.calculo.obtenerReglasCapacidad(),
+        this.calculo.obtenerReglasPaquete(),
+        this.calculo.obtenerTarifasHoraExtraEspacio(),
+        this.calculo.obtenerTarifasExtrasInstitucionales(),
+      ]);
 
     const composicion = resolverComposicionPaquete({
       paquete: this.aRef(paqueteProducto),
@@ -123,6 +139,75 @@ export class ComposicionPaqueteService {
     });
 
     composicion.items.push(...cargosCapacidad.items);
+
+    const pushExtra = (
+      nombre: string,
+      cantidad: number,
+      precioUnitario: number,
+      notas: string,
+    ) => {
+      if (cantidad <= 0 || precioUnitario < 0) return;
+      const item: ItemPaqueteResuelto = {
+        tipo: TipoItemCotizacion.extra,
+        nombre,
+        cantidad,
+        precioUnitario,
+        precioCatalogo: precioUnitario,
+        origenItem: OrigenItemCotizacion.adicional,
+        notas,
+      };
+      composicion.items.push(item);
+      composicion.itemsCobrables.push({ cantidad, precioUnitario });
+    };
+
+    const horasAdicionales = Math.max(0, params.horasAdicionales ?? 0);
+    if (horasAdicionales > 0) {
+      const tarifaHora = esFinSemana
+        ? tarifasHoraExtraEspacio.finSemana
+        : tarifasHoraExtraEspacio.lunesViernes;
+      pushExtra(
+        NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO,
+        horasAdicionales,
+        tarifaHora,
+        `Horario extra del espacio (${horasAdicionales} hora(s))`,
+      );
+    }
+
+    const salitaLoungeCantidad = Math.max(
+      0,
+      params.seleccion.salitaLoungeCantidad ?? 0,
+    );
+    pushExtra(
+      NOMBRE_ITEM_SALITA_LOUNGE,
+      salitaLoungeCantidad,
+      tarifasExtras.salitaLounge,
+      'Mobiliario lounge para 8 pax',
+    );
+
+    if (params.seleccion.derechoIngresoShowExterno) {
+      pushExtra(
+        NOMBRE_ITEM_INGRESO_SHOW_EXTERNO,
+        1,
+        tarifasExtras.ingresoShowExterno,
+        'Derecho de ingreso show externo',
+      );
+    }
+    if (params.seleccion.derechoIngresoDecoracionExterno) {
+      pushExtra(
+        NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO,
+        1,
+        tarifasExtras.ingresoDecoracionExterno,
+        'Derecho de ingreso decoración externo',
+      );
+    }
+    if (params.seleccion.derechoIngresoCarritoSnackExterno) {
+      pushExtra(
+        NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO,
+        1,
+        tarifasExtras.ingresoCarritoSnackExterno,
+        'Derecho de ingreso carrito snack externo',
+      );
+    }
 
     const montos = this.calculo.calcular(
       tarifas,

@@ -27,6 +27,7 @@ export type ConfigPanelResponse = {
   smtp: ConfigItem[];
   postventa: ConfigItem[];
   pedidosProveedor: ConfigItem[];
+  recordatorios: ConfigItem[];
   otras: ConfigItem[];
   todas: ConfigItem[];
   meta?: {

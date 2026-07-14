@@ -28,7 +28,7 @@ import { CARD_CLASS, INPUT_CLASS } from '../constants/design';
 
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 
-import { ETAPAS_EVENTO_FILTRO } from '../constants/eventos';
+import { ETAPAS_EVENTO_FILTRO, ETAPAS_EVENTO_RESUMEN_ORDEN } from '../constants/eventos';
 
 import { mesToParam, parseMesParam, rangoMes } from '../lib/agenda-calendar';
 
@@ -390,7 +390,10 @@ export function AgendaPage() {
 
         <div className="mb-4 flex flex-wrap gap-3">
 
-          {(Object.entries(data.resumen) as [EtapaEvento, number][]).map(([etapa, count]) => (
+          {ETAPAS_EVENTO_RESUMEN_ORDEN
+            .map((etapa) => [etapa, data.resumen?.[etapa] ?? 0] as [EtapaEvento, number])
+            .filter(([, count]) => count > 0)
+            .map(([etapa, count]) => (
 
             <div
 
@@ -406,7 +409,7 @@ export function AgendaPage() {
 
             </div>
 
-          ))}
+            ))}
 
         </div>
 

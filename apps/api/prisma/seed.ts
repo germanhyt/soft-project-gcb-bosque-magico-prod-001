@@ -100,6 +100,42 @@ const configuraciones = [
     esPublico: true,
   },
   {
+    clave: 'espacio.hora_extra_lunes_viernes',
+    valor: 150,
+    descripcion: 'Precio por hora adicional de espacio de lunes a viernes (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'espacio.hora_extra_fin_semana',
+    valor: 200,
+    descripcion: 'Precio por hora adicional de espacio sábado/domingo/feriado (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'extras.salita_lounge',
+    valor: 50,
+    descripcion: 'Precio por unidad de salita lounge 8 pax (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'extras.ingreso_show_externo',
+    valor: 300,
+    descripcion: 'Derecho de ingreso de show externo (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'extras.ingreso_decoracion_externo',
+    valor: 100,
+    descripcion: 'Derecho de ingreso de decoración externo (S/)',
+    esPublico: true,
+  },
+  {
+    clave: 'extras.ingreso_carrito_snack_externo',
+    valor: 300,
+    descripcion: 'Derecho de ingreso de carrito snack externo (S/)',
+    esPublico: true,
+  },
+  {
     clave: 'contrato.adelanto_referencial',
     valor: 500,
     descripcion: 'Adelanto referencial para separar fecha (S/)',
@@ -259,15 +295,63 @@ const configuraciones = [
     clave: 'pedidos_proveedor.asunto',
     valor: 'Pedido Bosque Mágico — {{servicio}} ({{fecha}})',
     descripcion:
-      'Asunto del correo. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}',
+      'Asunto del correo. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}',
     esPublico: false,
   },
   {
     clave: 'pedidos_proveedor.cuerpo',
     valor:
-      'Hola {{proveedor}},\n\nSolicitud de servicio desde Bosque Mágico.\n\nCliente: {{cliente}}\nEvento: {{fecha}} · {{turno}}\nServicio: {{servicio}}\nCantidad: {{cantidad}}\nCosto referencial: S/ {{costo}}\n{{notas}}\n\nConfirma o rechaza desde este enlace:\n{{link}}',
+      'Hola {{proveedor}},\n\nSolicitud de servicio desde Bosque Mágico.\n\nCliente: {{cliente}}\nEvento: {{fecha}} · {{turno}}\nCumpleañero: {{edad}} años\nNiños: {{cantidadNinos}}\nTemática: {{tematica}}\nServicio: {{servicio}}\nCantidad: {{cantidad}}\nCosto referencial: S/ {{costo}}\n{{notas}}\n\nConfirma o rechaza desde este enlace:\n{{link}}',
     descripcion:
-      'Cuerpo del correo en texto plano. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+      'Cuerpo del correo en texto plano. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.habilitado',
+    valor: true,
+    descripcion:
+      'Enviar recordatorio automático de eventos (correo cliente, correo operador y notificación en panel).',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.dias_antes',
+    valor: 7,
+    descripcion: 'Días de anticipación antes del evento (por defecto 7 = una semana).',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.correo_operador',
+    valor: '',
+    descripcion:
+      'Correo del operador/sistema. Si queda vacío se usa ADMIN_EMAIL del entorno.',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.asunto_cliente',
+    valor: 'Recordatorio: tu evento en Bosque Mágico ({{fecha}})',
+    descripcion:
+      'Asunto al cliente. Placeholders: {{cliente}}, {{fecha}}, {{turno}}, {{paquete}}, {{cumpleanero}}, {{diasAntes}}',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.cuerpo_cliente',
+    valor:
+      'Hola {{cliente}},\n\nTe recordamos que tu evento en Bosque Mágico es el {{fecha}} ({{turno}}).\nCumpleañero: {{cumpleanero}}\nPaquete: {{paquete}}\n\n¡Te esperamos!\nEquipo Bosque Mágico',
+    descripcion: 'Cuerpo al cliente (texto plano). Mismos placeholders que el asunto.',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.asunto_operador',
+    valor: 'Recordatorio operativo — {{cliente}} ({{fecha}})',
+    descripcion:
+      'Asunto al operador. Placeholders: {{cliente}}, {{correoCliente}}, {{celular}}, {{fecha}}, {{turno}}, {{etapa}}, {{paquete}}, {{cumpleanero}}, {{eventoId}}, {{diasAntes}}',
+    esPublico: false,
+  },
+  {
+    clave: 'recordatorios.cuerpo_operador',
+    valor:
+      'Recordatorio de evento:\n\nCliente: {{cliente}}\nCorreo: {{correoCliente}}\nCelular: {{celular}}\nFecha: {{fecha}} · {{turno}}\nEstado: {{etapa}}\nPaquete: {{paquete}}\nCumpleañero: {{cumpleanero}}\nEvento ID: {{eventoId}}',
+    descripcion: 'Cuerpo al operador (texto plano). Mismos placeholders que el asunto.',
     esPublico: false,
   },
 ];
@@ -303,7 +387,6 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250 },
   { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120 },
   { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150 },
-  { codigo: 'EXT-DECOR', nombre: 'Arco decorativo', categoria: 'extra', lv: 180, fds: 220 },
   { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   ...CATERING_GENERAL.map((c) => ({

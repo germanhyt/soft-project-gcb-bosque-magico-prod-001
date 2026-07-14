@@ -87,6 +87,22 @@ export function OperacionesPage() {
     [pedidos, busqueda, filtroEtapa, filtroArea],
   );
 
+  const hermanosPorPedido = useMemo(() => {
+    const map = new Map<string, PedidoOperaciones[]>();
+    for (const p of pedidos) {
+      if (p.tipo !== 'proveedor') continue;
+      const key = `${p.evento.id}:${p.proveedorId ?? p.proveedor?.nombre ?? p.id}`;
+      const list = map.get(key) ?? [];
+      list.push(p);
+      map.set(key, list);
+    }
+    const byId = new Map<string, PedidoOperaciones[]>();
+    for (const list of map.values()) {
+      for (const item of list) byId.set(item.id, list);
+    }
+    return byId;
+  }, [pedidos]);
+
   useEffect(() => {
     setPage(1);
   }, [desde, hasta, busqueda, filtroEtapa, filtroArea, pageSize]);
@@ -251,6 +267,7 @@ export function OperacionesPage() {
                     <td className="px-4 py-3">
                       <PedidoOperacionesRowActions
                         pedido={p}
+                        pedidosMismoProveedor={hermanosPorPedido.get(p.id)}
                         onVerEvento={(eventoId) => navigate(`/agenda?detalle=${eventoId}`)}
                       />
                     </td>

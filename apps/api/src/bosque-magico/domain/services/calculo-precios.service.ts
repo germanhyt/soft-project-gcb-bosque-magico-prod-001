@@ -18,6 +18,18 @@ export type ReglasCapacidadNegocio = {
   precioNinoExtraServicio: number;
 };
 
+export type TarifasHoraExtraEspacio = {
+  lunesViernes: number;
+  finSemana: number;
+};
+
+export type TarifasExtrasInstitucionales = {
+  salitaLounge: number;
+  ingresoShowExterno: number;
+  ingresoDecoracionExterno: number;
+  ingresoCarritoSnackExterno: number;
+};
+
 export type ItemCalculoInput = {
   cantidad: number;
   precioUnitario: number;
@@ -103,6 +115,34 @@ export class CalculoPreciosService {
         'paquetes.snack_premium_precio_excedente',
         10,
       ),
+    };
+  }
+
+  async obtenerTarifasHoraExtraEspacio(): Promise<TarifasHoraExtraEspacio> {
+    const items = await this.configuracion.listarPublicas();
+    const map = new Map(items.map((i) => [i.clave, i.valor]));
+    const num = (k: string, d: number) => {
+      const v = map.get(k);
+      return typeof v === 'number' && !Number.isNaN(v) ? v : d;
+    };
+    return {
+      lunesViernes: num('espacio.hora_extra_lunes_viernes', 150),
+      finSemana: num('espacio.hora_extra_fin_semana', 200),
+    };
+  }
+
+  async obtenerTarifasExtrasInstitucionales(): Promise<TarifasExtrasInstitucionales> {
+    const items = await this.configuracion.listarPublicas();
+    const map = new Map(items.map((i) => [i.clave, i.valor]));
+    const num = (k: string, d: number) => {
+      const v = map.get(k);
+      return typeof v === 'number' && !Number.isNaN(v) ? v : d;
+    };
+    return {
+      salitaLounge: num('extras.salita_lounge', 50),
+      ingresoShowExterno: num('extras.ingreso_show_externo', 300),
+      ingresoDecoracionExterno: num('extras.ingreso_decoracion_externo', 100),
+      ingresoCarritoSnackExterno: num('extras.ingreso_carrito_snack_externo', 300),
     };
   }
 

@@ -9,6 +9,8 @@ import {
 } from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { EtapaCotizacion } from '@prisma/client';
+import { CurrentUser } from '../../auth/decorators/current-user.decorator';
+import type { JwtPayload } from '../../auth/types/jwt-payload';
 import { ActualizarCotizacionDto } from '../application/dto/actualizar-cotizacion.dto';
 import { CrearCotizacionDto } from '../application/dto/crear-cotizacion.dto';
 import { EnviarCotizacionDto } from '../application/dto/enviar-cotizacion.dto';
@@ -58,8 +60,11 @@ export class CotizacionesController {
 
   @Post('cotizaciones')
   @ApiOperation({ summary: 'Crear cotización (borrador)' })
-  crearCotizacion(@Body() dto: CrearCotizacionDto) {
-    return this.crear.ejecutar(dto);
+  crearCotizacion(
+    @Body() dto: CrearCotizacionDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.crear.ejecutar(dto, user?.sub);
   }
 
   @Patch('cotizaciones/:id')
@@ -70,8 +75,12 @@ export class CotizacionesController {
 
   @Post('cotizaciones/:id/enviar')
   @ApiOperation({ summary: 'Marcar enviada y registrar log' })
-  enviarCotizacion(@Param('id') id: string, @Body() dto: EnviarCotizacionDto) {
-    return this.enviar.ejecutar(id, dto);
+  enviarCotizacion(
+    @Param('id') id: string,
+    @Body() dto: EnviarCotizacionDto,
+    @CurrentUser() user?: JwtPayload,
+  ) {
+    return this.enviar.ejecutar(id, dto, user?.sub);
   }
 
   @Post('cotizaciones/:id/aceptar')
