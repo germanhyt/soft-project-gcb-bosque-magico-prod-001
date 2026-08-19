@@ -15,19 +15,32 @@ type Props = {
   description?: string;
   children: ReactNode;
   size?: 'md' | 'lg' | 'xl';
+  /** Superpone este modal sobre otro ya abierto (p. ej. alta de show desde cotización). */
+  nested?: boolean;
 };
 
-export function Modal({ open, onClose, title, description, children, size = 'md' }: Props) {
+export function Modal({
+  open,
+  onClose,
+  title,
+  description,
+  children,
+  size = 'md',
+  nested = false,
+}: Props) {
   useModalLayer(open);
 
   if (!open) return null;
 
   const maxW =
     size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
+  const overlayClass = nested
+    ? MODAL_OVERLAY_CLASS.replace('z-[70]', 'z-[80]')
+    : MODAL_OVERLAY_CLASS;
 
   return createPortal(
     <div
-      className={MODAL_OVERLAY_CLASS}
+      className={overlayClass}
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"

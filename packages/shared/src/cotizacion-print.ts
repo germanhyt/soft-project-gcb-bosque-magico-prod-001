@@ -117,7 +117,7 @@ export function buildCotizacionPrintHtml(
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #1a2e1f; margin: 0; padding: 32px; }
     .header { display: flex; align-items: center; gap: 16px; border-bottom: 2px solid #2d5a3d; padding-bottom: 16px; margin-bottom: 24px; }
-    .header img { width: 72px; height: 72px; object-fit: contain; }
+    .header img { width: 128px; height: 128px; object-fit: contain; }
     h1 { margin: 0; font-size: 22px; color: #2d5a3d; }
     .meta { color: #5a6b5e; font-size: 13px; margin-top: 4px; }
     .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 24px; }

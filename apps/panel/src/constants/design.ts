@@ -6,6 +6,9 @@ import type { EtapaEvento } from '../lib/eventos';
 export const INPUT_CLASS =
   'w-full rounded-lg border border-outline-variant bg-surface-container-lowest px-3 py-2 text-body-sm text-on-surface outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/15';
 
+export const INPUT_ERROR_CLASS =
+  'border-error focus:border-error focus:ring-error/20';
+
 export const LABEL_CLASS = 'text-label-caps text-outline block mb-1';
 
 export const CARD_CLASS =

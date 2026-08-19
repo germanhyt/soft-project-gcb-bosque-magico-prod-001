@@ -136,9 +136,9 @@ async function main() {
     });
     cu(
       'CU-06',
-      'Pintacaritas 25 niños → extra 100 (10×10)',
-      (r.status === 200 || r.status === 201) && r.body?.montos?.ninosExtra === 100,
-      `status=${r.status}`,
+      'Pintacaritas 25 niños → sin extra por niño (precio = 1 h)',
+      (r.status === 200 || r.status === 201) && (r.body?.montos?.ninosExtra ?? 0) === 0,
+      `status=${r.status} extra=${r.body?.montos?.ninosExtra}`,
     );
   }
   if (extUnitas) {
@@ -150,9 +150,9 @@ async function main() {
     });
     cu(
       'CU-06',
-      'Uñitas 25 niños → extra 50 (5×10)',
-      (r.status === 200 || r.status === 201) && r.body?.montos?.ninosExtra === 50,
-      `status=${r.status}`,
+      'Uñitas 25 niños → sin extra por niño (precio = 1 h)',
+      (r.status === 200 || r.status === 201) && (r.body?.montos?.ninosExtra ?? 0) === 0,
+      `status=${r.status} extra=${r.body?.montos?.ninosExtra}`,
     );
   }
   if (extHora) {
@@ -164,9 +164,9 @@ async function main() {
     });
     cu(
       'CU-06',
-      'Hora loca 25 niños → extra 50 (5×10)',
-      (r.status === 200 || r.status === 201) && r.body?.montos?.ninosExtra === 50,
-      `status=${r.status}`,
+      'Hora loca 25 niños → sin extra por niño (precio = 1 h)',
+      (r.status === 200 || r.status === 201) && (r.body?.montos?.ninosExtra ?? 0) === 0,
+      `status=${r.status} extra=${r.body?.montos?.ninosExtra}`,
     );
   }
 

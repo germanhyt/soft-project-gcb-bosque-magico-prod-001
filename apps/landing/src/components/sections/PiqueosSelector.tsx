@@ -32,7 +32,8 @@ export function PiqueosSelector({
     () => paquetesConfigDesdeItems(data?.items),
     [data?.items],
   );
-  const credito = paquetesConfig.piqueosCreditoPremium;
+  const credito = esPaquetePremium(selection.paquete) ? paquetesConfig.piqueosCreditoPremium : 0;
+  const conCredito = credito > 0;
 
   const esFds = isWeekend(fechaReferencia ?? '', feriados);
 
@@ -51,33 +52,39 @@ export function PiqueosSelector({
     return { creditoUsado: r.creditoUsado, excedente: r.excedente };
   }, [selection.piqueoIds, selection.piqueosCantidades, piqueos, esFds, credito]);
 
-  if (!selection.paquete || !esPaquetePremium(selection.paquete)) return null;
+  if (!selection.paquete) return null;
 
   return (
     <SectionShell id="piqueos" tone="alt">
       <SectionTitle
-        pill="Piqueos Premium"
+        pill={conCredito ? 'Piqueos Premium' : 'Piqueos'}
         title="Arma tu bandeja de piqueos"
-        subtitle={`Elige packs de la carta. Crédito incluido: ${formatSoles(credito)} (precio por pack completo).`}
-      />
-      <div className="mb-6 rounded-2xl border border-primary/20 bg-primary-fixed/15 px-4 py-3">
-        <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
-          <span>
-            Crédito usado: <strong>{formatSoles(creditoUsado)}</strong> / {formatSoles(credito)}
-          </span>
-          {excedente > 0 && (
-            <span className="font-semibold text-tertiary">
-              + {formatSoles(excedente)} adicional
+        subtitle={
+          conCredito
+            ? `Elige packs de la carta. Crédito incluido: ${formatSoles(credito)} (precio por pack completo).`
+            : 'Piqueos a precio de carta. El crédito de S/ 200 aplica solo en paquete Premium (configurable en el panel).'
+        }
+      />    
+      {conCredito && (
+        <div className="mb-6 rounded-2xl border border-primary/20 bg-primary-fixed/15 px-4 py-3">
+          <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
+            <span>
+              Crédito usado: <strong>{formatSoles(creditoUsado)}</strong> / {formatSoles(credito)}
             </span>
-          )}
+            {excedente > 0 && (
+              <span className="font-semibold text-tertiary">
+                + {formatSoles(excedente)} adicional
+              </span>
+            )}
+          </div>
+          <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-variant">
+            <div
+              className="h-full rounded-full bg-primary transition-all"
+              style={{ width: `${Math.min(100, (creditoUsado / credito) * 100)}%` }}
+            />
+          </div>
         </div>
-        <div className="mt-2 h-2 overflow-hidden rounded-full bg-surface-variant">
-          <div
-            className="h-full rounded-full bg-primary transition-all"
-            style={{ width: `${Math.min(100, (creditoUsado / credito) * 100)}%` }}
-          />
-        </div>
-      </div>
+      )}
       <div className={GRID_CATALOG}>
         {piqueos.map((p) => {
           const selected = selection.piqueoIds.includes(p.id);

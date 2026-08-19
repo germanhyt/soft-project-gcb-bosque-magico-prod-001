@@ -115,18 +115,16 @@ describe('CalculoPreciosService', () => {
   });
 
   describe('obtenerReglasCapacidad', () => {
-    it('lee reglas de show y extras desde configuración pública', async () => {
+    it('lee reglas de show desde configuración pública', async () => {
       configuracion.listarPublicas = jest.fn().mockResolvedValue([
         { clave: 'shows.ninos_incluidos', valor: 20 },
         { clave: 'shows.precio_nino_extra', valor: 15 },
-        { clave: 'extras.precio_nino_extra', valor: 10 },
       ]);
 
       const reglas = await service.obtenerReglasCapacidad();
       expect(reglas).toEqual({
         ninosIncluidosShow: 20,
         precioNinoExtraShow: 15,
-        precioNinoExtraServicio: 10,
       });
     });
   });
@@ -138,6 +136,7 @@ describe('CalculoPreciosService', () => {
         { clave: 'paquetes.cajitas_precio_excedente', valor: 25.5 },
         { clave: 'paquetes.snack_premium_unidades_incluidas', valor: 30 },
         { clave: 'paquetes.snack_premium_precio_excedente', valor: 12 },
+        { clave: 'paquetes.piqueos_credito_premium', valor: 180 },
       ]);
 
       const reglas = await service.obtenerReglasPaquete();
@@ -146,6 +145,7 @@ describe('CalculoPreciosService', () => {
         cajitasPrecioExcedente: 25.5,
         snackPremiumUnidadesIncluidas: 30,
         snackPremiumPrecioExcedente: 12,
+        piqueosCreditoPremium: 180,
       });
     });
   });

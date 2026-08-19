@@ -9,7 +9,6 @@ export const CLAVES_NUMERICAS_EDITABLES = new Set([
   'ninos.maximo_permitido',
   'shows.ninos_incluidos',
   'shows.precio_nino_extra',
-  'extras.precio_nino_extra',
   'extras.salita_lounge',
   'extras.ingreso_show_externo',
   'extras.ingreso_decoracion_externo',
@@ -28,4 +27,7 @@ export const CLAVES_NUMERICAS_EDITABLES = new Set([
 ]);
 
 /** Claves obsoletas que ya no se usan en cálculo ni panel; se eliminan en seed. */
-export const CLAVES_CONFIG_DEPRECADAS = ['tarifas.precio_nino_extra'] as const;
+export const CLAVES_CONFIG_DEPRECADAS = [
+  'tarifas.precio_nino_extra',
+  'extras.precio_nino_extra',
+] as const;

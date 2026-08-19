@@ -299,4 +299,21 @@ describe('resolverComposicionPaquete', () => {
     expect(r.resumen.snackUnidadesExcedente).toBe(2);
     expect(r.resumen.snackMontoExcedente).toBe(24);
   });
+
+  it('prioriza configuración pública para crédito de piqueos sobre montoCredito de regla', () => {
+    const r = resolverComposicionPaquete({
+      paquete: paquetePremium,
+      reglas: reglasPremium,
+      productos,
+      seleccion: {
+        piqueos: [{ productoId: 'piq1', cantidad: 3 }],
+      },
+      esFinSemana: false,
+      piqueosCreditoPremium: 100,
+    });
+
+    expect(r.resumen.piqueosCreditoIncluido).toBe(100);
+    expect(r.resumen.piqueosValorSeleccionado).toBe(150);
+    expect(r.resumen.piqueosExcedente).toBe(50);
+  });
 });

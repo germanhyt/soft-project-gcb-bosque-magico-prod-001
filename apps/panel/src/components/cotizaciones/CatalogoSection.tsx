@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react';
 import type { Producto } from '../../lib/cotizaciones';
 import { cantidadItemProducto } from '../../lib/producto-cotizacion';
 import { descripcionPrecioProducto } from '../../lib/origen-item';
@@ -10,6 +11,8 @@ type Props = {
   cantidades: Record<string, number>;
   onToggle: (id: string) => void;
   onCantidad: (id: string, cantidad: number) => void;
+  onEditar?: (producto: Producto) => void;
+  headerExtra?: ReactNode;
 };
 
 function esPiqueo(p: Producto) {
@@ -27,12 +30,19 @@ export function CatalogoSection({
   cantidades,
   onToggle,
   onCantidad,
+  onEditar,
+  headerExtra,
 }: Props) {
-  if (!productos.length) return null;
+  if (!productos.length && !headerExtra) return null;
 
   return (
     <div className="mt-4">
-      {titulo ? <p className="text-label-caps text-outline">{titulo}</p> : null}
+      {(titulo || headerExtra) ? (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {titulo ? <p className="text-label-caps text-outline">{titulo}</p> : <span />}
+          {headerExtra}
+        </div>
+      ) : null}
       <div className="mt-2 grid gap-2 sm:grid-cols-2">
         {productos.map((p) => {
           const selected = selectedIds.includes(p.id);
@@ -72,6 +82,7 @@ export function CatalogoSection({
                   <span className="font-medium">{p.nombre}</span>
                   <span className="block text-xs text-on-surface-variant">
                     L-V S/ {p.precioLunesViernes} · FDS S/ {p.precioFinSemana}
+                    {p.categoria === 'extra' ? ' · por 1 h' : ''}
                     {esPiqueo(p)
                       ? ` · pack ${udsPack} uds (${descripcionPrecioProducto(p)})`
                       : p.cantidadMinima > 1
@@ -79,6 +90,18 @@ export function CatalogoSection({
                         : ''}
                   </span>
                 </span>
+                {onEditar && (
+                  <button
+                    type="button"
+                    className="shrink-0 text-xs font-semibold text-secondary hover:text-primary"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEditar(p);
+                    }}
+                  >
+                    Editar
+                  </button>
+                )}
               </div>
               {selected && permiteCantidad && (
                 <div

@@ -11,8 +11,8 @@ const PERMISOS_ADMIN = [
   'bosque_magico:admin',
 ];
 
-/** Claves de config obsoletas (reemplazadas por shows.* / extras.*). */
-const CLAVES_CONFIG_DEPRECADAS = ['tarifas.precio_nino_extra'];
+/** Claves de config obsoletas (reemplazadas por shows.* / extras institucionales). */
+const CLAVES_CONFIG_DEPRECADAS = ['tarifas.precio_nino_extra', 'extras.precio_nino_extra'];
 
 const configuraciones = [
   {
@@ -55,12 +55,6 @@ const configuraciones = [
     clave: 'shows.precio_nino_extra',
     valor: 15,
     descripcion: 'Precio por niño adicional en show fuera del rango incluido (S/)',
-    esPublico: true,
-  },
-  {
-    clave: 'extras.precio_nino_extra',
-    valor: 10,
-    descripcion: 'Precio por niño adicional en servicios extra (Pintacaritas, Uñitas, Hora loca, S/)',
     esPublico: true,
   },
   {
@@ -382,11 +376,11 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'SHOW-COMPETI', nombre: 'Show Competijuegos', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-GLOBO', nombre: 'Show Globoflexia', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-CINE', nombre: 'Cine al aire libre', categoria: 'show', lv: 520, fds: 690 },
-  { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 190, fds: 250 },
-  { codigo: 'EXT-UNITAS', nombre: 'Uñitas (sticker en uñas)', categoria: 'extra', lv: 190, fds: 250 },
-  { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250 },
-  { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120 },
-  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150 },
+  { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
+  { codigo: 'EXT-UNITAS', nombre: 'Uñitas (sticker en uñas)', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
+  { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
+  { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120, unidad: 'hora' },
+  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150, unidad: 'hora' },
   { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   ...CATERING_GENERAL.map((c) => ({

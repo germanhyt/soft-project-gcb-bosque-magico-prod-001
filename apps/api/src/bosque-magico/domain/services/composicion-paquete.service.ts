@@ -126,6 +126,7 @@ export class ComposicionPaqueteService {
       snackPremiumUnidadesIncluidas:
         configPaquete.snackPremiumUnidadesIncluidas,
       snackPremiumPrecioExcedente: configPaquete.snackPremiumPrecioExcedente,
+      piqueosCreditoPremium: configPaquete.piqueosCreditoPremium,
     });
 
     const cargosCapacidad = calcularCargosCapacidad({
@@ -133,9 +134,7 @@ export class ComposicionPaqueteService {
       maximoPermitido: tarifas.maximoPermitido,
       ninosIncluidosShow: reglasCapacidad.ninosIncluidosShow,
       precioNinoExtraShow: reglasCapacidad.precioNinoExtraShow,
-      precioNinoExtraServicio: reglasCapacidad.precioNinoExtraServicio,
       seleccion: params.seleccion,
-      productos,
     });
 
     composicion.items.push(...cargosCapacidad.items);

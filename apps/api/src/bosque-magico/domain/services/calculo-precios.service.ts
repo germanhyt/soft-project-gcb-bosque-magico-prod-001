@@ -15,7 +15,6 @@ export type TarifasNegocio = {
 export type ReglasCapacidadNegocio = {
   ninosIncluidosShow: number;
   precioNinoExtraShow: number;
-  precioNinoExtraServicio: number;
 };
 
 export type TarifasHoraExtraEspacio = {
@@ -74,7 +73,6 @@ export class CalculoPreciosService {
     return {
       ninosIncluidosShow,
       precioNinoExtraShow: num('shows.precio_nino_extra', 15),
-      precioNinoExtraServicio: num('extras.precio_nino_extra', 10),
     };
   }
 
@@ -97,6 +95,7 @@ export class CalculoPreciosService {
     cajitasPrecioExcedente: number;
     snackPremiumUnidadesIncluidas: number;
     snackPremiumPrecioExcedente: number;
+    piqueosCreditoPremium: number;
   }> {
     const items = await this.configuracion.listarPublicas();
     const map = new Map(items.map((i) => [i.clave, i.valor]));
@@ -115,6 +114,7 @@ export class CalculoPreciosService {
         'paquetes.snack_premium_precio_excedente',
         10,
       ),
+      piqueosCreditoPremium: num('paquetes.piqueos_credito_premium', 200),
     };
   }
 

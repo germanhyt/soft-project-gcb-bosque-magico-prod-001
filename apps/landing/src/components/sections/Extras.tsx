@@ -26,7 +26,7 @@ export function Extras({ selectionMode, selectedExtraIds, onToggleExtra }: Props
       <SectionTitle
         pill="Extras"
         title="Complementa la experiencia"
-        subtitle="Elige servicios adicionales para personalizar la fiesta."
+        subtitle="El primer extra va incluido en todos los paquetes. El precio de catálogo es por 1 hora."
       />
       <SelectionHint>{selectionHint(selectionMode)}</SelectionHint>
       <div className={`${GRID_CATALOG} lg:grid-cols-3`}>

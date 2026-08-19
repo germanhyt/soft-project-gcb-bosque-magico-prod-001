@@ -8,7 +8,7 @@ import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { SolicitudPreferenciasLanding } from '../solicitudes/SolicitudPreferenciasLanding';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
-import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { INPUT_CLASS, INPUT_ERROR_CLASS, LABEL_CLASS } from '../../constants/design';
 import { TURNOS } from '../../constants/solicitudes';
 import { apiErrorMessage } from '../../lib/api-error';
 import { generarCotizacionBorradorSolicitud, fetchSolicitud } from '../../lib/api';
@@ -49,23 +49,46 @@ type Props = {
 };
 
 const schemaCrear = Yup.object({
-  nombreCompleto: Yup.string().trim().min(2).required('Requerido'),
-  celular: Yup.string().trim().min(9).required('Requerido'),
-  cumpleaneroNombre: Yup.string().trim().min(1).required('Requerido'),
-  fechaEvento: Yup.string().required('Requerido'),
-  turno: Yup.string().required('Requerido'),
-  cantidadNinos: Yup.number().min(1).required('Requerido'),
-  horasAdicionales: Yup.number().min(0).max(8),
-  paquete: Yup.string().trim().required('Indica el paquete'),
+  nombreCompleto: Yup.string()
+    .trim()
+    .min(2, 'Mínimo 2 caracteres')
+    .required('Indica el nombre del apoderado'),
+  celular: Yup.string()
+    .trim()
+    .min(9, 'Mínimo 9 dígitos')
+    .required('Indica el celular'),
+  cumpleaneroNombre: Yup.string()
+    .trim()
+    .min(1, 'Indica el nombre del cumpleañero')
+    .required('Indica el nombre del cumpleañero'),
+  fechaEvento: Yup.string().required('Indica la fecha del evento'),
+  turno: Yup.string().required('Indica el turno'),
+  cantidadNinos: Yup.number()
+    .min(1, 'Debe haber al menos 1 niño')
+    .required('Indica la cantidad de niños'),
+  horasAdicionales: Yup.number().min(0, 'No puede ser negativo').max(8, 'Máximo 8 horas'),
+  paquete: Yup.string().trim().required('Selecciona el paquete'),
 });
 
 const schemaEditar = Yup.object({
-  fechaEvento: Yup.string().required('Requerido'),
-  turno: Yup.string().required('Requerido'),
-  cantidadNinos: Yup.number().min(1).required('Requerido'),
-  horasAdicionales: Yup.number().min(0).max(8),
-  paquete: Yup.string().trim().required('Indica el paquete'),
+  fechaEvento: Yup.string().required('Indica la fecha del evento'),
+  turno: Yup.string().required('Indica el turno'),
+  cantidadNinos: Yup.number()
+    .min(1, 'Debe haber al menos 1 niño')
+    .required('Indica la cantidad de niños'),
+  horasAdicionales: Yup.number().min(0, 'No puede ser negativo').max(8, 'Máximo 8 horas'),
+  paquete: Yup.string().trim().required('Selecciona el paquete'),
 });
+
+const FIELD_LABELS: Record<string, string> = {
+  nombreCompleto: 'Nombre apoderado',
+  celular: 'Celular',
+  cumpleaneroNombre: 'Nombre cumpleañero',
+  fechaEvento: 'Fecha del evento',
+  turno: 'Turno',
+  cantidadNinos: 'Cantidad de niños',
+  paquete: 'Paquete',
+};
 
 function extraerHorasAdicionales(items?: Array<{ nombre: string; cantidad: number }>) {
   return (items ?? [])
@@ -73,6 +96,61 @@ function extraerHorasAdicionales(items?: Array<{ nombre: string; cantidad: numbe
       item.nombre.trim().toLowerCase() === NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO.toLowerCase(),
     )
     .reduce((sum, item) => sum + item.cantidad, 0);
+}
+
+type FormikLite = {
+  submitCount: number;
+  touched: Record<string, unknown>;
+  errors: Record<string, unknown>;
+};
+
+function erroresVisibles(formik: FormikLite) {
+  if (formik.submitCount === 0) return [];
+  return Object.entries(formik.errors)
+    .filter(([, msg]) => typeof msg === 'string')
+    .map(([key, msg]) => ({
+      key,
+      label: FIELD_LABELS[key] ?? key,
+      msg: String(msg),
+    }));
+}
+
+function inputConError(formik: FormikLite, name: string) {
+  const show = Boolean((formik.touched[name] || formik.submitCount > 0) && formik.errors[name]);
+  return `${INPUT_CLASS} ${show ? INPUT_ERROR_CLASS : ''}`;
+}
+
+function FieldHint({ formik, name }: { formik: FormikLite; name: string }) {
+  const show =
+    Boolean(formik.touched[name] || formik.submitCount > 0) &&
+    typeof formik.errors[name] === 'string';
+  if (!show) return null;
+  return <p className="mt-1 text-xs font-medium text-error">{String(formik.errors[name])}</p>;
+}
+
+function ValidationBanner({
+  items,
+  apiError,
+}: {
+  items: Array<{ key: string; label: string; msg: string }>;
+  apiError?: string;
+}) {
+  if (!items.length && !apiError) return null;
+  return (
+    <div className="rounded-lg border border-error-container bg-error-container/30 px-3 py-2 text-body-sm text-error">
+      <p className="font-semibold">No se puede generar la cotización</p>
+      {apiError ? <p className="mt-1">{apiError}</p> : null}
+      {items.length > 0 && (
+        <ul className="mt-1 list-disc pl-5">
+          {items.map((e) => (
+            <li key={e.key}>
+              {e.label}: {e.msg}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
 }
 
 export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
@@ -86,6 +164,11 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
   });
 
   const [resolvedTarget, setResolvedTarget] = useState<CotizacionFormTarget | null>(null);
+  const [formError, setFormError] = useState('');
+
+  useEffect(() => {
+    if (open) setFormError('');
+  }, [open]);
 
   useEffect(() => {
     if (!open || !target) {
@@ -237,6 +320,9 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
     },
   });
 
+  const formikLite = formik as unknown as FormikLite;
+  const validacionItems = erroresVisibles(formikLite);
+
   const invalidar = async () => {
     await qc.invalidateQueries({ queryKey: ['cotizaciones'] });
     await qc.invalidateQueries({ queryKey: ['solicitudes'] });
@@ -256,10 +342,12 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
       onClose();
     },
     onError: async (err: unknown) => {
+      const msg = apiErrorMessage(err, 'No se pudo actualizar la cotización');
+      setFormError(msg);
       await Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: apiErrorMessage(err, 'No se pudo actualizar la cotización'),
+        title: 'No se pudo guardar',
+        text: msg,
       });
     },
   });
@@ -275,10 +363,12 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
       onClose();
     },
     onError: async (err: unknown) => {
+      const msg = apiErrorMessage(err, 'No se pudo crear la cotización');
+      setFormError(msg);
       await Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: apiErrorMessage(err, 'No se pudo crear la cotización'),
+        title: 'No se pudo generar',
+        text: msg,
       });
     },
   });
@@ -298,10 +388,12 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
       onClose();
     },
     onError: async (err: unknown) => {
+      const msg = apiErrorMessage(err, 'No se pudo generar el borrador');
+      setFormError(msg);
       await Swal.fire({
         icon: 'error',
-        title: 'Error',
-        text: apiErrorMessage(err, 'No se pudo generar el borrador'),
+        title: 'No se pudo generar',
+        text: msg,
       });
     },
   });
@@ -384,6 +476,9 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           >
             {generarBorradorMut.isPending ? 'Generando…' : 'Generar borrador automático'}
           </Button>
+          {formError && (
+            <p className="mt-3 text-body-sm font-medium text-error">{formError}</p>
+          )}
         </div>
       )}
 
@@ -399,6 +494,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
 
       {mostrarFormulario && (
         <form onSubmit={formik.handleSubmit} className="space-y-5">
+          <ValidationBanner items={validacionItems} apiError={formError} />
           {!activeEsEdicion && (
             <fieldset className="rounded-xl border border-surface-variant bg-surface-container-low/50 p-4">
               <legend className="text-body-md font-semibold text-primary">Cliente y cumpleañero</legend>
@@ -407,21 +503,25 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <span className={LABEL_CLASS}>Nombre apoderado *</span>
                   <input
                     name="nombreCompleto"
-                    className={INPUT_CLASS}
+                    className={inputConError(formikLite, 'nombreCompleto')}
                     placeholder="Ej. María López"
                     value={(formik.values as { nombreCompleto: string }).nombreCompleto}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  <FieldHint formik={formikLite} name="nombreCompleto" />
                 </label>
                 <label className="block">
                   <span className={LABEL_CLASS}>Celular *</span>
                   <input
                     name="celular"
-                    className={INPUT_CLASS}
+                    className={inputConError(formikLite, 'celular')}
                     placeholder="Ej. 999888777"
                     value={(formik.values as { celular: string }).celular}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  <FieldHint formik={formikLite} name="celular" />
                 </label>
                 <label className="block">
                   <span className={LABEL_CLASS}>Correo</span>
@@ -438,11 +538,13 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   <span className={LABEL_CLASS}>Nombre cumpleañero *</span>
                   <input
                     name="cumpleaneroNombre"
-                    className={INPUT_CLASS}
+                    className={inputConError(formikLite, 'cumpleaneroNombre')}
                     placeholder="Ej. Valentina"
                     value={(formik.values as { cumpleaneroNombre: string }).cumpleaneroNombre}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  <FieldHint formik={formikLite} name="cumpleaneroNombre" />
                 </label>
                 <label className="block">
                   <span className={LABEL_CLASS}>Edad</span>
@@ -469,20 +571,29 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 <input
                   name="fechaEvento"
                   type="date"
-                  className={INPUT_CLASS}
+                  className={inputConError(formikLite, 'fechaEvento')}
                   value={formik.values.fechaEvento}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                <FieldHint formik={formikLite} name="fechaEvento" />
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>Turno *</span>
-                <select name="turno" className={INPUT_CLASS} value={formik.values.turno} onChange={formik.handleChange}>
+                <select
+                  name="turno"
+                  className={inputConError(formikLite, 'turno')}
+                  value={formik.values.turno}
+                  onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
+                >
                   {TURNOS.map((t) => (
                     <option key={t.value} value={t.value}>
                       {t.label}
                     </option>
                   ))}
                 </select>
+                <FieldHint formik={formikLite} name="turno" />
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>Cantidad de niños *</span>
@@ -490,11 +601,13 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   name="cantidadNinos"
                   type="number"
                   min={1}
-                  className={INPUT_CLASS}
+                  className={inputConError(formikLite, 'cantidadNinos')}
                   placeholder="Ej. 25"
                   value={formik.values.cantidadNinos}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                <FieldHint formik={formikLite} name="cantidadNinos" />
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>Horas adicionales de espacio</span>
@@ -503,18 +616,20 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   type="number"
                   min={0}
                   max={8}
-                  className={INPUT_CLASS}
+                  className={inputConError(formikLite, 'horasAdicionales')}
                   placeholder="Ej. 1"
                   value={(formik.values as { horasAdicionales?: number }).horasAdicionales ?? 0}
                   onChange={formik.handleChange}
+                  onBlur={formik.handleBlur}
                 />
+                <FieldHint formik={formikLite} name="horasAdicionales" />
               </label>
               <label className="block">
                 <span className={LABEL_CLASS}>Paquete *</span>
                 {catalogo.paquetes.length > 0 ? (
                   <select
                     name="paquete"
-                    className={INPUT_CLASS}
+                    className={inputConError(formikLite, 'paquete')}
                     value={formik.values.paquete}
                     onChange={(e) => {
                       formik.handleChange(e);
@@ -524,6 +639,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                         extraIds: seleccion.extraIds,
                       });
                     }}
+                    onBlur={formik.handleBlur}
                   >
                     <option value="">Seleccionar…</option>
                     {catalogo.paquetes.map((p) => (
@@ -535,12 +651,14 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 ) : (
                   <input
                     name="paquete"
-                    className={INPUT_CLASS}
+                    className={inputConError(formikLite, 'paquete')}
                     placeholder="Ej. Estándar"
                     value={formik.values.paquete}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
                 )}
+                <FieldHint formik={formikLite} name="paquete" />
               </label>
               <label className="block sm:col-span-2">
                 <span className={LABEL_CLASS}>Temática</span>
@@ -597,6 +715,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 </p>
               </>
             )}
+            <ValidationBanner items={validacionItems} apiError={formError} />
             <div className="flex flex-wrap justify-end gap-2">
               <Button type="button" variant="ghost" onClick={onClose}>
                 Cancelar

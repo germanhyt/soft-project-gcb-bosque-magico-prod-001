@@ -28,6 +28,11 @@ type Props = {
   onClose: () => void;
   onSubmit: (payload: ProductoFormPayload) => Promise<void>;
   producto?: Producto | null;
+  /** Valores iniciales al crear (p. ej. filtro Piqueos del catálogo). */
+  defaults?: { categoria?: string; subtipo?: string };
+  /** Bloquea el selector de categoría (alta rápida de show desde cotización). */
+  categoriaFija?: boolean;
+  nested?: boolean;
   puedeGestionarImagen?: boolean;
   onUploadImagen?: (file: File) => Promise<void>;
   onEliminarMedia?: (mediaId: string) => Promise<void>;
@@ -36,19 +41,25 @@ type Props = {
   onEliminarVideo?: () => Promise<void>;
 };
 
-const EMPTY = {
-  nombre: '',
-  categoria: 'show',
-  subtipo: 'general',
-  unidadesPack: '',
-  precioLunesViernes: '',
-  precioFinSemana: '',
-  cantidadMinima: '1',
-  descripcion: '',
-  origen: 'propio',
-  costoInterno: '',
-  proveedorId: '',
-};
+function emptyForm(defaults?: { categoria?: string; subtipo?: string }) {
+  const categoria = defaults?.categoria ?? 'show';
+  const subtipo = defaults?.subtipo ?? 'general';
+  return {
+    nombre: '',
+    categoria,
+    subtipo,
+    unidadesPack: categoria === 'catering' && subtipo === 'piqueo' ? '25' : '',
+    precioLunesViernes: '',
+    precioFinSemana: '',
+    cantidadMinima: categoria === 'catering' && subtipo === 'general' ? '18' : '1',
+    descripcion: '',
+    origen: 'propio',
+    costoInterno: '',
+    proveedorId: '',
+  };
+}
+
+const EMPTY = emptyForm();
 
 function formFromProducto(p: Producto) {
   return {
@@ -71,6 +82,9 @@ export function ProductoFormModal({
   onClose,
   onSubmit,
   producto,
+  defaults,
+  categoriaFija = false,
+  nested = false,
   puedeGestionarImagen = true,
   onUploadImagen,
   onEliminarMedia,
@@ -91,10 +105,10 @@ export function ProductoFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm(producto ? formFromProducto(producto) : EMPTY);
+    setForm(producto ? formFromProducto(producto) : emptyForm(defaults));
     setError('');
     setPending(false);
-  }, [open, producto]);
+  }, [open, producto, defaults?.categoria, defaults?.subtipo]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -172,8 +186,17 @@ export function ProductoFormModal({
     <Modal
       open={open}
       onClose={onClose}
-      title={esEdicion ? 'Editar producto' : 'Nuevo producto'}
+      title={
+        esEdicion
+          ? categoriaFija && form.categoria === 'show'
+            ? 'Editar show'
+            : 'Editar producto'
+          : categoriaFija && (defaults?.categoria ?? form.categoria) === 'show'
+            ? 'Nuevo show'
+            : 'Nuevo producto'
+      }
       size="lg"
+      nested={nested}
     >
       <form onSubmit={handleSubmit} className="grid gap-4 sm:grid-cols-2">
         {!esEdicion && (
@@ -205,6 +228,7 @@ export function ProductoFormModal({
           <select
             className={INPUT_CLASS}
             value={form.categoria}
+            disabled={categoriaFija}
             onChange={(e) => {
               const categoria = e.target.value;
               setForm({
@@ -245,7 +269,7 @@ export function ProductoFormModal({
               }}
             >
               <option value="general">General (catering adicional)</option>
-              <option value="piqueo">Piqueo Premium (precio por pack)</option>
+              <option value="piqueo">Piqueo (precio por pack)</option>
               <option value="cajita">Cajita Bosque</option>
               <option value="snack">Snack incluido Premium</option>
             </select>

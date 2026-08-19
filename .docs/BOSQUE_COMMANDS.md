@@ -444,9 +444,9 @@ te comparto data actualizada del proyecto, lo revisamos y verificamos si se est�
 
 - El espacio es **privado** en todos los paquetes por **3 horas**.
 - Todos los paquetes incluyen **10 Cajitas Bosque Mágico**.
-- Los shows cubren hasta **20 niños**; del niño **#21 al #35** se cobra **S/ 15 adicional por niño**.
+- Los shows cubren hasta **20 niños**; del niño **#21 al #30** se cobra **S/ 15 adicional por niño** (config `shows.*`).
 - El catering tiene un **mínimo de 18 unidades por evento**.
-- Los servicios del Grupo B (Pintacaritas, Uñitas, Hora loca) tienen un costo extra de **S/ 10 por niño adicional** al máximo incluido.
+- **Pintacaritas / extras:** el precio de catálogo es **por 1 h**. Ya no se agrega automático S/ 10 por niño extra en extras (Pintacaritas en la tabla comercial no tiene extra x niño). Show sí mantiene extra por niño.
 - El **Asistente de fiestas** tiene el mismo precio (S/ 150) tanto entre semana como en fin de semana.
 
 
@@ -504,7 +504,8 @@ hiciste pruebas con el flujo con operaciones cuando se realiza pedidos a proveed
 () En agenda ordenamos los labels de colores de los estados en orden (por confirmar, luego confirmado, luego realizado)
 
 () El label que aparece de verde en "Nueva cotización manual" lo ordenamos mejor (mejora UI)
-() Respecto a la lógica del crédito usado, sumamos los items hasta llegar al crédito tope, y recién apartir de ahí calcular el excedente (corregir)
+(x) Respecto a la lógica del crédito usado, sumamos los items hasta llegar al crédito tope, y recién apartir de ahí calcular el excedente (corregir)
+— Crédito acumulado pack a pack (excedente parcial). Config `paquetes.piqueos_credito_premium` ahora también alimenta el cálculo, no solo la UI.
 () Quitamoss el servicio extra "arco decorativo" inlcuso si está en el seeder
 () Para cajita de bosque mágico puede ser clásica o saludable, considerarlo
 () Para cuando se notifica al proveedor por algún medio, considera los datos: edad del cumpleañero, cantidad de niños, temática
@@ -537,8 +538,51 @@ hiciste pruebas con el flujo con operaciones cuando se realiza pedidos a proveed
 - (x) UI label solicitudes: sin chip superior «Sin tomar»; en tabla badge Nueva + hint discreto `+1h`/`+24h` (solo si aplica).
 
 
-()
-- Desplegamos un versión limpia de tablas transaccionales como el de solicitudes/cotixaciones/operaciones/contratos/agente/clientes, y solo quedarnos con las tablas maestras
-Nuevos sub-dominios:
-bosquemagico.gcbprojects.site (landing)
-admin.bosquemagico.gcbprojects.site (pamel)
+(x) Commit/push `747c5b9`+`85db2d3` → sandbox OK → prod limpio (solo maestras) + TDD hoy.
+- Landing: https://bosquemagico.gcbprojects.site
+- Panel: https://admin.bosquemagico.gcbprojects.site — `admin@bosquemagico.test` / `BosqueDev123!`
+- QA prod: cambios recientes 10/10 + smoke 22/22
+
+==================================================
+
+
+19/08/26
+
+usando ngram,
+
+(x)
+El logo más grande en los documentos pdf de cotización y contrato
+— Header 128px (cotización) / 112px (contrato) en packages/shared print HTML.
+
+(x)
+revisamos en base a "COT-00039" si al haber excedente no se esté agregando un producto al azar
+— COT-00039 (Básico, 15 niños, Pintacaritas incluido): no había producto inventado.
+  El ítem “fantasma” era “Niños adicionales — extra” al superar el tope por niño. Eliminado (extras se cobran por 1 h).
+  Piqueos: el resolver solo cobra packs seleccionados; no rellena crédito con otro producto.
+
+(x)
+al registrar piqueos no se registran correctamente en su módulo de catálogo de productos?
+— Filtro propio «Piqueos» (subtipo), alta desde ese chip abre el form en catering/piqueo, columna muestra Piqueos.
+  En cotización: búsqueda de toda la carta (ya no recorta a 24).
+
+(x)
+al generar la cotización que se observe las validaciones en rojo del porque no se genera
+— Banner + mensajes por campo en CotizacionFormModal (Yup + error de API).
+
+(x)
+para el caso de show personalizado desde la cotización manual poder tener acceso rápido para registrar un nuevo o editar, en un modal
+— «Nuevo show» + Editar en composición; ProductoFormModal anidado (categoría fija show).
+
+(x)
+los piqueos se está aplicando para todos los planes? (es configurable?)
+— Crédito S/200 solo Premium (`paquetes.piqueos_credito_premium`). Básico/Estándar pueden pedir piqueos a precio de carta (sin crédito).
+
+(x)
+en servicios extra, quitamos el costo por niño extra, sino considerar que este tiene costo es por 1h
+— Deprecado `extras.precio_nino_extra`. Show sigue cobrando niño extra. UI: «precio por 1 h».
+
+(x)
+se está aplicando bien las reglas de los items incluidos o no incluidos por plan?
+— Sí: Básico = 1 extra + 10 cajitas (sin show); Estándar = 1 show + 1 extra + cajitas; Premium = asistente + 1 show + 1 extra + snack + crédito piqueos + cajitas. Slots extra/show adicionales a precio de catálogo.
+
+

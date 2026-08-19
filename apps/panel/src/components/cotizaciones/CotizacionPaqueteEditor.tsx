@@ -1,13 +1,16 @@
-import { useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { CatalogoSection } from './CatalogoSection';
+import { ProductoFormModal, type ProductoFormPayload } from '../catalogo/ProductoFormModal';
+import { Button } from '../ui/Button';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
-import { previewCotizacion } from '../../lib/cotizaciones';
-import { fetchConfiguracionPanel } from '../../lib/configuracion';
+import { previewCotizacion, type Producto } from '../../lib/cotizaciones';
+import { crearProducto, actualizarProducto, fetchConfiguracionPanel } from '../../lib/configuracion';
 import { cantidadItemProducto } from '../../lib/producto-cotizacion';
 import { etiquetaOrigenItem } from '../../lib/origen-item';
 import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
 import { calcularResumenPiqueosCredito } from '../../lib/piqueos-credito';
+import { apiErrorMessage } from '../../lib/api-error';
 import {
   esPaquetePremium,
   seleccionToPayload,
@@ -42,7 +45,12 @@ export function CotizacionPaqueteEditor({
   onChange,
   catalogo,
 }: Props) {
+  const qc = useQueryClient();
   const esPremium = esPaquetePremium(paquete);
+  const [piqueosBusqueda, setPiqueosBusqueda] = useState('');
+  const [showForm, setShowForm] = useState<{ mode: 'create' } | { mode: 'edit'; producto: Producto } | null>(
+    null,
+  );
   const payload = useMemo(
     () => seleccionToPayload(seleccion, catalogo.catering),
     [seleccion, catalogo.catering],
@@ -82,8 +90,10 @@ export function CotizacionPaqueteEditor({
 
   const esFinSemana = preview.data?.esFinSemana ?? false;
 
+  const creditoPiqueos = esPremium ? paquetesConfig.piqueosCreditoPremium : 0;
+
   const resumenPiqueosLocal = useMemo(() => {
-    if (!esPremium) return null;
+    if (seleccion.piqueoIds.length === 0) return null;
     const entradas = seleccion.piqueoIds.map((id) => {
       const p = catalogo.piqueos.find((x) => x.id === id);
       if (!p) return null;
@@ -93,14 +103,13 @@ export function CotizacionPaqueteEditor({
         cantidadPacks: Math.max(seleccion.piqueosCantidades[id] ?? 1, 1),
       };
     }).filter(Boolean) as Array<{ precioPack: number; cantidadPacks: number }>;
-    return calcularResumenPiqueosCredito(entradas, paquetesConfig.piqueosCreditoPremium);
+    return calcularResumenPiqueosCredito(entradas, creditoPiqueos);
   }, [
-    esPremium,
     seleccion.piqueoIds,
     seleccion.piqueosCantidades,
     catalogo.piqueos,
     esFinSemana,
-    paquetesConfig.piqueosCreditoPremium,
+    creditoPiqueos,
   ]);
 
   const creditoUsadoPiqueos =
@@ -121,6 +130,32 @@ export function CotizacionPaqueteEditor({
 
   const patch = (partial: Partial<SeleccionPaqueteState>) =>
     onChange({ ...seleccion, ...partial });
+
+  const guardarShowMut = useMutation({
+    mutationFn: async (payload: ProductoFormPayload) => {
+      if (showForm?.mode === 'edit') {
+        return actualizarProducto(showForm.producto.id, payload);
+      }
+      return crearProducto({ ...payload, categoria: 'show' });
+    },
+    onSuccess: async (saved) => {
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      if (showForm?.mode === 'create' && !seleccion.showIds.includes(saved.id)) {
+        patch({ showIds: [...seleccion.showIds, saved.id] });
+      }
+      setShowForm(null);
+    },
+  });
+
+  const piqueosFiltrados = useMemo(() => {
+    const q = piqueosBusqueda.trim().toLowerCase();
+    if (!q) return catalogo.piqueos;
+    return catalogo.piqueos.filter(
+      (p) =>
+        p.nombre.toLowerCase().includes(q) ||
+        p.codigo.toLowerCase().includes(q),
+    );
+  }, [catalogo.piqueos, piqueosBusqueda]);
 
   const toggleShow = (id: string) => {
     const activo = seleccion.showIds.includes(id);
@@ -276,23 +311,38 @@ export function CotizacionPaqueteEditor({
         </div>
       )}
 
-      {esPremium && catalogo.piqueos.length > 0 && (
+      {catalogo.piqueos.length > 0 && (
         <div>
           <div className="mb-2 flex flex-wrap items-center justify-between gap-2">
             <p className={LABEL_CLASS}>
-              Piqueos Premium (crédito {formatSoles(paquetesConfig.piqueosCreditoPremium)})
+              {esPremium
+                ? `Piqueos (crédito ${formatSoles(paquetesConfig.piqueosCreditoPremium)} en Premium)`
+                : 'Piqueos adicionales (precio de carta; crédito solo en Premium)'}
             </p>
             {resumenPiqueosLocal != null && (
               <span className="text-xs text-on-surface-variant">
-                Crédito usado: {formatSoles(creditoUsadoPiqueos)} /{' '}
-                {formatSoles(paquetesConfig.piqueosCreditoPremium)}
-                {excedentePiqueos > 0 && <> · excedente {formatSoles(excedentePiqueos)}</>}
+                {esPremium ? (
+                  <>
+                    Crédito usado: {formatSoles(creditoUsadoPiqueos)} /{' '}
+                    {formatSoles(paquetesConfig.piqueosCreditoPremium)}
+                    {excedentePiqueos > 0 && <> · excedente {formatSoles(excedentePiqueos)}</>}
+                  </>
+                ) : (
+                  <>Total piqueos: {formatSoles(resumenPiqueosLocal.valorSeleccionado)}</>
+                )}
               </span>
             )}
           </div>
+          <input
+            type="search"
+            className={`${INPUT_CLASS} mb-2`}
+            placeholder="Buscar piqueo por nombre o código…"
+            value={piqueosBusqueda}
+            onChange={(e) => setPiqueosBusqueda(e.target.value)}
+          />
           <CatalogoSection
             titulo=""
-            productos={catalogo.piqueos.slice(0, 24)}
+            productos={piqueosFiltrados}
             selectedIds={seleccion.piqueoIds}
             cantidades={seleccion.piqueosCantidades}
             onToggle={togglePiqueo}
@@ -302,10 +352,8 @@ export function CotizacionPaqueteEditor({
               })
             }
           />
-          {catalogo.piqueos.length > 24 && (
-            <p className="mt-1 text-xs text-outline">
-              Mostrando 24 de {catalogo.piqueos.length} piqueos. Usa catálogo para el resto.
-            </p>
+          {piqueosFiltrados.length === 0 && (
+            <p className="mt-1 text-xs text-outline">Ningún piqueo coincide con la búsqueda.</p>
           )}
         </div>
       )}
@@ -317,10 +365,16 @@ export function CotizacionPaqueteEditor({
         cantidades={{}}
         onToggle={toggleShow}
         onCantidad={() => {}}
+        onEditar={(p) => setShowForm({ mode: 'edit', producto: p })}
+        headerExtra={
+          <Button type="button" variant="ghost" onClick={() => setShowForm({ mode: 'create' })}>
+            Nuevo show
+          </Button>
+        }
       />
 
       <CatalogoSection
-        titulo="Servicios extra (1.º incluido en todos los paquetes)"
+        titulo="Servicios extra (1.º incluido en todos los paquetes · precio por 1 h)"
         productos={catalogo.extras}
         selectedIds={seleccion.extraIds}
         cantidades={{}}
@@ -494,6 +548,22 @@ export function CotizacionPaqueteEditor({
           )}
         </div>
       )}
+      <ProductoFormModal
+        open={showForm != null}
+        nested
+        categoriaFija
+        defaults={{ categoria: 'show', subtipo: 'general' }}
+        producto={showForm?.mode === 'edit' ? showForm.producto : null}
+        onClose={() => setShowForm(null)}
+        onSubmit={async (payload) => {
+          try {
+            await guardarShowMut.mutateAsync(payload);
+          } catch (err) {
+            throw new Error(apiErrorMessage(err, 'No se pudo guardar el show'));
+          }
+        }}
+        puedeGestionarImagen={false}
+      />
     </div>
   );
 }

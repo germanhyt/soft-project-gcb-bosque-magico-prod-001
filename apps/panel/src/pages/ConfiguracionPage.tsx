@@ -48,7 +48,16 @@ import {
 } from '../constants/design';
 
 type Tab = 'tarifas' | 'catalogo' | 'proveedores';
-type CategoriaFiltro = 'todas' | 'paquete' | 'show' | 'catering' | 'extra' | 'espacio';
+type CategoriaFiltro =
+  | 'todas'
+  | 'paquete'
+  | 'show'
+  | 'catering'
+  | 'piqueo'
+  | 'cajita'
+  | 'snack'
+  | 'extra'
+  | 'espacio';
 type EstadoCatalogoFiltro = '' | 'activo' | 'inactivo';
 
 const LABELS: Record<string, string> = {
@@ -61,7 +70,6 @@ const LABELS: Record<string, string> = {
   'ninos.maximo_permitido': 'Máximo permitido',
   'shows.ninos_incluidos': 'Niños incluidos',
   'shows.precio_nino_extra': 'Precio por niño extra (S/)',
-  'extras.precio_nino_extra': 'Precio por niño excedente (S/)',
   'extras.salita_lounge': 'Salita lounge 8 pax (S/)',
   'extras.ingreso_show_externo': 'Ingreso show externo (S/)',
   'extras.ingreso_decoracion_externo': 'Ingreso decoración externo (S/)',
@@ -87,7 +95,6 @@ const AYUDA: Record<string, string> = {
   'ninos.maximo_permitido': 'Tope máximo de niños; cierra el rango extra del show.',
   'shows.ninos_incluidos': 'Primeros niños incluidos en el show sin cargo adicional.',
   'shows.precio_nino_extra': 'Cargo por cada niño dentro del rango extra configurado.',
-  'extras.precio_nino_extra': 'Aplica en Pintacaritas, Uñitas y Hora loca cuando se supera el límite del servicio.',
   'extras.salita_lounge': 'Mobiliario lounge para 8 personas por unidad.',
   'extras.ingreso_show_externo': 'Cargo por derecho de ingreso de show externo.',
   'extras.ingreso_decoracion_externo': 'Cargo por derecho de ingreso de decoración externo.',
@@ -150,18 +157,13 @@ const CONFIG_GRUPOS_NUMERICOS: ConfigGrupo[] = [
     },
   },
   {
-    titulo: 'Servicios extra — niños adicionales',
-    descripcion: 'Cargo por niño excedente en Pintacaritas, Uñitas y Hora loca.',
-    claves: ['extras.precio_nino_extra'],
-  },
-  {
     titulo: 'Contrato referencial',
     descripcion: 'Montos orientativos para adelanto y garantía.',
     claves: ['contrato.adelanto_referencial', 'contrato.garantia_referencial'],
   },
   {
     titulo: 'Paquetes',
-    descripcion: 'Cajitas, piqueos y snack Premium incluidos en composición de paquetes.',
+    descripcion: 'Cajitas en todos los paquetes; crédito de piqueos solo Premium (configurable). Snack solo Premium.',
     claves: [
       'paquetes.cajitas_incluidas',
       'paquetes.cajitas_precio_excedente',
@@ -293,9 +295,31 @@ const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
   paquete: 'Paquetes',
   show: 'Shows',
   catering: 'Catering',
+  piqueo: 'Piqueos',
+  cajita: 'Cajitas',
+  snack: 'Snacks',
   extra: 'Extras',
   espacio: 'Espacios',
 };
+
+function coincideCategoriaFiltro(p: { categoria: string; subtipo?: string | null }, filtro: CategoriaFiltro) {
+  if (filtro === 'todas') return true;
+  if (filtro === 'piqueo') return p.categoria === 'catering' && p.subtipo === 'piqueo';
+  if (filtro === 'cajita') return p.categoria === 'catering' && p.subtipo === 'cajita';
+  if (filtro === 'snack') return p.categoria === 'catering' && p.subtipo === 'snack';
+  if (filtro === 'catering') {
+    return p.categoria === 'catering' && (p.subtipo === 'general' || !p.subtipo);
+  }
+  return p.categoria === filtro;
+}
+
+function defaultsProductoDesdeFiltro(filtro: CategoriaFiltro): { categoria: string; subtipo: string } {
+  if (filtro === 'piqueo') return { categoria: 'catering', subtipo: 'piqueo' };
+  if (filtro === 'cajita') return { categoria: 'catering', subtipo: 'cajita' };
+  if (filtro === 'snack') return { categoria: 'catering', subtipo: 'snack' };
+  if (filtro === 'todas') return { categoria: 'show', subtipo: 'general' };
+  return { categoria: filtro, subtipo: 'general' };
+}
 
 const SUBTIPO_LABEL: Record<string, string> = {
   general: 'General',
@@ -455,9 +479,9 @@ export function ConfiguracionPage() {
     JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales) ||
     JSON.stringify(postventaActuales) !== JSON.stringify(postventaIniciales) ||
     JSON.stringify(pedidosProveedorActuales) !==
-      JSON.stringify(pedidosProveedorIniciales) ||
+    JSON.stringify(pedidosProveedorIniciales) ||
     JSON.stringify(recordatoriosActuales) !==
-      JSON.stringify(recordatoriosIniciales) ||
+    JSON.stringify(recordatoriosIniciales) ||
     JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales);
 
   const smtpOrdenados = useMemo(() => {
@@ -539,7 +563,7 @@ export function ConfiguracionPage() {
       rows = rows.filter((p) => p.etapa === 'inactivo');
     }
     if (categoriaFiltro !== 'todas') {
-      rows = rows.filter((p) => p.categoria === categoriaFiltro);
+      rows = rows.filter((p) => coincideCategoriaFiltro(p, categoriaFiltro));
     }
     const q = catalogoBusqueda.trim().toLowerCase();
     if (!q) return rows;
@@ -582,9 +606,9 @@ export function ConfiguracionPage() {
         ...Object.entries(valoresActuales)
           .filter(([clave]) => CLAVES_NUMERICAS_EDITABLES.has(clave))
           .map(([clave, v]) => ({
-          clave,
-          valor: Number(v),
-        })),
+            clave,
+            valor: Number(v),
+          })),
         ...Object.entries(turnosActuales).map(([clave, v]) => ({
           clave,
           valor: turnoParaGuardar(v),
@@ -740,27 +764,13 @@ export function ConfiguracionPage() {
       <PageHeader breadcrumbs={[CRUMB_INICIO, crumb('Configuración')]} />
 
       <div className="mt-6 flex gap-2 border-b border-surface-variant">
-        {puedeEditarTarifas && (
-          <button
-            type="button"
-            onClick={() => setTab('tarifas')}
-            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
-              tab === 'tarifas'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-outline hover:text-on-surface'
-            }`}
-          >
-            Tarifas y turnos
-          </button>
-        )}
         <button
           type="button"
           onClick={() => setTab('catalogo')}
-          className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
-            tab === 'catalogo'
+          className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${tab === 'catalogo'
               ? 'border-primary text-primary'
               : 'border-transparent text-outline hover:text-on-surface'
-          }`}
+            }`}
         >
           Catálogo
         </button>
@@ -768,13 +778,25 @@ export function ConfiguracionPage() {
           <button
             type="button"
             onClick={() => setTab('proveedores')}
-            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${
-              tab === 'proveedores'
+            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${tab === 'proveedores'
                 ? 'border-primary text-primary'
                 : 'border-transparent text-outline hover:text-on-surface'
-            }`}
+              }`}
           >
             Proveedores
+          </button>
+        )}
+
+        {puedeEditarTarifas && (
+          <button
+            type="button"
+            onClick={() => setTab('tarifas')}
+            className={`border-b-2 px-4 py-2 text-body-sm font-semibold transition ${tab === 'tarifas'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-outline hover:text-on-surface'
+              }`}
+          >
+            Tarifas y turnos
           </button>
         )}
       </div>
@@ -1260,17 +1282,16 @@ export function ConfiguracionPage() {
               const count =
                 categoria === 'todas'
                   ? productos.length
-                  : productos.filter((p) => p.categoria === categoria).length;
+                  : productos.filter((p) => coincideCategoriaFiltro(p, categoria)).length;
               return (
                 <button
                   key={categoria}
                   type="button"
                   onClick={() => setCategoriaFiltro(categoria)}
-                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${
-                    active
+                  className={`rounded-full border px-3 py-1 text-xs font-semibold transition ${active
                       ? 'border-primary bg-primary text-on-primary'
                       : 'border-surface-variant bg-surface text-on-surface-variant hover:border-outline'
-                  }`}
+                    }`}
                 >
                   {CATEGORIA_LABEL[categoria]} ({count})
                 </button>
@@ -1292,57 +1313,58 @@ export function ConfiguracionPage() {
               setProductoEditando(null);
             }}
             producto={productoEditando}
+            defaults={productoEditando ? undefined : defaultsProductoDesdeFiltro(categoriaFiltro)}
             puedeGestionarImagen={puedeGestionarCatalogo}
             onUploadImagen={
               productoEditando
                 ? async (file) => {
-                    const actualizado = await imagenMut.mutateAsync({
-                      id: productoEditando.id,
-                      file,
-                    });
-                    setProductoEditando(actualizado);
-                  }
+                  const actualizado = await imagenMut.mutateAsync({
+                    id: productoEditando.id,
+                    file,
+                  });
+                  setProductoEditando(actualizado);
+                }
                 : undefined
             }
             onEliminarMedia={
               productoEditando
                 ? async (mediaId) => {
-                    const actualizado = await eliminarMediaMut.mutateAsync({
-                      id: productoEditando.id,
-                      mediaId,
-                    });
-                    setProductoEditando(actualizado);
-                  }
+                  const actualizado = await eliminarMediaMut.mutateAsync({
+                    id: productoEditando.id,
+                    mediaId,
+                  });
+                  setProductoEditando(actualizado);
+                }
                 : undefined
             }
             onGuardarVideoUrl={
               productoEditando
                 ? async (url) => {
-                    const actualizado = await guardarVideoUrlMut.mutateAsync({
-                      id: productoEditando.id,
-                      url,
-                    });
-                    setProductoEditando(actualizado);
-                  }
+                  const actualizado = await guardarVideoUrlMut.mutateAsync({
+                    id: productoEditando.id,
+                    url,
+                  });
+                  setProductoEditando(actualizado);
+                }
                 : undefined
             }
             onSubirVideo={
               productoEditando
                 ? async (file) => {
-                    const actualizado = await subirVideoMut.mutateAsync({
-                      id: productoEditando.id,
-                      file,
-                    });
-                    setProductoEditando(actualizado);
-                  }
+                  const actualizado = await subirVideoMut.mutateAsync({
+                    id: productoEditando.id,
+                    file,
+                  });
+                  setProductoEditando(actualizado);
+                }
                 : undefined
             }
             onEliminarVideo={
               productoEditando
                 ? async () => {
-                    const actualizado = await eliminarVideoMut.mutateAsync(productoEditando.id);
-                    setProductoEditando(actualizado);
-                  }
+                  const actualizado = await eliminarVideoMut.mutateAsync(productoEditando.id);
+                  setProductoEditando(actualizado);
+                }
                 : undefined
             }
             onSubmit={async (payload) => {
@@ -1434,8 +1456,8 @@ export function ConfiguracionPage() {
                           onRemove={
                             p.imagenUrl && puedeGestionarCatalogo
                               ? async () => {
-                                  await quitarImagenMut.mutateAsync(p.id);
-                                }
+                                await quitarImagenMut.mutateAsync(p.id);
+                              }
                               : undefined
                           }
                         />
@@ -1444,7 +1466,9 @@ export function ConfiguracionPage() {
                         {ORIGEN_LABEL[p.origen ?? 'propio'] ?? p.origen ?? '—'}
                       </td>
                       <td className="px-4 py-3 capitalize">
-                        {CATEGORIA_LABEL[p.categoria as CategoriaFiltro] ?? p.categoria}
+                        {p.categoria === 'catering' && p.subtipo && p.subtipo !== 'general'
+                          ? CATEGORIA_LABEL[p.subtipo as CategoriaFiltro] ?? p.subtipo
+                          : CATEGORIA_LABEL[p.categoria as CategoriaFiltro] ?? p.categoria}
                       </td>
                       <td className="px-4 py-3 text-xs text-on-surface-variant">
                         {p.categoria === 'catering' && p.subtipo ? (
@@ -1463,11 +1487,10 @@ export function ConfiguracionPage() {
                       </td>
                       <td className="px-4 py-3">
                         <span
-                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${
-                            p.etapa === 'activo'
+                          className={`rounded-full px-2 py-0.5 text-xs font-semibold ${p.etapa === 'activo'
                               ? 'bg-primary-fixed/50 text-primary'
                               : 'bg-surface-variant text-outline'
-                          }`}
+                            }`}
                         >
                           {p.etapa === 'activo' ? 'Activo' : 'Inactivo'}
                         </span>

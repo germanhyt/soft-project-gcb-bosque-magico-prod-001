@@ -22,6 +22,13 @@ describe('ListarConfiguracionPanelUseCase', () => {
         esPublico: true,
       },
       {
+        id: '1b',
+        clave: 'extras.precio_nino_extra',
+        valor: 10,
+        descripcion: null,
+        esPublico: true,
+      },
+      {
         id: '2',
         clave: 'shows.precio_nino_extra',
         valor: 15,
@@ -48,6 +55,7 @@ describe('ListarConfiguracionPanelUseCase', () => {
     const claves = res.numericas.map((i) => i.clave);
 
     expect(claves).not.toContain('tarifas.precio_nino_extra');
+    expect(claves).not.toContain('extras.precio_nino_extra');
     expect(claves).toContain('shows.precio_nino_extra');
     expect(claves).toContain('shows.ninos_incluidos');
     expect(claves).toContain('ninos.maximo_permitido');

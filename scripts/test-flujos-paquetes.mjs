@@ -86,15 +86,16 @@ async function main() {
   ok('Config maximo_permitido=30', map.get('ninos.maximo_permitido') === 30);
   ok('Config show extra=15', map.get('shows.precio_nino_extra') === 15);
   ok('Config shows.ninos_incluidos=20', map.get('shows.ninos_incluidos') === 20);
-  ok('Config extras extra=10', map.get('extras.precio_nino_extra') === 10);
   ok(
     'Config sin clave obsoleta tarifas.precio_nino_extra',
     !map.has('tarifas.precio_nino_extra'),
   );
 
   const shows = cat.body?.productos?.shows ?? [];
+  const extrasCat = cat.body?.productos?.extras ?? [];
   const show1 = shows[0];
   const show2 = shows[1];
+  const extraPinta = extrasCat.find((p) => p.codigo === 'EXT-PINTA') ?? extrasCat[0];
   const piq1 = piqueos.find((p) => p.codigo === 'PIQ-001') ?? piqueos[0];
   const piq2 = piqueos.find((p) => p.codigo === 'PIQ-002') ?? piqueos[1];
   const piq3 = piqueos.find((p) => p.codigo === 'PIQ-020') ?? piqueos[2];
@@ -161,8 +162,8 @@ async function main() {
     });
     const exPiq = prevPiq.body?.resumenPaquete?.piqueosExcedente;
     ok(
-      'Piqueos 3 packs → excedente atómico 62.5',
-      Math.abs(exPiq - 62.5) < 0.01,
+      'Piqueos 3 packs → excedente parcial 25 (50+112.5+62.5−200)',
+      Math.abs(exPiq - 25) < 0.01,
       `excedente=${exPiq}`,
     );
   } else {
@@ -267,6 +268,23 @@ async function main() {
     );
   } else {
     ok('Show extra capacidad (skip: sin SHOW-MAGIA)', false);
+  }
+
+  if (extraPinta) {
+    const prevPinta = await post('/public/bosque-magico/cotizaciones/preview', {
+      fechaEvento: fechaLv,
+      cantidadNinos: 25,
+      paquete: 'Básico',
+      seleccion: { cajitasCantidad: 10, extraIds: [extraPinta.id] },
+    });
+    const ninoExtraLinea = (prevPinta.body?.items ?? []).find((i) =>
+      String(i.nombre ?? '').toLowerCase().includes('niños adicionales'),
+    );
+    ok(
+      'Extras no agregan producto por niño extra (precio = 1 h)',
+      !ninoExtraLinea && (prevPinta.body?.montos?.ninosExtra ?? 0) === 0,
+      `linea=${ninoExtraLinea?.nombre ?? 'ninguna'} extra=${prevPinta.body?.montos?.ninosExtra}`,
+    );
   }
 
   // 10b. Tope 30 niños — rechaza 31 en preview
@@ -422,8 +440,8 @@ async function main() {
       seleccion: { cajitasCantidad: 10, extraIds: [extUnitas.id] },
     });
     ok(
-      'Uñitas 25 niños → extra capacidad 5×10',
-      prevUnitas.body?.montos?.ninosExtra === 50,
+      'Uñitas 25 niños → sin extra por niño (precio = 1 h)',
+      (prevUnitas.body?.montos?.ninosExtra ?? 0) === 0,
       `extra=${prevUnitas.body?.montos?.ninosExtra}`,
     );
   } else {

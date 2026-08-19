@@ -125,8 +125,8 @@ async function main() {
   ok(5, 'Cajitas 12 → excedente 2', exCaj === 2, `excedente=${exCaj}`);
   ok(
     5,
-    'Piqueos excedente 62.5',
-    Math.abs((preview.body?.resumenPaquete?.piqueosExcedente ?? 0) - 62.5) < 0.01,
+    'Piqueos excedente parcial 25',
+    Math.abs((preview.body?.resumenPaquete?.piqueosExcedente ?? 0) - 25) < 0.01,
     `excedente=${preview.body?.resumenPaquete?.piqueosExcedente}`,
   );
   ok(

@@ -31,6 +31,8 @@ export type ResolverComposicionInput = {
   cajitasPrecioExcedente?: number;
   snackPremiumUnidadesIncluidas?: number;
   snackPremiumPrecioExcedente?: number;
+  /** Override del crédito de piqueos (config `paquetes.piqueos_credito_premium`). */
+  piqueosCreditoPremium?: number;
 };
 
 function itemIncluido(
@@ -260,7 +262,7 @@ function resolverPiqueos(
             producto,
             1,
             esFinSemana,
-            'Incluido en crédito Premium',
+            creditoIncluido > 0 ? 'Incluido en crédito de piqueos' : 'Incluido en paquete',
           ),
           creditoAplicado,
         });
@@ -272,7 +274,9 @@ function resolverPiqueos(
             1,
             precioExcedente,
             esFinSemana,
-            'Excede crédito de piqueos Premium',
+            creditoIncluido > 0
+              ? 'Excede crédito de piqueos'
+              : 'Piqueo adicional',
           ),
           creditoAplicado,
         });
@@ -413,6 +417,7 @@ export function resolverComposicionPaquete(
     snackPremiumUnidadesIncluidas = SNACK_PREMIUM_UNIDADES_INCLUIDAS_DEFAULT,
     snackPremiumPrecioExcedente =
       SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT,
+    piqueosCreditoPremium,
   } = input;
 
   const items: ItemPaqueteResuelto[] = [];
@@ -459,7 +464,8 @@ export function resolverComposicionPaquete(
         cajitasRegla = regla.cantidad;
         break;
       case ModoComposicionPaquete.credito_piqueos:
-        creditoPiqueos = regla.montoCredito ?? 200;
+        creditoPiqueos =
+          piqueosCreditoPremium ?? regla.montoCredito ?? 200;
         break;
       case ModoComposicionPaquete.eleccion_snack: {
         const snack = resolverSnackPremium(
