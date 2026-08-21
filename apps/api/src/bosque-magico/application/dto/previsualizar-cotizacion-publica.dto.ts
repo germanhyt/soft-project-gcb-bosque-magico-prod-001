@@ -35,7 +35,7 @@ export class PrevisualizarCotizacionPublicaDto {
   @ApiProperty({ example: 25 })
   @IsInt()
   @Min(1)
-  @Max(30)
+  @Max(35)
   cantidadNinos!: number;
 
   @ApiPropertyOptional({ enum: ['paquete', 'solo_espacio'], default: 'paquete' })

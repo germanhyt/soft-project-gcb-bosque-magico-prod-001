@@ -101,7 +101,6 @@ export function HomePage() {
         />
         <PiqueosSelector
           selection={selection}
-          fechaReferencia={fechaPreview}
           onTogglePiqueo={(productoId, checked) =>
             setSelection((prev) => {
               if (!checked) {
@@ -161,10 +160,20 @@ export function HomePage() {
         <Extras
           selectionMode={selectionModes.extras}
           selectedExtraIds={selection.extraIds}
+          extraCantidades={selection.extraCantidades}
           onToggleExtra={(extraId, checked) =>
             setSelection((prev) =>
               toggleCatalogSelection(prev, 'extraIds', 'extraCantidades', extraId, checked, selectionModes.extras, 1),
             )
+          }
+          onCantidadExtra={(extraId, cantidad) =>
+            setSelection((prev) => ({
+              ...prev,
+              extraCantidades: {
+                ...prev.extraCantidades,
+                [extraId]: Math.max(1, cantidad),
+              },
+            }))
           }
         />
         <QuoteForm

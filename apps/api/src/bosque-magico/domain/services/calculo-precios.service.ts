@@ -13,8 +13,10 @@ export type TarifasNegocio = {
 };
 
 export type ReglasCapacidadNegocio = {
-  ninosIncluidosShow: number;
-  precioNinoExtraShow: number;
+  /** Niños incluidos en el paquete sin cargo (capacidad del local, no del show). */
+  ninosIncluidos: number;
+  /** Costo por niño adicional fuera del rango incluido. */
+  precioNinoExtra: number;
 };
 
 export type TarifasHoraExtraEspacio = {
@@ -69,10 +71,10 @@ export class CalculoPreciosService {
       const v = map.get(k);
       return typeof v === 'number' && !Number.isNaN(v) ? v : d;
     };
-    const ninosIncluidosShow = num('shows.ninos_incluidos', 20);
+    const ninosIncluidos = num('shows.ninos_incluidos', 25);
     return {
-      ninosIncluidosShow,
-      precioNinoExtraShow: num('shows.precio_nino_extra', 15),
+      ninosIncluidos,
+      precioNinoExtra: num('shows.precio_nino_extra', 25),
     };
   }
 

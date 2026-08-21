@@ -251,7 +251,8 @@ function resolverPiqueos(
   for (const entrada of seleccion.piqueos ?? []) {
     const producto = productos.get(entrada.productoId);
     if (!producto || producto.subtipo !== SubtipoProducto.piqueo) continue;
-    const precioPack = precioProducto(producto, esFinSemana);
+    // Piqueos: precio fijo (no varía por día). Se usa precioLunesViernes como precio único.
+    const precioPack = producto.precioLunesViernes;
     for (let u = 0; u < entrada.cantidad; u++) {
       valorSeleccionado += precioPack;
       const creditoAplicado = Math.min(creditoRestante, precioPack);

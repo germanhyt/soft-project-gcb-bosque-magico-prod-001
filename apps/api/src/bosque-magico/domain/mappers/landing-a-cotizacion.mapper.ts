@@ -56,9 +56,17 @@ function extraerSeleccion(
       cantidad: Math.max(sel.cateringCantidades?.[id] ?? 1, 1),
     }));
 
+  // Expandir extraIds según extraCantidades (mismo mecanismo que buildSeleccionPaquete en landing).
+  const extraCantidades = sel.extraCantidades ?? {};
+  const extraIdsExpandidos: string[] = [];
+  for (const id of sel.extraIds ?? []) {
+    const qty = Math.max(extraCantidades[id] ?? 1, 1);
+    for (let i = 0; i < qty; i++) extraIdsExpandidos.push(id);
+  }
+
   return {
     showIds: sel.showIds,
-    extraIds: sel.extraIds,
+    extraIds: extraIdsExpandidos.length ? extraIdsExpandidos : sel.extraIds,
     snackId: sel.snackId,
     snackCantidad: sel.snackCantidad,
     cajitasCantidad: sel.cajitasCantidad,

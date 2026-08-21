@@ -115,16 +115,16 @@ describe('CalculoPreciosService', () => {
   });
 
   describe('obtenerReglasCapacidad', () => {
-    it('lee reglas de show desde configuración pública', async () => {
+    it('lee reglas de capacidad del local desde configuración pública', async () => {
       configuracion.listarPublicas = jest.fn().mockResolvedValue([
-        { clave: 'shows.ninos_incluidos', valor: 20 },
-        { clave: 'shows.precio_nino_extra', valor: 15 },
+        { clave: 'shows.ninos_incluidos', valor: 25 },
+        { clave: 'shows.precio_nino_extra', valor: 25 },
       ]);
 
       const reglas = await service.obtenerReglasCapacidad();
       expect(reglas).toEqual({
-        ninosIncluidosShow: 20,
-        precioNinoExtraShow: 15,
+        ninosIncluidos: 25,
+        precioNinoExtra: 25,
       });
     });
   });

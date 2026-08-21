@@ -1,6 +1,12 @@
 import { motion, useReducedMotion } from 'framer-motion';
-import { GRID_CATALOG, CARD_CATALOG, cardCatalogState } from '../../constants/design';
+import {
+  CARD_CATALOG,
+  GRID_CATALOG,
+  INPUT_CLASS,
+  cardCatalogState,
+} from '../../constants/design';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
+import { formatSoles } from '../../lib/pricing';
 import { selectionHint, type SelectionMode } from '../../lib/selection-mode';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
@@ -11,10 +17,18 @@ import { StatusBadge } from '../ui/StatusBadge';
 type Props = {
   selectionMode: SelectionMode;
   selectedExtraIds: string[];
+  extraCantidades: Record<string, number>;
   onToggleExtra: (extraId: string, checked: boolean) => void;
+  onCantidadExtra: (extraId: string, cantidad: number) => void;
 };
 
-export function Extras({ selectionMode, selectedExtraIds, onToggleExtra }: Props) {
+export function Extras({
+  selectionMode,
+  selectedExtraIds,
+  extraCantidades,
+  onToggleExtra,
+  onCantidadExtra,
+}: Props) {
   const { data } = useConfiguracion();
   const reduceMotion = useReducedMotion();
   const extras = data?.productos.extras ?? [];
@@ -32,6 +46,7 @@ export function Extras({ selectionMode, selectedExtraIds, onToggleExtra }: Props
       <div className={`${GRID_CATALOG} lg:grid-cols-3`}>
         {extras.map((extra, index) => {
           const selected = selectedExtraIds.includes(extra.id);
+          const qty = Math.max(extraCantidades[extra.id] ?? 1, 1);
           return (
             <motion.article
               key={extra.id}
@@ -57,7 +72,31 @@ export function Extras({ selectionMode, selectedExtraIds, onToggleExtra }: Props
               <p className="mt-2 flex-1 text-sm leading-relaxed text-on-surface-variant">
                 {extra.descripcion || 'Servicio adicional configurable para tu evento.'}
               </p>
-              <div className="mt-5 flex justify-end">
+              <p className="mt-2 text-xs text-on-surface-variant">
+                desde {formatSoles(extra.precioLunesViernes)} / hora
+              </p>
+              <div className="mt-5 flex items-center justify-between gap-2">
+                {selected ? (
+                  <div
+                    className="flex items-center gap-2 text-sm"
+                    onClick={(e) => e.stopPropagation()}
+                    onKeyDown={(e) => e.stopPropagation()}
+                  >
+                    <span className="text-on-surface-variant">Horas</span>
+                    <input
+                      type="number"
+                      min={1}
+                      max={10}
+                      className={`${INPUT_CLASS} max-w-20`}
+                      value={qty}
+                      onChange={(e) =>
+                        onCantidadExtra(extra.id, Math.max(1, Number(e.target.value) || 1))
+                      }
+                    />
+                  </div>
+                ) : (
+                  <span />
+                )}
                 <StatusBadge selected={selected} />
               </div>
             </motion.article>

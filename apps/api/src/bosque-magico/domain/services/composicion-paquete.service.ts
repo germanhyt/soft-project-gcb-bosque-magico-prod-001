@@ -132,8 +132,8 @@ export class ComposicionPaqueteService {
     const cargosCapacidad = calcularCargosCapacidad({
       cantidadNinos: params.cantidadNinos,
       maximoPermitido: tarifas.maximoPermitido,
-      ninosIncluidosShow: reglasCapacidad.ninosIncluidosShow,
-      precioNinoExtraShow: reglasCapacidad.precioNinoExtraShow,
+      ninosIncluidos: reglasCapacidad.ninosIncluidos,
+      precioNinoExtra: reglasCapacidad.precioNinoExtra,
       seleccion: params.seleccion,
     });
 

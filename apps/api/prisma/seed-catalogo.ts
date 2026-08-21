@@ -41,6 +41,7 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 190, fds: 250 },
   { codigo: 'EXT-UNITAS', nombre: 'Uñitas (sticker en uñas)', categoria: 'extra', lv: 190, fds: 250 },
   { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250 },
+  { codigo: 'EXT-MINIHORALOCA', nombre: 'Mini Hora Loca', categoria: 'extra', lv: 120, fds: 150 },
   { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120 },
   { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150 },
   { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },

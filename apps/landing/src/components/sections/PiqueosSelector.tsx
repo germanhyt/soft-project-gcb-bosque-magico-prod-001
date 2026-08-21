@@ -2,7 +2,7 @@ import { useMemo } from 'react';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
 import { calcularResumenPiqueosCredito } from '../../lib/piqueos-credito';
 import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
-import { formatSoles, isWeekend } from '../../lib/pricing';
+import { formatSoles } from '../../lib/pricing';
 import {
   esPaquetePremium,
   type QuoteBuilderSelection,
@@ -14,20 +14,17 @@ import { StatusBadge } from '../ui/StatusBadge';
 
 type Props = {
   selection: QuoteBuilderSelection;
-  fechaReferencia?: string;
   onTogglePiqueo: (productoId: string, checked: boolean) => void;
   onCantidadPiqueo: (productoId: string, cantidad: number) => void;
 };
 
 export function PiqueosSelector({
   selection,
-  fechaReferencia,
   onTogglePiqueo,
   onCantidadPiqueo,
 }: Props) {
   const { data } = useConfiguracion();
   const piqueos = data?.productos.piqueos ?? [];
-  const feriados = data?.feriados ?? [];
   const paquetesConfig = useMemo(
     () => paquetesConfigDesdeItems(data?.items),
     [data?.items],
@@ -35,22 +32,22 @@ export function PiqueosSelector({
   const credito = esPaquetePremium(selection.paquete) ? paquetesConfig.piqueosCreditoPremium : 0;
   const conCredito = credito > 0;
 
-  const esFds = isWeekend(fechaReferencia ?? '', feriados);
+  // Piqueos: precio fijo (no varía por día). Se usa precioLunesViernes como precio único.
+  const precioPiqueo = (p: (typeof piqueos)[number]) => p.precioLunesViernes;
 
   const { creditoUsado, excedente } = useMemo(() => {
     const entradas = selection.piqueoIds.map((id) => {
       const p = piqueos.find((x) => x.id === id);
       if (!p) return null;
-      const precio = esFds ? p.precioFinSemana : p.precioLunesViernes;
       return {
-        precioPack: precio,
+        precioPack: precioPiqueo(p),
         cantidadPacks: Math.max(selection.piqueosCantidades[id] ?? 1, 1),
       };
     }).filter(Boolean) as Array<{ precioPack: number; cantidadPacks: number }>;
 
     const r = calcularResumenPiqueosCredito(entradas, credito);
     return { creditoUsado: r.creditoUsado, excedente: r.excedente };
-  }, [selection.piqueoIds, selection.piqueosCantidades, piqueos, esFds, credito]);
+  }, [selection.piqueoIds, selection.piqueosCantidades, piqueos, credito]);
 
   if (!selection.paquete) return null;
 
@@ -64,7 +61,7 @@ export function PiqueosSelector({
             ? `Elige packs de la carta. Crédito incluido: ${formatSoles(credito)} (precio por pack completo).`
             : 'Piqueos a precio de carta. El crédito de S/ 200 aplica solo en paquete Premium (configurable en el panel).'
         }
-      />    
+      />
       {conCredito && (
         <div className="mb-6 rounded-2xl border border-primary/20 bg-primary-fixed/15 px-4 py-3">
           <div className="flex flex-wrap items-center justify-between gap-2 text-sm">
@@ -88,7 +85,7 @@ export function PiqueosSelector({
       <div className={GRID_CATALOG}>
         {piqueos.map((p) => {
           const selected = selection.piqueoIds.includes(p.id);
-          const precio = esFds ? p.precioFinSemana : p.precioLunesViernes;
+          const precio = precioPiqueo(p);
           const uds = p.unidadesPack ?? 1;
           const qty = Math.max(selection.piqueosCantidades[p.id] ?? 1, 1);
 

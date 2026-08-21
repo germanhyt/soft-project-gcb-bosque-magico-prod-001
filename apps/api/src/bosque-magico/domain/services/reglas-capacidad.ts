@@ -10,8 +10,10 @@ import type {
 export type ReglasCapacidadInput = {
   cantidadNinos: number;
   maximoPermitido: number;
-  ninosIncluidosShow: number;
-  precioNinoExtraShow: number;
+  /** Niños incluidos en el paquete (sin cargo). Antes ligado al show; ahora es capacidad del local. */
+  ninosIncluidos: number;
+  /** Costo por cada niño adicional fuera del rango incluido. */
+  precioNinoExtra: number;
   seleccion: SeleccionPaqueteInput;
 };
 
@@ -22,7 +24,9 @@ export type ResultadoCargosCapacidad = {
 };
 
 /**
- * Cargos por capacidad: solo show (niños extra).
+ * Cargos por capacidad del local (Refugio Gastronómico): niños adicionales.
+ * Se cobra por cada niño que excede el rango incluido, haya o no show,
+ * porque el costo marginal (comida + espacio + materiales) es del local.
  * Los extras (Pintacaritas, Uñitas, Hora loca, etc.) se cobran por 1 h de catálogo;
  * no se agrega línea por niño excedente.
  */
@@ -34,19 +38,18 @@ export function calcularCargosCapacidad(
   const itemsCobrables: Array<{ cantidad: number; precioUnitario: number }> = [];
   let montoTotal = 0;
 
-  const tieneShow = (input.seleccion.showIds?.length ?? 0) > 0;
-  if (tieneShow && ninos > input.ninosIncluidosShow) {
-    const cantidad = ninos - input.ninosIncluidosShow;
-    const precio = input.precioNinoExtraShow;
+  if (ninos > input.ninosIncluidos) {
+    const cantidad = ninos - input.ninosIncluidos;
+    const precio = input.precioNinoExtra;
     montoTotal += cantidad * precio;
     items.push({
       tipo: TipoItemCotizacion.show,
-      nombre: 'Niños adicionales show',
+      nombre: 'Niños adicionales (Refugio Gastronómico)',
       cantidad,
       precioUnitario: precio,
       precioCatalogo: precio,
       origenItem: OrigenItemCotizacion.adicional,
-      notas: `Del niño #${input.ninosIncluidosShow + 1} al #${input.maximoPermitido}`,
+      notas: `Del niño #${input.ninosIncluidos + 1} al #${input.maximoPermitido}`,
     });
     itemsCobrables.push({ cantidad, precioUnitario: precio });
   }
