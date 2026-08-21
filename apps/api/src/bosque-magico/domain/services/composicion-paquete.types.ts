@@ -88,6 +88,21 @@ export function precioProducto(
   return esFinSemana ? producto.precioFinSemana : producto.precioLunesViernes;
 }
 
+/**
+ * Precio efectivo de un producto según su categoría.
+ * Catering (cajitas, snacks, piqueos, general): precio único, no varía por día.
+ * Shows, extras, paquetes y espacios: mantienen tarifa L-V / S-D.
+ */
+export function precioProductoPorCategoria(
+  producto: ProductoCotizacionRef,
+  esFinSemana: boolean,
+): number {
+  if (producto.categoria === CategoriaProducto.catering) {
+    return producto.precioLunesViernes;
+  }
+  return esFinSemana ? producto.precioFinSemana : producto.precioLunesViernes;
+}
+
 export function categoriaATipoItem(
   categoria: CategoriaProducto,
 ): TipoItemCotizacion {

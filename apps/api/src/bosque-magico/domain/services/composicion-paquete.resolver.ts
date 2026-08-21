@@ -9,7 +9,7 @@ import {
   type ComposicionRegla,
   type ItemPaqueteResuelto,
   type ProductoCotizacionRef,
-  precioProducto,
+  precioProductoPorCategoria,
   type ResumenPaquete,
   type ResultadoComposicionPaquete,
   type SeleccionPaqueteInput,
@@ -41,7 +41,7 @@ function itemIncluido(
   esFinSemana: boolean,
   notas?: string,
 ): ItemPaqueteResuelto {
-  const precioCatalogo = precioProducto(producto, esFinSemana);
+  const precioCatalogo = precioProductoPorCategoria(producto, esFinSemana);
   return {
     productoId: producto.id,
     tipo: categoriaATipoItem(producto.categoria),
@@ -61,7 +61,7 @@ function itemExcedente(
   esFinSemana: boolean,
   notas?: string,
 ): ItemPaqueteResuelto {
-  const precioCatalogo = precioProducto(producto, esFinSemana);
+  const precioCatalogo = precioProductoPorCategoria(producto, esFinSemana);
   return {
     productoId: producto.id,
     tipo: categoriaATipoItem(producto.categoria),
@@ -79,7 +79,7 @@ function itemAdicional(
   cantidad: number,
   esFinSemana: boolean,
 ): ItemPaqueteResuelto {
-  const precio = precioProducto(producto, esFinSemana);
+  const precio = precioProductoPorCategoria(producto, esFinSemana);
   return {
     productoId: producto.id,
     tipo: categoriaATipoItem(producto.categoria),
@@ -251,8 +251,8 @@ function resolverPiqueos(
   for (const entrada of seleccion.piqueos ?? []) {
     const producto = productos.get(entrada.productoId);
     if (!producto || producto.subtipo !== SubtipoProducto.piqueo) continue;
-    // Piqueos: precio fijo (no varía por día). Se usa precioLunesViernes como precio único.
-    const precioPack = producto.precioLunesViernes;
+    // Catering: precio fijo (no varía por día). precioProductoPorCategoria usa precioLunesViernes para catering.
+    const precioPack = precioProductoPorCategoria(producto, esFinSemana);
     for (let u = 0; u < entrada.cantidad; u++) {
       valorSeleccionado += precioPack;
       const creditoAplicado = Math.min(creditoRestante, precioPack);
@@ -532,7 +532,7 @@ export function resolverComposicionPaquete(
     items.push(itemAdicional(producto, adicional.cantidad, esFinSemana));
   }
 
-  const montoBasePaquete = precioProducto(paquete, esFinSemana);
+  const montoBasePaquete = precioProductoPorCategoria(paquete, esFinSemana);
   const itemsCobrables = items
     .filter((i) => i.precioUnitario > 0)
     .map((i) => ({ cantidad: i.cantidad, precioUnitario: i.precioUnitario }));
