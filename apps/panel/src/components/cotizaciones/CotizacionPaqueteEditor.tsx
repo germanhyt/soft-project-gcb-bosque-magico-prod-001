@@ -88,8 +88,6 @@ export function CotizacionPaqueteEditor({
     retry: 0,
   });
 
-  const esFinSemana = preview.data?.esFinSemana ?? false;
-
   const creditoPiqueos = esPremium ? paquetesConfig.piqueosCreditoPremium : 0;
 
   const resumenPiqueosLocal = useMemo(() => {
@@ -97,7 +95,8 @@ export function CotizacionPaqueteEditor({
     const entradas = seleccion.piqueoIds.map((id) => {
       const p = catalogo.piqueos.find((x) => x.id === id);
       if (!p) return null;
-      const precio = esFinSemana ? p.precioFinSemana : p.precioLunesViernes;
+      // Piqueos: precio fijo (no varía por día).
+      const precio = p.precioLunesViernes;
       return {
         precioPack: precio,
         cantidadPacks: Math.max(seleccion.piqueosCantidades[id] ?? 1, 1),
@@ -108,7 +107,6 @@ export function CotizacionPaqueteEditor({
     seleccion.piqueoIds,
     seleccion.piqueosCantidades,
     catalogo.piqueos,
-    esFinSemana,
     creditoPiqueos,
   ]);
 

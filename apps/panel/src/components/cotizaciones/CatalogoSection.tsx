@@ -81,7 +81,9 @@ export function CatalogoSection({
                 <span className="min-w-0 flex-1">
                   <span className="font-medium">{p.nombre}</span>
                   <span className="block text-xs text-on-surface-variant">
-                    L-V S/ {p.precioLunesViernes} · FDS S/ {p.precioFinSemana}
+                    {p.categoria === 'catering'
+                      ? `S/ ${p.precioLunesViernes}`
+                      : `L-V S/ ${p.precioLunesViernes} · FDS S/ ${p.precioFinSemana}`}
                     {p.categoria === 'extra' ? ' · por 1 h' : ''}
                     {esPiqueo(p)
                       ? ` · pack ${udsPack} uds (${descripcionPrecioProducto(p)})`
