@@ -27,7 +27,7 @@ import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
 
 export function HomePage() {
   const [selection, setSelection] = useState<QuoteBuilderSelection>(INITIAL_QUOTE_SELECTION);
-  const [fechaPreview, setFechaPreview] = useState('');
+  const [, setFechaPreview] = useState('');
   const { data } = useConfiguracion();
   const minimoCatering = useMemo(
     () => minimoCateringDesdeConfig(data?.items),
