@@ -686,6 +686,22 @@ export function ConfiguracionPage() {
     onSuccess: () => qc.invalidateQueries({ queryKey: ['productos-catalogo'] }),
   });
 
+  const confirmarToggleEstado = async (prod: Producto) => {
+    if (prod.etapa === 'activo') {
+      const confirm = await Swal.fire({
+        icon: 'warning',
+        title: '¿Desactivar producto?',
+        text: `"${prod.nombre}" dejará de aparecer en el catálogo y la landing. Puedes reactivarlo después.`,
+        showCancelButton: true,
+        confirmButtonText: 'Sí, desactivar',
+        cancelButtonText: 'Cancelar',
+        confirmButtonColor: '#b91c1c',
+      });
+      if (!confirm.isConfirmed) return;
+    }
+    toggleProductoMut.mutate(prod);
+  };
+
   const invalidarCatalogo = async () => {
     await qc.invalidateQueries({ queryKey: ['productos-catalogo'] });
     await qc.invalidateQueries({ queryKey: ['productos'] });
@@ -1501,7 +1517,7 @@ export function ConfiguracionPage() {
                             producto={p}
                             puedeGestionar={puedeGestionarCatalogo}
                             onEditar={abrirEditarProducto}
-                            onToggleEstado={(prod) => toggleProductoMut.mutate(prod)}
+                            onToggleEstado={confirmarToggleEstado}
                           />
                         </div>
                       </td>

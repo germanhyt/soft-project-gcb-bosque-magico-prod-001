@@ -15,6 +15,7 @@ export const PIQUEOS_CREDITO_PREMIUM = PAQUETES_CONFIG_DEFAULT.piqueosCreditoPre
 export type SeleccionPaqueteState = {
   showIds: string[];
   extraIds: string[];
+  extraCantidades: Record<string, number>;
   snackId: string;
   snackCantidad: number;
   cajitasCantidad: number;
@@ -33,6 +34,7 @@ export type SeleccionPaqueteState = {
 export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
   showIds: [],
   extraIds: [],
+  extraCantidades: {},
   snackId: '',
   snackCantidad: 25,
   cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
@@ -82,7 +84,12 @@ export function seleccionToPayload(
 
   return {
     showIds: state.showIds.length ? state.showIds : undefined,
-    extraIds: state.extraIds.length ? state.extraIds : undefined,
+    extraIds: state.extraIds.length
+      ? state.extraIds.flatMap((id) => {
+        const qty = Math.max(state.extraCantidades[id] ?? 1, 1);
+        return Array.from({ length: qty }, () => id);
+      })
+      : undefined,
     snackId: state.snackId || undefined,
     snackCantidad: state.snackId ? Math.max(state.snackCantidad ?? 25, 25) : undefined,
     cajitasCantidad,
@@ -141,6 +148,7 @@ export function seleccionDesdePreferenciasLanding(
   return {
     showIds: sel.showIds ?? [],
     extraIds: sel.extraIds ?? [],
+    extraCantidades: { ...((sel as { extraCantidades?: Record<string, number> }).extraCantidades ?? {}) },
     snackId: sel.snackId ?? '',
     snackCantidad: Math.max(sel.snackCantidad ?? 25, 25),
     cajitasCantidad: sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT,
@@ -168,6 +176,7 @@ export function seleccionDesdeItemsCotizacion(
   const byId = new Map(productos.map((p) => [p.id, p]));
   const showIds: string[] = [];
   const extraIds: string[] = [];
+  const extraCantidades: Record<string, number> = {};
   const piqueoIds: string[] = [];
   const piqueosCantidades: Record<string, number> = {};
   const adicionalIds: string[] = [];
@@ -224,6 +233,7 @@ export function seleccionDesdeItemsCotizacion(
     }
     if (p.categoria === 'extra') {
       if (!extraIds.includes(item.productoId)) extraIds.push(item.productoId);
+      extraCantidades[item.productoId] = (extraCantidades[item.productoId] ?? 0) + item.cantidad;
       continue;
     }
     if (
@@ -238,6 +248,7 @@ export function seleccionDesdeItemsCotizacion(
   return {
     showIds,
     extraIds,
+    extraCantidades,
     snackId,
     snackCantidad: Math.max(snackCantidad, 25),
     cajitasCantidad: cajitasCantidad || CAJITAS_INCLUIDAS_DEFAULT,

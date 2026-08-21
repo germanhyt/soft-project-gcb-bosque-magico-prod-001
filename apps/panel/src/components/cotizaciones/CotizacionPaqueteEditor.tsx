@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import Swal from 'sweetalert2';
 import { CatalogoSection } from './CatalogoSection';
 import { ProductoFormModal, type ProductoFormPayload } from '../catalogo/ProductoFormModal';
 import { Button } from '../ui/Button';
@@ -145,6 +146,31 @@ export function CotizacionPaqueteEditor({
     },
   });
 
+  const eliminarShowMut = useMutation({
+    mutationFn: (producto: Producto) =>
+      actualizarProducto(producto.id, { etapa: 'inactivo' }),
+    onSuccess: async (_data, producto) => {
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      if (seleccion.showIds.includes(producto.id)) {
+        patch({ showIds: seleccion.showIds.filter((id) => id !== producto.id) });
+      }
+    },
+  });
+
+  const confirmarEliminarShow = async (producto: Producto) => {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar show del catálogo?',
+      text: `"${producto.nombre}" se desactivará y dejará de aparecer en el catálogo y la landing. Puedes reactivarlo después.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#b91c1c',
+    });
+    if (!confirm.isConfirmed) return;
+    eliminarShowMut.mutate(producto);
+  };
+
   const piqueosFiltrados = useMemo(() => {
     const q = piqueosBusqueda.trim().toLowerCase();
     if (!q) return catalogo.piqueos;
@@ -162,7 +188,21 @@ export function CotizacionPaqueteEditor({
 
   const toggleExtra = (id: string) => {
     const activo = seleccion.extraIds.includes(id);
-    patch({ extraIds: toggleIdEnLista(seleccion.extraIds, id, !activo) });
+    const extraIds = toggleIdEnLista(seleccion.extraIds, id, !activo);
+    const extraCantidades = { ...seleccion.extraCantidades };
+    if (!activo) {
+      const p = catalogo.extras.find((x) => x.id === id);
+      extraCantidades[id] = cantidadItemProducto(p!, extraCantidades);
+    } else {
+      delete extraCantidades[id];
+    }
+    patch({ extraIds, extraCantidades });
+  };
+
+  const cambiarCantidadExtra = (id: string, cantidad: number) => {
+    const extraCantidades = { ...seleccion.extraCantidades };
+    extraCantidades[id] = Math.max(1, cantidad || 1);
+    patch({ extraCantidades });
   };
 
   const togglePiqueo = (id: string) => {
@@ -364,6 +404,7 @@ export function CotizacionPaqueteEditor({
         onToggle={toggleShow}
         onCantidad={() => {}}
         onEditar={(p) => setShowForm({ mode: 'edit', producto: p })}
+        onEliminar={confirmarEliminarShow}
         headerExtra={
           <Button type="button" variant="ghost" onClick={() => setShowForm({ mode: 'create' })}>
             Nuevo show
@@ -375,9 +416,9 @@ export function CotizacionPaqueteEditor({
         titulo="Servicios extra (1.º incluido en todos los paquetes · precio por 1 h)"
         productos={catalogo.extras}
         selectedIds={seleccion.extraIds}
-        cantidades={{}}
+        cantidades={seleccion.extraCantidades}
         onToggle={toggleExtra}
-        onCantidad={() => {}}
+        onCantidad={cambiarCantidadExtra}
       />
 
       <div className="rounded-xl border border-outline-variant/50 p-4">

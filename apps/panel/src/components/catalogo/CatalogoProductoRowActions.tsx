@@ -30,7 +30,8 @@ export function CatalogoProductoRowActions({
         onClick={() => onEditar(producto)}
       />
       <RowIconButton
-        icon={activo ? 'visibility_off' : 'check_circle'}
+        icon={activo ? 'delete' : 'check_circle'}
+        variant={activo ? 'danger' : 'default'}
         title={activo ? 'Desactivar' : 'Activar'}
         aria-label={activo ? 'Desactivar producto' : 'Activar producto'}
         onClick={() => onToggleEstado(producto)}

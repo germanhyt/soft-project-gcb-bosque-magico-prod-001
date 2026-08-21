@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import type { Producto } from '../../lib/cotizaciones';
 import { cantidadItemProducto } from '../../lib/producto-cotizacion';
 import { descripcionPrecioProducto } from '../../lib/origen-item';
+import { Icon } from '../ui/Icon';
 import { INPUT_CLASS } from '../../constants/design';
 
 type Props = {
@@ -12,6 +13,7 @@ type Props = {
   onToggle: (id: string) => void;
   onCantidad: (id: string, cantidad: number) => void;
   onEditar?: (producto: Producto) => void;
+  onEliminar?: (producto: Producto) => void;
   headerExtra?: ReactNode;
 };
 
@@ -20,6 +22,7 @@ function esPiqueo(p: Producto) {
 }
 
 function etiquetaCantidad(p: Producto): string {
+  if (p.categoria === 'extra') return 'Horas';
   return esPiqueo(p) ? 'Nº de packs' : 'Cantidad';
 }
 
@@ -31,6 +34,7 @@ export function CatalogoSection({
   onToggle,
   onCantidad,
   onEditar,
+  onEliminar,
   headerExtra,
 }: Props) {
   if (!productos.length && !headerExtra) return null;
@@ -102,6 +106,20 @@ export function CatalogoSection({
                     }}
                   >
                     Editar
+                  </button>
+                )}
+                {onEliminar && (
+                  <button
+                    type="button"
+                    title="Eliminar del catálogo"
+                    aria-label="Eliminar del catálogo"
+                    className="shrink-0 text-error hover:text-red-700"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onEliminar(p);
+                    }}
+                  >
+                    <Icon name="delete" size={18} />
                   </button>
                 )}
               </div>
