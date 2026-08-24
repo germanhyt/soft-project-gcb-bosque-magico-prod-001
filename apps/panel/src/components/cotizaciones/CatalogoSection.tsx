@@ -21,9 +21,15 @@ function esPiqueo(p: Producto) {
   return p.subtipo === 'piqueo';
 }
 
+function esExtraBloque(p: Producto) {
+  return p.categoria === 'extra' && Boolean(p.unidad) && p.unidad !== 'hora';
+}
+
 function etiquetaCantidad(p: Producto): string {
+  if (esPiqueo(p)) return 'Nº de packs';
+  if (esExtraBloque(p)) return p.unidad ?? 'bloque';
   if (p.categoria === 'extra') return 'Horas';
-  return esPiqueo(p) ? 'Nº de packs' : 'Cantidad';
+  return 'Cantidad';
 }
 
 export function CatalogoSection({
@@ -130,13 +136,17 @@ export function CatalogoSection({
                   onKeyDown={(e) => e.stopPropagation()}
                 >
                   <span className="text-on-surface-variant">{etiquetaCantidad(p)}</span>
-                  <input
-                    type="number"
-                    min={p.cantidadMinima}
-                    className={`${INPUT_CLASS} max-w-24`}
-                    value={qty}
-                    onChange={(e) => onCantidad(p.id, Math.max(p.cantidadMinima, Number(e.target.value) || 0))}
-                  />
+                  {esExtraBloque(p) ? (
+                    <span className="font-semibold text-on-surface">1</span>
+                  ) : (
+                    <input
+                      type="number"
+                      min={p.cantidadMinima}
+                      className={`${INPUT_CLASS} max-w-24`}
+                      value={qty}
+                      onChange={(e) => onCantidad(p.id, Math.max(p.cantidadMinima, Number(e.target.value) || 0))}
+                    />
+                  )}
                   {esPiqueo(p) && (
                     <span className="text-xs text-outline">
                       = {(qty * udsPack).toLocaleString('es-PE')} porciones

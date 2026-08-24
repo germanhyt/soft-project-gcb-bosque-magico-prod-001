@@ -130,6 +130,12 @@ const configuraciones = [
     esPublico: true,
   },
   {
+    clave: 'extras.decoracion_personalizada',
+    valor: 100,
+    descripcion: 'Derechos de decoración personalizada (S/)',
+    esPublico: true,
+  },
+  {
     clave: 'contrato.adelanto_referencial',
     valor: 500,
     descripcion: 'Adelanto referencial para separar fecha (S/)',
@@ -360,14 +366,17 @@ type ProductoSeed = {
   unidadesPack?: number;
   cantidadMinima?: number;
   unidad?: string;
+  etapa?: 'activo' | 'inactivo';
 };
 
 const productosBase: ProductoSeed[] = [
   { codigo: 'PK-BASICO', nombre: 'Básico', categoria: 'paquete', lv: 799, fds: 950 },
   { codigo: 'PK-ESTANDAR', nombre: 'Estándar', categoria: 'paquete', lv: 1310, fds: 1650 },
   { codigo: 'PK-PREMIUM', nombre: 'Premium', categoria: 'paquete', lv: 1770, fds: 2100 },
+  { codigo: 'PK-PERSONALIZADO', nombre: 'Personalizado', categoria: 'paquete', lv: 799, fds: 950 },
   { codigo: 'ESP-ALQ-3H', nombre: 'Alquiler 3 horas', categoria: 'espacio', lv: 0, fds: 0 },
   { codigo: 'CAJ-BOSQUE', nombre: 'Cajita Bosque Mágico', categoria: 'catering', lv: 20.9, fds: 20.9, subtipo: 'cajita', unidad: 'unidad', cantidadMinima: 1 },
+  { codigo: 'SHOW-PERS', nombre: 'Show personalizado', categoria: 'show', lv: 1000, fds: 1000 },
   { codigo: 'SHOW-MAGIA', nombre: 'Magia Chispeante', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-MIMO', nombre: 'Show Mimo', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-BURBUJAS', nombre: 'Burbujas Fantásticas', categoria: 'show', lv: 520, fds: 690 },
@@ -378,10 +387,10 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'SHOW-CINE', nombre: 'Cine al aire libre', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'EXT-PINTA', nombre: 'Pintacaritas', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
   { codigo: 'EXT-UNITAS', nombre: 'Uñitas (sticker en uñas)', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
-  { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora' },
+  { codigo: 'EXT-HORALOCA', nombre: 'Hora loca', categoria: 'extra', lv: 190, fds: 250, unidad: 'hora', etapa: 'inactivo' },
   { codigo: 'EXT-MINIHORALOCA', nombre: 'Mini Hora Loca', categoria: 'extra', lv: 120, fds: 150, unidad: 'hora' },
-  { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120, unidad: 'hora' },
-  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150, unidad: 'hora' },
+  { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120, unidad: 'hora', etapa: 'inactivo' },
+  { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150, unidad: 'bloque 3h' },
   { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   ...CATERING_GENERAL.map((c) => ({
@@ -477,6 +486,7 @@ async function upsertProductos(syncCatalogo: boolean) {
           subtipo: p.subtipo ?? 'general',
           unidadesPack: p.unidadesPack,
           unidad: p.unidad ?? 'servicio',
+          etapa: p.etapa ?? 'activo',
           origen: 'propio',
           descripcion: `Producto catálogo ${p.nombre}`,
         },
@@ -499,6 +509,7 @@ async function upsertProductos(syncCatalogo: boolean) {
         subtipo: p.subtipo ?? 'general',
         unidadesPack: p.unidadesPack,
         unidad: p.unidad ?? 'servicio',
+        etapa: p.etapa ?? 'activo',
         origen: 'propio',
       },
     });
@@ -516,6 +527,11 @@ async function seedComposicion(ids: Map<string, string>, force: boolean) {
     metadata?: object;
   }>> = {
     'PK-BASICO': [
+      { modo: 'producto_fijo', componenteCodigo: 'ESP-ALQ-3H', cantidad: 1, orden: 1 },
+      { modo: 'slot_extra', cantidad: 1, orden: 2 },
+      { modo: 'cajitas_incluidas', cantidad: 10, orden: 3 },
+    ],
+    'PK-PERSONALIZADO': [
       { modo: 'producto_fijo', componenteCodigo: 'ESP-ALQ-3H', cantidad: 1, orden: 1 },
       { modo: 'slot_extra', cantidad: 1, orden: 2 },
       { modo: 'cajitas_incluidas', cantidad: 10, orden: 3 },

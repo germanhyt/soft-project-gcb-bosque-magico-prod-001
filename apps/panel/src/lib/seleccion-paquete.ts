@@ -1,6 +1,7 @@
 import type { ItemCotizacion, Producto, SeleccionPaquetePayload } from './cotizaciones';
 import { PAQUETES_CONFIG_DEFAULT } from './paquetes-config';
 import {
+  NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA,
   NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO,
   NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO,
   NOMBRE_ITEM_INGRESO_SHOW_EXTERNO,
@@ -29,6 +30,7 @@ export type SeleccionPaqueteState = {
   derechoIngresoShowExterno: boolean;
   derechoIngresoDecoracionExterno: boolean;
   derechoIngresoCarritoSnackExterno: boolean;
+  derechoDecoracionPersonalizada: boolean;
 };
 
 export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
@@ -48,6 +50,7 @@ export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
   derechoIngresoShowExterno: false,
   derechoIngresoDecoracionExterno: false,
   derechoIngresoCarritoSnackExterno: false,
+  derechoDecoracionPersonalizada: false,
 };
 
 export function normalizarPaqueteNombre(paquete: string): string {
@@ -60,6 +63,10 @@ export function normalizarPaqueteNombre(paquete: string): string {
 
 export function esPaquetePremium(paquete: string): boolean {
   return normalizarPaqueteNombre(paquete).includes('premiu');
+}
+
+export function esPaquetePersonalizado(paquete: string): boolean {
+  return normalizarPaqueteNombre(paquete).includes('personal');
 }
 
 export function esPaqueteEstandarOMayor(paquete: string): boolean {
@@ -114,6 +121,7 @@ export function seleccionToPayload(
     derechoIngresoShowExterno: state.derechoIngresoShowExterno || undefined,
     derechoIngresoDecoracionExterno: state.derechoIngresoDecoracionExterno || undefined,
     derechoIngresoCarritoSnackExterno: state.derechoIngresoCarritoSnackExterno || undefined,
+    derechoDecoracionPersonalizada: state.derechoDecoracionPersonalizada || undefined,
   };
 }
 
@@ -132,6 +140,7 @@ type PreferenciasSeleccion = {
   derechoIngresoShowExterno?: boolean;
   derechoIngresoDecoracionExterno?: boolean;
   derechoIngresoCarritoSnackExterno?: boolean;
+  derechoDecoracionPersonalizada?: boolean;
 };
 
 export function seleccionDesdePreferenciasLanding(
@@ -162,6 +171,7 @@ export function seleccionDesdePreferenciasLanding(
     derechoIngresoShowExterno: Boolean(sel.derechoIngresoShowExterno),
     derechoIngresoDecoracionExterno: Boolean(sel.derechoIngresoDecoracionExterno),
     derechoIngresoCarritoSnackExterno: Boolean(sel.derechoIngresoCarritoSnackExterno),
+    derechoDecoracionPersonalizada: Boolean(sel.derechoDecoracionPersonalizada),
   };
 }
 
@@ -190,6 +200,7 @@ export function seleccionDesdeItemsCotizacion(
   let derechoIngresoShowExterno = false;
   let derechoIngresoDecoracionExterno = false;
   let derechoIngresoCarritoSnackExterno = false;
+  let derechoDecoracionPersonalizada = false;
 
   for (const item of items) {
     if (!item.productoId) {
@@ -201,6 +212,8 @@ export function seleccionDesdeItemsCotizacion(
         derechoIngresoDecoracionExterno = true;
       } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO)) {
         derechoIngresoCarritoSnackExterno = true;
+      } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA)) {
+        derechoDecoracionPersonalizada = true;
       }
       continue;
     }
@@ -262,6 +275,7 @@ export function seleccionDesdeItemsCotizacion(
     derechoIngresoShowExterno,
     derechoIngresoDecoracionExterno,
     derechoIngresoCarritoSnackExterno,
+    derechoDecoracionPersonalizada,
   };
 }
 

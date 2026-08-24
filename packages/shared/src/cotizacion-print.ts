@@ -5,6 +5,9 @@ export type CotizacionPrintItem = {
   cantidad: number;
   precioUnitario: number;
   subtotal: number;
+  origenItem?: string;
+  subtipo?: string | null;
+  unidadesPack?: number | null;
 };
 
 export type CotizacionPrintData = {
@@ -159,13 +162,28 @@ export function buildCotizacionPrintHtml(
   ${
     items.length > 0
       ? `<table>
-    <thead><tr><th>Ítem</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
+    <thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>Tipo</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
     <tbody>
       ${items
-        .map(
-          (i) =>
-            `<tr><td>${escapeHtml(i.nombre)}</td><td>${i.cantidad}</td><td>${money(i.precioUnitario)}</td><td>${money(i.subtotal)}</td></tr>`,
-        )
+        .map((i) => {
+          const incluido = i.precioUnitario <= 0;
+          const tipo = i.origenItem
+            ? (i.origenItem === 'incluido_paquete'
+              ? 'Incluido'
+              : i.origenItem === 'excedente_paquete'
+                ? 'Excedente'
+                : i.origenItem === 'manual'
+                  ? 'Manual'
+                  : 'Adicional')
+            : '';
+          const descripcion =
+            i.subtipo === 'piqueo' && i.unidadesPack
+              ? `${i.cantidad} pack${i.cantidad > 1 ? 's' : ''} · ${i.unidadesPack} uds c/u`
+              : '';
+          const costo = incluido ? '—' : money(i.precioUnitario);
+          const subtotalTxt = incluido ? '—' : money(i.subtotal);
+          return `<tr><td>${escapeHtml(i.nombre)}</td><td>${escapeHtml(descripcion)}</td><td>${i.cantidad}</td><td>${escapeHtml(tipo)}</td><td>${costo}</td><td>${subtotalTxt}</td></tr>`;
+        })
         .join('')}
     </tbody>
   </table>`

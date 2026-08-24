@@ -22,6 +22,7 @@ export type Producto = {
   categoria: string;
   subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
   unidadesPack?: number | null;
+  unidad?: string;
   precioLunesViernes: number;
   precioFinSemana: number;
   cantidadMinima: number;
@@ -53,6 +54,8 @@ export type ItemCotizacion = {
   notas?: string | null;
   origenItem?: OrigenItemCotizacion;
   creditoAplicado?: number | null;
+  subtipo?: string | null;
+  unidadesPack?: number | null;
 };
 
 export type SeleccionPaquetePayload = {
@@ -69,6 +72,7 @@ export type SeleccionPaquetePayload = {
   derechoIngresoShowExterno?: boolean;
   derechoIngresoDecoracionExterno?: boolean;
   derechoIngresoCarritoSnackExterno?: boolean;
+  derechoDecoracionPersonalizada?: boolean;
 };
 
 export type PreviewCotizacionResponse = {

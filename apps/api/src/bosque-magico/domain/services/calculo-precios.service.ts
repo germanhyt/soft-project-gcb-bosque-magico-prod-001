@@ -1,9 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
-import {
-  esTarifaFinSemana,
-  feriadosComoSet,
-} from '../utils/tarifa-calendario';
+import { esTarifaFinSemana, feriadosComoSet } from '../utils/tarifa-calendario';
 
 export type TarifasNegocio = {
   baseLunesViernes: number;
@@ -29,6 +26,7 @@ export type TarifasExtrasInstitucionales = {
   ingresoShowExterno: number;
   ingresoDecoracionExterno: number;
   ingresoCarritoSnackExterno: number;
+  decoracionPersonalizada: number;
 };
 
 export type ItemCalculoInput = {
@@ -84,7 +82,9 @@ export class CalculoPreciosService {
   }
 
   async obtenerFeriados(): Promise<Set<string>> {
-    const item = await this.configuracion.obtenerPorClave('calendario.feriados');
+    const item = await this.configuracion.obtenerPorClave(
+      'calendario.feriados',
+    );
     return feriadosComoSet(item?.valor);
   }
 
@@ -144,7 +144,11 @@ export class CalculoPreciosService {
       salitaLounge: num('extras.salita_lounge', 50),
       ingresoShowExterno: num('extras.ingreso_show_externo', 300),
       ingresoDecoracionExterno: num('extras.ingreso_decoracion_externo', 100),
-      ingresoCarritoSnackExterno: num('extras.ingreso_carrito_snack_externo', 300),
+      ingresoCarritoSnackExterno: num(
+        'extras.ingreso_carrito_snack_externo',
+        300,
+      ),
+      decoracionPersonalizada: num('extras.decoracion_personalizada', 100),
     };
   }
 

@@ -43,27 +43,45 @@ export type CotizacionResponse = CotizacionConItems & {
     notas: string | null;
     origenItem?: string;
     creditoAplicado?: unknown;
+    subtipo?: string | null;
+    unidadesPack?: number | null;
   }>;
+};
+
+export type ProductoPackInfo = {
+  id: string;
+  subtipo?: string | null;
+  unidadesPack?: number | null;
 };
 
 export function mapCotizacionResponse(
   cot: CotizacionConItems,
+  productosMap?: Map<string, ProductoPackInfo>,
 ): CotizacionResponse {
-  const items = cot.items?.map((item) => ({
-    id: item.id,
-    tipo: item.tipo,
-    nombre: item.nombre,
-    cantidad: item.cantidad,
-    precioUnitario: fromDecimal(item.precioUnitario as never),
-    subtotal: fromDecimal(item.subtotal as never),
-    productoId: item.productoId,
-    notas: item.notas,
-    origenItem: (item as { origenItem?: string }).origenItem,
-    creditoAplicado:
-      (item as { creditoAplicado?: unknown }).creditoAplicado != null
-        ? fromDecimal((item as { creditoAplicado: unknown }).creditoAplicado as never)
-        : null,
-  }));
+  const items = cot.items?.map((item) => {
+    const prod = item.productoId
+      ? productosMap?.get(item.productoId)
+      : undefined;
+    return {
+      id: item.id,
+      tipo: item.tipo,
+      nombre: item.nombre,
+      cantidad: item.cantidad,
+      precioUnitario: fromDecimal(item.precioUnitario as never),
+      subtotal: fromDecimal(item.subtotal as never),
+      productoId: item.productoId,
+      notas: item.notas,
+      origenItem: (item as { origenItem?: string }).origenItem,
+      creditoAplicado:
+        (item as { creditoAplicado?: unknown }).creditoAplicado != null
+          ? fromDecimal(
+              (item as { creditoAplicado: unknown }).creditoAplicado as never,
+            )
+          : null,
+      subtipo: prod?.subtipo,
+      unidadesPack: prod?.unidadesPack,
+    };
+  });
 
   return {
     ...cot,

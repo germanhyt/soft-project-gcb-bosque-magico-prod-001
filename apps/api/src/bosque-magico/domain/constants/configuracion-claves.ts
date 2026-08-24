@@ -13,6 +13,7 @@ export const CLAVES_NUMERICAS_EDITABLES = new Set([
   'extras.ingreso_show_externo',
   'extras.ingreso_decoracion_externo',
   'extras.ingreso_carrito_snack_externo',
+  'extras.decoracion_personalizada',
   'contrato.adelanto_referencial',
   'contrato.garantia_referencial',
   'catering.minimo_unidades',

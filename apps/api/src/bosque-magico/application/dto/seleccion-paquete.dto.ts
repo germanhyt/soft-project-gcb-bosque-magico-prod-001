@@ -37,7 +37,10 @@ export class SeleccionPaqueteDto {
   @IsUUID()
   snackId?: string;
 
-  @ApiPropertyOptional({ example: 25, description: 'Unidades solicitadas para carrito snack Premium' })
+  @ApiPropertyOptional({
+    example: 25,
+    description: 'Unidades solicitadas para carrito snack Premium',
+  })
   @IsOptional()
   @IsInt()
   @Min(25)
@@ -49,13 +52,19 @@ export class SeleccionPaqueteDto {
   @Min(10)
   cajitasCantidad?: number;
 
-  @ApiPropertyOptional({ example: 10, description: 'Cantidad de cajitas clásicas' })
+  @ApiPropertyOptional({
+    example: 10,
+    description: 'Cantidad de cajitas clásicas',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
   cajitasClasica?: number;
 
-  @ApiPropertyOptional({ example: 0, description: 'Cantidad de cajitas saludables' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Cantidad de cajitas saludables',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -75,7 +84,10 @@ export class SeleccionPaqueteDto {
   @Type(() => ItemCantidadSeleccionDto)
   adicionales?: ItemCantidadSeleccionDto[];
 
-  @ApiPropertyOptional({ example: 0, description: 'Unidades de salita lounge (8 pax)' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Unidades de salita lounge (8 pax)',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -86,13 +98,22 @@ export class SeleccionPaqueteDto {
   @IsBoolean()
   derechoIngresoShowExterno?: boolean;
 
-  @ApiPropertyOptional({ description: 'Derecho de ingreso de decoración externo' })
+  @ApiPropertyOptional({
+    description: 'Derecho de ingreso de decoración externo',
+  })
   @IsOptional()
   @IsBoolean()
   derechoIngresoDecoracionExterno?: boolean;
 
-  @ApiPropertyOptional({ description: 'Derecho de ingreso de carrito snack externo' })
+  @ApiPropertyOptional({
+    description: 'Derecho de ingreso de carrito snack externo',
+  })
   @IsOptional()
   @IsBoolean()
   derechoIngresoCarritoSnackExterno?: boolean;
+
+  @ApiPropertyOptional({ description: 'Derechos de decoración personalizada' })
+  @IsOptional()
+  @IsBoolean()
+  derechoDecoracionPersonalizada?: boolean;
 }

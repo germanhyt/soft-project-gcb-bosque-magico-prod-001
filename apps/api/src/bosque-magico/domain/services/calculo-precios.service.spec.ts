@@ -60,7 +60,13 @@ describe('CalculoPreciosService', () => {
 
     it('aplica tarifa fin de semana en feriado configurado', () => {
       const feriados = new Set(['2026-07-28']);
-      const r = service.calcular(TARIFAS, fechaLocal(2026, 7, 28), 20, [], feriados);
+      const r = service.calcular(
+        TARIFAS,
+        fechaLocal(2026, 7, 28),
+        20,
+        [],
+        feriados,
+      );
       expect(r.esFinSemana).toBe(true);
       expect(r.montoBase).toBe(950);
     });
@@ -78,9 +84,16 @@ describe('CalculoPreciosService', () => {
     });
 
     it('acepta montoNinosExtra externo (cargos de capacidad)', () => {
-      const r = service.calcular(TARIFAS, fechaLocal(2026, 6, 4), 25, [], new Set(), {
-        montoNinosExtra: 75,
-      });
+      const r = service.calcular(
+        TARIFAS,
+        fechaLocal(2026, 6, 4),
+        25,
+        [],
+        new Set(),
+        {
+          montoNinosExtra: 75,
+        },
+      );
       expect(r.montoNinosExtra).toBe(75);
       expect(r.montoTotal).toBe(874);
     });
@@ -157,6 +170,7 @@ describe('CalculoPreciosService', () => {
         { clave: 'extras.ingreso_show_externo', valor: 310 },
         { clave: 'extras.ingreso_decoracion_externo', valor: 110 },
         { clave: 'extras.ingreso_carrito_snack_externo', valor: 320 },
+        { clave: 'extras.decoracion_personalizada', valor: 100 },
       ]);
 
       const tarifas = await service.obtenerTarifasExtrasInstitucionales();
@@ -165,6 +179,7 @@ describe('CalculoPreciosService', () => {
         ingresoShowExterno: 310,
         ingresoDecoracionExterno: 110,
         ingresoCarritoSnackExterno: 320,
+        decoracionPersonalizada: 100,
       });
     });
   });

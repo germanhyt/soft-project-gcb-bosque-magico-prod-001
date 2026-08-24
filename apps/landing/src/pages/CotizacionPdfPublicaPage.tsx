@@ -23,7 +23,15 @@ type CotizacionPublica = {
   puedeAceptar: boolean;
   cliente: { nombreCompleto: string; celular?: string | null; correo?: string | null };
   cumpleanero: { nombre: string; edad?: number | null };
-  items?: { nombre: string; cantidad: number; precioUnitario: number; subtotal: number }[];
+  items?: {
+    nombre: string;
+    cantidad: number;
+    precioUnitario: number;
+    subtotal: number;
+    origenItem?: string;
+    subtipo?: string | null;
+    unidadesPack?: number | null;
+  }[];
 };
 
 async function fetchPublica(token: string) {

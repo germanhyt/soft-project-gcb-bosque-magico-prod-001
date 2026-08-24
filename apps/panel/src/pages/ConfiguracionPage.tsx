@@ -24,6 +24,7 @@ import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
 import { smtpValoresDesdeItems, SMTP_ORDEN } from '../lib/smtp-config';
 import type { Producto } from '../lib/cotizaciones';
 import { FeriadosConfigEditor } from '../components/configuracion/FeriadosConfigEditor';
+import { SmtpPruebaEnvio } from '../components/configuracion/SmtpPruebaEnvio';
 import { CatalogoProductoRowActions } from '../components/catalogo/CatalogoProductoRowActions';
 import { ProveedoresTab } from '../components/proveedores/ProveedoresTab';
 import { ProductoFormModal } from '../components/catalogo/ProductoFormModal';
@@ -74,6 +75,7 @@ const LABELS: Record<string, string> = {
   'extras.ingreso_show_externo': 'Ingreso show externo (S/)',
   'extras.ingreso_decoracion_externo': 'Ingreso decoración externo (S/)',
   'extras.ingreso_carrito_snack_externo': 'Ingreso carrito snack externo (S/)',
+  'extras.decoracion_personalizada': 'Decoración personalizada (S/)',
   'contrato.adelanto_referencial': 'Adelanto referencial (S/)',
   'contrato.garantia_referencial': 'Garantía referencial (S/)',
   'catering.minimo_unidades': 'Mínimo catering (unidades)',
@@ -99,6 +101,7 @@ const AYUDA: Record<string, string> = {
   'extras.ingreso_show_externo': 'Cargo por derecho de ingreso de show externo.',
   'extras.ingreso_decoracion_externo': 'Cargo por derecho de ingreso de decoración externo.',
   'extras.ingreso_carrito_snack_externo': 'Cargo por derecho de ingreso de carrito snack externo.',
+  'extras.decoracion_personalizada': 'Cargo por derechos de decoración personalizada.',
   'contrato.adelanto_referencial': 'Monto referencial para separar la fecha del evento.',
   'contrato.garantia_referencial': 'Monto referencial de garantía al confirmar.',
   'catering.minimo_unidades': 'Mínimo por ítem de catering genérico (no piqueos ni cajitas).',
@@ -130,12 +133,13 @@ const CONFIG_GRUPOS_NUMERICOS: ConfigGrupo[] = [
   },
   {
     titulo: 'Extras institucionales',
-    descripcion: 'Salita lounge y derechos de ingreso externos (cotización / contrato).',
+    descripcion: 'Salita lounge, derechos de ingreso externos y decoración personalizada (cotización / contrato).',
     claves: [
       'extras.salita_lounge',
       'extras.ingreso_show_externo',
       'extras.ingreso_decoracion_externo',
       'extras.ingreso_carrito_snack_externo',
+      'extras.decoracion_personalizada',
     ],
   },
   {
@@ -503,6 +507,8 @@ export function ConfiguracionPage() {
   }, [config?.smtp, smtpIniciales]);
 
   const smtpHabilitado = smtpActuales['smtp.habilitado'] === 'true';
+  const hayCambiosSmtp = JSON.stringify(smtpActuales) !== JSON.stringify(smtpIniciales);
+  const smtpGuardadoActivo = config?.meta?.smtp.activo === true;
   const postventaHabilitado = postventaActuales['postventa.habilitado'] === 'true';
   const pedidosProveedorHabilitado =
     pedidosProveedorActuales['pedidos_proveedor.notificar_correo'] === 'true';
@@ -1056,6 +1062,10 @@ export function ConfiguracionPage() {
                   );
                 })}
               </div>
+              <SmtpPruebaEnvio
+                smtpGuardadoActivo={smtpGuardadoActivo}
+                hayCambiosSmtp={hayCambiosSmtp}
+              />
             </section>
 
             <section className={`w-full p-6 ${CARD_CLASS}`}>

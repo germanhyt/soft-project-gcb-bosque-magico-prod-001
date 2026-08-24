@@ -29,6 +29,8 @@ const NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO =
   'Derecho de ingreso de decoración externo';
 const NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO =
   'Derecho de ingreso de carrito snack externo';
+const NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA =
+  'Derechos de decoración personalizada';
 
 @Injectable()
 export class ComposicionPaqueteService {
@@ -106,14 +108,19 @@ export class ComposicionPaqueteService {
       metadata: (r.metadata as Record<string, unknown> | null) ?? null,
     }));
 
-    const [tarifas, reglasCapacidad, configPaquete, tarifasHoraExtraEspacio, tarifasExtras] =
-      await Promise.all([
-        this.calculo.obtenerTarifas(),
-        this.calculo.obtenerReglasCapacidad(),
-        this.calculo.obtenerReglasPaquete(),
-        this.calculo.obtenerTarifasHoraExtraEspacio(),
-        this.calculo.obtenerTarifasExtrasInstitucionales(),
-      ]);
+    const [
+      tarifas,
+      reglasCapacidad,
+      configPaquete,
+      tarifasHoraExtraEspacio,
+      tarifasExtras,
+    ] = await Promise.all([
+      this.calculo.obtenerTarifas(),
+      this.calculo.obtenerReglasCapacidad(),
+      this.calculo.obtenerReglasPaquete(),
+      this.calculo.obtenerTarifasHoraExtraEspacio(),
+      this.calculo.obtenerTarifasExtrasInstitucionales(),
+    ]);
 
     const composicion = resolverComposicionPaquete({
       paquete: this.aRef(paqueteProducto),
@@ -205,6 +212,14 @@ export class ComposicionPaqueteService {
         1,
         tarifasExtras.ingresoCarritoSnackExterno,
         'Derecho de ingreso carrito snack externo',
+      );
+    }
+    if (params.seleccion.derechoDecoracionPersonalizada) {
+      pushExtra(
+        NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA,
+        1,
+        tarifasExtras.decoracionPersonalizada,
+        'Derechos de decoración personalizada',
       );
     }
 

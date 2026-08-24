@@ -34,8 +34,8 @@ export class PrevisualizarCotizacionPublicaUseCase {
       salitaLoungeCantidad: base.salitaLoungeCantidad,
       derechoIngresoShowExterno: base.derechoIngresoShowExterno,
       derechoIngresoDecoracionExterno: base.derechoIngresoDecoracionExterno,
-      derechoIngresoCarritoSnackExterno:
-        base.derechoIngresoCarritoSnackExterno,
+      derechoIngresoCarritoSnackExterno: base.derechoIngresoCarritoSnackExterno,
+      derechoDecoracionPersonalizada: base.derechoDecoracionPersonalizada,
     };
   }
 

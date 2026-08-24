@@ -80,13 +80,18 @@ export class ActualizarCotizacionUseCase {
       cajitasClasica: dto.seleccion.cajitasClasica,
       cajitasSaludable: dto.seleccion.cajitasSaludable,
       piqueos: dto.seleccion.piqueos,
-      adicionales: [...(dto.seleccion.adicionales ?? []), ...adicionalesManuales],
+      adicionales: [
+        ...(dto.seleccion.adicionales ?? []),
+        ...adicionalesManuales,
+      ],
       salitaLoungeCantidad: dto.seleccion.salitaLoungeCantidad,
       derechoIngresoShowExterno: dto.seleccion.derechoIngresoShowExterno,
       derechoIngresoDecoracionExterno:
         dto.seleccion.derechoIngresoDecoracionExterno,
       derechoIngresoCarritoSnackExterno:
         dto.seleccion.derechoIngresoCarritoSnackExterno,
+      derechoDecoracionPersonalizada:
+        dto.seleccion.derechoDecoracionPersonalizada,
     };
   }
 
@@ -156,7 +161,9 @@ export class ActualizarCotizacionUseCase {
 
     const seleccion = this.mapearSeleccion(dto);
     const horasAdicionalesDesdeAntes = antes.items
-      .filter((i) => i.nombre.toLowerCase().includes('hora adicional de espacio'))
+      .filter((i) =>
+        i.nombre.toLowerCase().includes('hora adicional de espacio'),
+      )
       .reduce((sum, i) => sum + i.cantidad, 0);
     const horasAdicionales = dto.horasAdicionales ?? horasAdicionalesDesdeAntes;
     let items: ItemCotizacionInput[];
@@ -164,13 +171,15 @@ export class ActualizarCotizacionUseCase {
     let resumenPaquete;
 
     if (seleccion) {
-      const resultado = await this.composicionPaquete.armarCotizacionConPaquete({
-        paquete,
-        fechaEvento,
-        cantidadNinos,
-        seleccion,
-        horasAdicionales,
-      });
+      const resultado = await this.composicionPaquete.armarCotizacionConPaquete(
+        {
+          paquete,
+          fechaEvento,
+          cantidadNinos,
+          seleccion,
+          horasAdicionales,
+        },
+      );
       items = this.itemsDesdeComposicion(resultado.composicion.items);
       montos = resultado.montos;
       resumenPaquete = resultado.composicion.resumen;
@@ -186,12 +195,17 @@ export class ActualizarCotizacionUseCase {
           notas: i.notas ?? undefined,
         }));
 
-      items = await this.resolverItemsManuales(itemsInput, fechaEvento, feriados);
+      items = await this.resolverItemsManuales(
+        itemsInput,
+        fechaEvento,
+        feriados,
+      );
       const tarifas = await this.calculo.obtenerTarifas();
       const paqueteProducto =
         await this.composicionPaquete.resolverPaquetePorNombreOCodigo(paquete);
       const esFin = this.calculo.esTarifaFinSemana(fechaEvento, feriados);
-      const tarifasHoraExtra = await this.calculo.obtenerTarifasHoraExtraEspacio();
+      const tarifasHoraExtra =
+        await this.calculo.obtenerTarifasHoraExtraEspacio();
       if (horasAdicionales > 0) {
         const tarifaHora = esFin
           ? tarifasHoraExtra.finSemana

@@ -14,6 +14,7 @@ import { calcularResumenPiqueosCredito } from '../../lib/piqueos-credito';
 import { apiErrorMessage } from '../../lib/api-error';
 import {
   esPaquetePremium,
+  esPaquetePersonalizado,
   seleccionToPayload,
   toggleIdEnLista,
   type SeleccionPaqueteState,
@@ -48,6 +49,7 @@ export function CotizacionPaqueteEditor({
 }: Props) {
   const qc = useQueryClient();
   const esPremium = esPaquetePremium(paquete);
+  const esPersonalizado = esPaquetePersonalizado(paquete);
   const [piqueosBusqueda, setPiqueosBusqueda] = useState('');
   const [showForm, setShowForm] = useState<{ mode: 'create' } | { mode: 'edit'; producto: Producto } | null>(
     null,
@@ -397,18 +399,28 @@ export function CotizacionPaqueteEditor({
       )}
 
       <CatalogoSection
-        titulo="Shows (1.º incluido en Estándar/Premium; adicionales a precio completo)"
-        productos={catalogo.shows}
+        titulo={
+          esPersonalizado
+            ? 'Shows (paquete personalizado · show personalizado con coste)'
+            : 'Shows (1.º incluido en Estándar/Premium; adicionales a precio completo)'
+        }
+        productos={
+          esPersonalizado
+            ? catalogo.shows.filter((s) => s.codigo === 'SHOW-PERS')
+            : catalogo.shows
+        }
         selectedIds={seleccion.showIds}
         cantidades={{}}
         onToggle={toggleShow}
         onCantidad={() => {}}
-        onEditar={(p) => setShowForm({ mode: 'edit', producto: p })}
-        onEliminar={confirmarEliminarShow}
+        onEditar={esPersonalizado ? undefined : (p) => setShowForm({ mode: 'edit', producto: p })}
+        onEliminar={esPersonalizado ? undefined : confirmarEliminarShow}
         headerExtra={
-          <Button type="button" variant="ghost" onClick={() => setShowForm({ mode: 'create' })}>
-            Nuevo show
-          </Button>
+          esPersonalizado ? undefined : (
+            <Button type="button" variant="ghost" onClick={() => setShowForm({ mode: 'create' })}>
+              Nuevo show
+            </Button>
+          )
         }
       />
 
@@ -466,6 +478,12 @@ export function CotizacionPaqueteEditor({
                   label: 'Derecho ingreso carrito snack externo',
                   clave: 'extras.ingreso_carrito_snack_externo',
                   def: 300,
+                },
+                {
+                  key: 'derechoDecoracionPersonalizada' as const,
+                  label: 'Derechos de decoración personalizada',
+                  clave: 'extras.decoracion_personalizada',
+                  def: 100,
                 },
               ] as const
             ).map((opt) => {

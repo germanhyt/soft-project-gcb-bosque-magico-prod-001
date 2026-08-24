@@ -36,6 +36,8 @@ export const NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO =
   'Derecho de ingreso de decoración externo';
 export const NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO =
   'Derecho de ingreso de carrito snack externo';
+export const NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA =
+  'Derechos de decoración personalizada';
 
 export const CONTRATO_ESPACIO_INCLUYE = [
   '8 Mesas cuadradas de 60×60 y 24 sillas',

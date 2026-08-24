@@ -45,6 +45,7 @@ export type SeleccionPaqueteInput = {
   derechoIngresoShowExterno?: boolean;
   derechoIngresoDecoracionExterno?: boolean;
   derechoIngresoCarritoSnackExterno?: boolean;
+  derechoDecoracionPersonalizada?: boolean;
 };
 
 export type ItemPaqueteResuelto = {
@@ -106,7 +107,8 @@ export function precioProductoPorCategoria(
 export function categoriaATipoItem(
   categoria: CategoriaProducto,
 ): TipoItemCotizacion {
-  if (categoria === CategoriaProducto.catering) return TipoItemCotizacion.catering;
+  if (categoria === CategoriaProducto.catering)
+    return TipoItemCotizacion.catering;
   if (categoria === CategoriaProducto.show) return TipoItemCotizacion.show;
   return TipoItemCotizacion.extra;
 }

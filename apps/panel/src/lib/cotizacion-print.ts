@@ -26,6 +26,9 @@ function toPrintData(cot: Cotizacion): CotizacionPrintData {
       cantidad: i.cantidad,
       precioUnitario: i.precioUnitario,
       subtotal: i.subtotal,
+      origenItem: i.origenItem,
+      subtipo: i.subtipo,
+      unidadesPack: i.unidadesPack,
     })),
   };
 }
