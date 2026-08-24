@@ -406,7 +406,7 @@ export function CotizacionPaqueteEditor({
         }
         productos={
           esPersonalizado
-            ? catalogo.shows.filter((s) => s.codigo === 'SHOW-PERS')
+            ? catalogo.shows.filter((s) => s.codigo === 'SHOW-001')
             : catalogo.shows
         }
         selectedIds={seleccion.showIds}

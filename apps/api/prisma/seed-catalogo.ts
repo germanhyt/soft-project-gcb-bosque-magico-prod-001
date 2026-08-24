@@ -32,7 +32,7 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'PK-PERSONALIZADO', nombre: 'Personalizado', categoria: 'paquete', lv: 799, fds: 950 },
   { codigo: 'ESP-ALQ-3H', nombre: 'Alquiler 3 horas', categoria: 'espacio', lv: 0, fds: 0 },
   { codigo: 'CAJ-BOSQUE', nombre: 'Cajita Bosque Mágico', categoria: 'catering', lv: 20.9, fds: 20.9, subtipo: 'cajita', unidad: 'unidad', cantidadMinima: 1 },
-  { codigo: 'SHOW-PERS', nombre: 'Show personalizado', categoria: 'show', lv: 1000, fds: 1000 },
+  { codigo: 'SHOW-001', nombre: 'Show personalizado', categoria: 'show', lv: 1000, fds: 1000 },
   { codigo: 'SHOW-MAGIA', nombre: 'Magia Chispeante', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-MIMO', nombre: 'Show Mimo', categoria: 'show', lv: 520, fds: 690 },
   { codigo: 'SHOW-BURBUJAS', nombre: 'Burbujas Fantásticas', categoria: 'show', lv: 520, fds: 690 },
