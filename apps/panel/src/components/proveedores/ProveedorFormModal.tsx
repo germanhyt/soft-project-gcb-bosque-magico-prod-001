@@ -1,8 +1,12 @@
 import { useEffect, useState } from 'react';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
-import type { Proveedor } from '../../lib/proveedores';
+import {
+  CATEGORIA_PROVEEDOR_OPTIONS,
+  type Proveedor,
+} from '../../lib/proveedores';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { MultiSelect } from '../ui/MultiSelect';
 
 export type ProveedorFormPayload = {
   nombre: string;
@@ -25,27 +29,19 @@ const EMPTY = {
   contacto: '',
   celular: '',
   correo: '',
-  categoriaPrincipal: '',
-  categoriasExtra: '',
+  categorias: [] as string[],
   notas: '',
 };
 
-const CATEGORIA_OPTIONS = [
-  { value: 'show', label: 'Show' },
-  { value: 'catering', label: 'Catering' },
-  { value: 'inflables', label: 'Inflables' },
-  { value: 'decoracion', label: 'Decoración' },
-  { value: 'animacion', label: 'Animación' },
-  { value: 'fotografia-video', label: 'Fotografía / Video' },
-];
+const CATEGORIA_OPTIONS = CATEGORIA_PROVEEDOR_OPTIONS.map((categoria) => ({
+  value: categoria.value,
+  label: categoria.label,
+}));
 
 export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState('');
-  const categoriaPrincipalNoListada =
-    form.categoriaPrincipal &&
-    !CATEGORIA_OPTIONS.some((categoria) => categoria.value === form.categoriaPrincipal);
 
   useEffect(() => {
     if (!open) return;
@@ -56,8 +52,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             contacto: proveedor.contacto ?? '',
             celular: proveedor.celular ?? '',
             correo: proveedor.correo ?? '',
-            categoriaPrincipal: proveedor.categorias[0] ?? '',
-            categoriasExtra: proveedor.categorias.slice(1).join(', '),
+            categorias: [...proveedor.categorias],
             notas: proveedor.notas ?? '',
           }
         : EMPTY,
@@ -81,11 +76,7 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
         celular: form.celular.trim() || undefined,
         correo: form.correo.trim() || undefined,
         categorias: Array.from(
-          new Set(
-            [form.categoriaPrincipal, ...form.categoriasExtra.split(',')]
-              .map((c) => c.trim())
-              .filter(Boolean),
-          ),
+          new Set(form.categorias.map((c) => c.trim()).filter(Boolean)),
         ),
         notas: form.notas.trim() || undefined,
       });
@@ -144,35 +135,16 @@ export function ProveedorFormModal({ open, onClose, onSubmit, proveedor }: Props
             placeholder="contacto@proveedor.com"
           />
         </label>
-        <div className="grid gap-5 sm:grid-cols-2">
-          <label className="block space-y-2">
-            <span className={LABEL_CLASS}>Categoría principal</span>
-            <select
-              className={INPUT_CLASS}
-              value={form.categoriaPrincipal}
-              onChange={(e) => setForm((f) => ({ ...f, categoriaPrincipal: e.target.value }))}
-            >
-              <option value="">— Seleccionar —</option>
-              {categoriaPrincipalNoListada && (
-                <option value={form.categoriaPrincipal}>{form.categoriaPrincipal}</option>
-              )}
-              {CATEGORIA_OPTIONS.map((categoria) => (
-                <option key={categoria.value} value={categoria.value}>
-                  {categoria.label}
-                </option>
-              ))}
-            </select>
-          </label>
-          <label className="block space-y-2">
-            <span className={LABEL_CLASS}>Categorías adicionales (opcional)</span>
-            <input
-              className={INPUT_CLASS}
-              placeholder="inflables, utilería, transporte"
-              value={form.categoriasExtra}
-              onChange={(e) => setForm((f) => ({ ...f, categoriasExtra: e.target.value }))}
-            />
-          </label>
-        </div>
+        <label className="block space-y-2">
+          <span className={LABEL_CLASS}>Categorías</span>
+          <MultiSelect
+            inputId="proveedor-categorias"
+            value={form.categorias}
+            options={CATEGORIA_OPTIONS}
+            onChange={(categorias) => setForm((f) => ({ ...f, categorias }))}
+            placeholder="Selecciona una o más categorías"
+          />
+        </label>
         <label className="block space-y-2">
           <span className={LABEL_CLASS}>Notas</span>
           <textarea

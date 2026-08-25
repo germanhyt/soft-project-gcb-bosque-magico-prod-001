@@ -29,6 +29,7 @@ import { CrearSolicitudManualUseCase } from './application/use-cases/crear-solic
 import { CrearSolicitudPublicaUseCase } from './application/use-cases/crear-solicitud-publica.use-case';
 import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cases/generar-cotizacion-borrador-solicitud.use-case';
 import { EnviarPedidoProveedorCorreoUseCase } from './application/use-cases/enviar-pedido-proveedor-correo.use-case';
+import { EnviarCorreoContactoUseCase } from './application/use-cases/enviar-correo-contacto.use-case';
 import { ListarAuditoriaUseCase } from './application/use-cases/listar-auditoria.use-case';
 import { ListarConfiguracionPanelUseCase } from './application/use-cases/listar-configuracion-panel.use-case';
 import { ProbarSmtpUseCase } from './application/use-cases/probar-smtp.use-case';
@@ -87,6 +88,7 @@ import { PedidosController } from './presentation/pedidos.controller';
 import { ProveedoresController } from './presentation/proveedores.controller';
 import { PublicBosqueMagicoController } from './presentation/public.controller';
 import { TareasEventoController } from './presentation/tareas-evento.controller';
+import { ContactoController } from './presentation/contacto.controller';
 import { SolicitudesController } from './presentation/solicitudes.controller';
 import { ContratosController } from './presentation/contratos.controller';
 import { ClientesController } from './presentation/clientes.controller';
@@ -116,6 +118,7 @@ import {
   controllers: [
     PublicBosqueMagicoController,
     SolicitudesController,
+    ContactoController,
     ClientesController,
     CotizacionesController,
     EventosController,
@@ -179,6 +182,7 @@ import {
     ActualizarCotizacionUseCase,
     EnviarCotizacionUseCase,
     EnviarPedidoProveedorCorreoUseCase,
+    EnviarCorreoContactoUseCase,
     AceptarCotizacionUseCase,
     ListarProductosUseCase,
     ListarProductosPanelUseCase,

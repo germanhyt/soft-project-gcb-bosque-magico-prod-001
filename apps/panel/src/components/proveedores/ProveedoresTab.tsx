@@ -6,7 +6,7 @@ import {
   crearProveedor,
   fetchProveedores,
 } from '../../lib/proveedores-api';
-import type { Proveedor } from '../../lib/proveedores';
+import { etiquetaCategoriaProveedor, type Proveedor } from '../../lib/proveedores';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../../lib/pagination';
 import { Button } from '../ui/Button';
 import { DataTableCard } from '../ui/DataTableCard';
@@ -203,7 +203,9 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-outline">
-                      {p.categorias.length ? p.categorias.join(', ') : '—'}
+                      {p.categorias.length
+                        ? p.categorias.map(etiquetaCategoriaProveedor).join(', ')
+                        : '—'}
                     </td>
                     <td className="px-4 py-3">
                       <span

@@ -752,7 +752,7 @@ export function ConfiguracionPage() {
               <h3 className="text-title-md text-primary">Correo SMTP</h3>
               <p className="mt-1 text-body-sm text-outline">
                 {smtpHabilitado
-                  ? 'Envío automático activo: las cotizaciones se envían desde el servidor.'
+                  ? 'Envío automático activo: cotizaciones, pedidos a proveedor y contacto (solicitudes/clientes) se envían desde el servidor.'
                   : 'Envío manual: al usar «Enviar por correo» se abrirá tu cliente de correo con el mensaje precargado.'}
               </p>
               <div className="mt-6 grid gap-6 sm:grid-cols-2 xl:grid-cols-3">

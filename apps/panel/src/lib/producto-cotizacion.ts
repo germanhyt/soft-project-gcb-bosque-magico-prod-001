@@ -11,8 +11,22 @@ export function productosParaCotizacion(productos: Producto[]) {
     (p) => p.etapa !== 'inactivo' && p.codigo !== 'EXT-DECOR',
   );
   const catering = activos.filter((p) => p.categoria === 'catering');
+  const ordenPaquete = (nombre: string) => {
+    const n = nombre
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase();
+    if (n.includes('basico')) return 0;
+    if (n.includes('estandar') || n.includes('standar')) return 1;
+    if (n.includes('premiu')) return 2;
+    if (n.includes('personal')) return 3;
+    return 99;
+  };
+
   return {
-    paquetes: activos.filter((p) => p.categoria === 'paquete'),
+    paquetes: activos
+      .filter((p) => p.categoria === 'paquete')
+      .sort((a, b) => ordenPaquete(a.nombre) - ordenPaquete(b.nombre) || a.nombre.localeCompare(b.nombre, 'es')),
     shows: activos.filter((p) => p.categoria === 'show'),
     catering: catering.filter(
       (p) =>

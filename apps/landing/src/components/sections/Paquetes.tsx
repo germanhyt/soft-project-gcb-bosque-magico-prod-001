@@ -18,8 +18,15 @@ type Props = {
 export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
   const { data } = useConfiguracion();
   const reduceMotion = useReducedMotion();
+  const paquetesCatalogo = data?.productos.paquetes?.length
+    ? [...data.productos.paquetes].sort((a, b) => {
+        const ia = PAQUETES.findIndex((n) => n.toLowerCase() === a.nombre.toLowerCase());
+        const ib = PAQUETES.findIndex((n) => n.toLowerCase() === b.nombre.toLowerCase());
+        return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib);
+      })
+    : null;
   const paquetes =
-    data?.productos.paquetes?.map((paquete) => ({
+    paquetesCatalogo?.map((paquete) => ({
       nombre: paquete.nombre,
       imagenUrl: paquete.imagenUrl,
       imagenes: paquete.imagenes,

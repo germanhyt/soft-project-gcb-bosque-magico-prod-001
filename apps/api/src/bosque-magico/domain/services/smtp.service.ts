@@ -59,6 +59,11 @@ export class SmtpService {
     destino: string;
     asunto: string;
     texto: string;
+    adjuntos?: Array<{
+      filename: string;
+      content: Buffer;
+      contentType?: string;
+    }>;
   }): Promise<void> {
     const cfg = await this.cargarConfig();
     if (!cfg.habilitado) {
@@ -87,6 +92,11 @@ export class SmtpService {
         to: opts.destino,
         subject: opts.asunto,
         text: opts.texto,
+        attachments: opts.adjuntos?.map((a) => ({
+          filename: a.filename,
+          content: a.content,
+          contentType: a.contentType,
+        })),
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar correo';
