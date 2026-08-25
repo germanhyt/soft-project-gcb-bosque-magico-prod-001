@@ -25,6 +25,13 @@ export function rangoMes(year: number, month: number) {
   return { desde, hasta };
 }
 
+/** Desde el 1 del mes actual (zona negocio) hasta el 31 de diciembre del mismo año. */
+export function rangoMesActualHastaFinAnio() {
+  const { year, month } = parseMesParam(null);
+  const { desde } = rangoMes(year, month);
+  return { desde, hasta: `${year}-12-31` };
+}
+
 export function nombreMesAnio(year: number, month: number) {
   const d = new Date(Date.UTC(year, month, 1, 12, 0, 0));
   const nombre = d.toLocaleDateString('es-PE', { month: 'long', year: 'numeric', timeZone: 'UTC' });

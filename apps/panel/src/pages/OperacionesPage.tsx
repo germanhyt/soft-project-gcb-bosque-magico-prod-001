@@ -11,7 +11,7 @@ import {
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { TURNO_LABEL } from '../constants/solicitudes';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
-import { parseMesParam, rangoMes } from '../lib/agenda-calendar';
+import { rangoMesActualHastaFinAnio } from '../lib/agenda-calendar';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
 import { actualizarPedido } from '../lib/pedidos-api';
 import type { AreaPedido, EtapaPedido } from '../lib/pedidos';
@@ -30,11 +30,6 @@ import {
   type PedidoOperaciones,
 } from '../components/pedidos/PedidoOperacionesRowActions';
 
-function rangoMesCompletoActual() {
-  const { year, month } = parseMesParam(null);
-  return rangoMes(year, month);
-}
-
 function coincideBusqueda(q: string, pedido: PedidoOperaciones) {
   const needle = q.trim().toLowerCase();
   if (!needle) return true;
@@ -51,7 +46,7 @@ function coincideBusqueda(q: string, pedido: PedidoOperaciones) {
 export function OperacionesPage() {
   const navigate = useNavigate();
   const qc = useQueryClient();
-  const def = rangoMesCompletoActual();
+  const def = rangoMesActualHastaFinAnio();
   const [desde, setDesde] = useState(def.desde);
   const [hasta, setHasta] = useState(def.hasta);
   const [busqueda, setBusqueda] = useState('');

@@ -869,7 +869,7 @@ export function ConfiguracionPage() {
               <h3 className="text-title-md text-primary">Pedidos a proveedores</h3>
               <p className="mt-1 text-body-sm text-outline">
                 {pedidosProveedorHabilitado
-                  ? 'Al crear un pedido de proveedor (automático o manual) se enviará correo si el proveedor tiene email y SMTP está activo.'
+                  ? 'Al marcar un pedido de proveedor como Solicitado se enviará correo si el proveedor tiene email y SMTP está activo. Aceptar la cotización solo genera los pedidos en Pendiente.'
                   : 'Desactivado: el operador contacta al proveedor manualmente (WhatsApp/correo desde el detalle del evento).'}
               </p>
               <div className="mt-6 grid gap-6 sm:grid-cols-2">
