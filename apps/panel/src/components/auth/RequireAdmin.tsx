@@ -13,7 +13,7 @@ export function RequireAdmin() {
   }
 
   if (!user?.permisos.includes('bosque_magico:admin')) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

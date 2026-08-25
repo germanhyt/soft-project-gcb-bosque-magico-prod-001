@@ -52,6 +52,14 @@ export async function guardarConfiguracion(
   return data;
 }
 
+export async function probarSmtp(correoDestino: string) {
+  const { data } = await api.post<{ ok: true; destino: string }>(
+    '/bosque-magico/configuracion/smtp/probar',
+    { correoDestino },
+  );
+  return data;
+}
+
 export async function fetchProductosCatalogo(soloActivos?: boolean) {
   const { data } = await api.get<Producto[]>('/bosque-magico/productos', {
     params: soloActivos !== undefined ? { soloActivos } : {},

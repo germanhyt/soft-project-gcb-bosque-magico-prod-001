@@ -7,7 +7,7 @@ import { LiveStatusBadge } from './LiveStatusBadge';
 import { NotificationsDropdown } from './NotificationsDropdown';
 import { UserAccountMenu } from './UserAccountMenu';
 
-const NAV_TOP = [{ to: '/', label: 'Dashboard', icon: 'dashboard', end: true }] as const;
+const NAV_TOP = [{ to: '/dashboard', label: 'Dashboard', icon: 'dashboard', end: true }] as const;
 
 const NAV_MAIN = [
   { to: '/solicitudes', label: 'Solicitudes', icon: 'inbox' },

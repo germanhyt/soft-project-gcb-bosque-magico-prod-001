@@ -26,7 +26,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
         <Route element={<PanelLayout />}>
-          <Route index element={<Navigate to="/solicitudes" replace />} />
+          <Route index element={<Navigate to="/dashboard" replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="solicitudes" element={<SolicitudesPage />} />
           <Route path="clientes" element={<ClientesPage />} />
