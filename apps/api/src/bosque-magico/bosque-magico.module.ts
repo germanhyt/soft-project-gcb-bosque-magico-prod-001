@@ -31,6 +31,7 @@ import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cas
 import { EnviarPedidoProveedorCorreoUseCase } from './application/use-cases/enviar-pedido-proveedor-correo.use-case';
 import { ListarAuditoriaUseCase } from './application/use-cases/listar-auditoria.use-case';
 import { ListarConfiguracionPanelUseCase } from './application/use-cases/listar-configuracion-panel.use-case';
+import { ProbarSmtpUseCase } from './application/use-cases/probar-smtp.use-case';
 import { ListarCotizacionesUseCase } from './application/use-cases/listar-cotizaciones.use-case';
 import { ListarEventosUseCase } from './application/use-cases/listar-eventos.use-case';
 import { ListarProductosPanelUseCase } from './application/use-cases/listar-productos-panel.use-case';
@@ -55,6 +56,7 @@ import { ComposicionPaqueteService } from './domain/services/composicion-paquete
 import { SolicitudCotizacionSyncService } from './domain/services/solicitud-cotizacion-sync.service';
 import { SmtpService } from './domain/services/smtp.service';
 import { AnticipacionEventoService } from './domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from './domain/services/capacidad-evento.service';
 import { PrecondicionesEventoService } from './domain/services/precondiciones-evento.service';
 import { IdentidadContactoService } from './domain/services/identidad-contacto.service';
 import { AuditoriaRepository } from './infrastructure/repositories/auditoria.repository';
@@ -152,6 +154,7 @@ import {
     NotificacionProveedorService,
     ProductoMediaSyncService,
     AnticipacionEventoService,
+    CapacidadEventoService,
     PrecondicionesEventoService,
     IdentidadContactoService,
     ListarClientesUseCase,
@@ -169,6 +172,7 @@ import {
     ObtenerCatalogoPublicoUseCase,
     ListarConfiguracionPanelUseCase,
     ActualizarConfiguracionUseCase,
+    ProbarSmtpUseCase,
     CrearCotizacionUseCase,
     ListarCotizacionesUseCase,
     ObtenerCotizacionUseCase,

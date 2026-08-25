@@ -6,11 +6,15 @@ const ETAPAS_RESPONDER: EtapaPedido[] = [
   EtapaPedido.solicitado,
 ];
 
-export function mapProveedorResponse<T extends Record<string, unknown>>(proveedor: T) {
+export function mapProveedorResponse<T extends Record<string, unknown>>(
+  proveedor: T,
+) {
   return { ...proveedor };
 }
 
-export function mapPedidoResponse<T extends Record<string, unknown>>(pedido: T) {
+export function mapPedidoResponse<T extends Record<string, unknown>>(
+  pedido: T,
+) {
   const token = String(pedido.tokenPublico ?? '');
   return {
     ...pedido,

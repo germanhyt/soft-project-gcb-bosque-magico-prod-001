@@ -44,7 +44,10 @@ describe('ActualizarConfiguracionUseCase', () => {
       18,
     );
     expect(auditoria.registrar).toHaveBeenCalledWith(
-      expect.objectContaining({ accion: 'actualizar', tipoEntidad: 'configuracion' }),
+      expect.objectContaining({
+        accion: 'actualizar',
+        tipoEntidad: 'configuracion',
+      }),
     );
   });
 
@@ -79,7 +82,9 @@ describe('ActualizarConfiguracionUseCase', () => {
 
     await expect(
       useCase.ejecutar({
-        actualizaciones: [{ clave: 'shows.ninos_incluidos', valor: 'veinte' as never }],
+        actualizaciones: [
+          { clave: 'shows.ninos_incluidos', valor: 'veinte' as never },
+        ],
       }),
     ).rejects.toThrow('Valor numérico inválido');
   });

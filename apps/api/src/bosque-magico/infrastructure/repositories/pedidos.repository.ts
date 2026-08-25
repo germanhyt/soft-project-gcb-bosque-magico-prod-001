@@ -1,10 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  AreaPedido,
-  EtapaPedido,
-  Prisma,
-  TipoPedido,
-} from '@prisma/client';
+import { AreaPedido, EtapaPedido, Prisma, TipoPedido } from '@prisma/client';
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { toDecimal } from '../../domain/utils/decimal';
@@ -18,8 +13,12 @@ export class PedidosRepository {
   }
 
   private includeRelaciones = {
-    producto: { select: { id: true, codigo: true, nombre: true, categoria: true } },
-    proveedor: { select: { id: true, nombre: true, celular: true, correo: true } },
+    producto: {
+      select: { id: true, codigo: true, nombre: true, categoria: true },
+    },
+    proveedor: {
+      select: { id: true, nombre: true, celular: true, correo: true },
+    },
   };
 
   private includePublico = {

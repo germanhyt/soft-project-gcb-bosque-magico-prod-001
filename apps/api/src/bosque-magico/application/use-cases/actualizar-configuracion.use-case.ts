@@ -126,9 +126,7 @@ function parseTurnoValor(valor: unknown): {
 function parseFeriadosValor(valor: unknown): string[] {
   const fechas = parseFeriadosConfig(valor);
   if (Array.isArray(valor) && valor.length > 0 && fechas.length === 0) {
-    throw new BadRequestException(
-      'Feriados inválidos: use fechas YYYY-MM-DD',
-    );
+    throw new BadRequestException('Feriados inválidos: use fechas YYYY-MM-DD');
   }
   return fechas;
 }

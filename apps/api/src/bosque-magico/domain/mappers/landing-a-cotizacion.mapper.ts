@@ -73,8 +73,7 @@ function extraerSeleccion(
     cajitasClasica: sel.cajitasClasica,
     cajitasSaludable: sel.cajitasSaludable,
     piqueos:
-      sel.piqueos ??
-      (piqueosDesdeIds.length ? piqueosDesdeIds : undefined),
+      sel.piqueos ?? (piqueosDesdeIds.length ? piqueosDesdeIds : undefined),
   };
 }
 

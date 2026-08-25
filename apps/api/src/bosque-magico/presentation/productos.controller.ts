@@ -104,16 +104,18 @@ export class ProductosController {
 
   @Delete(':id/medios/:mediaId')
   @ApiOperation({ summary: 'Eliminar una imagen o video de la galería' })
-  eliminarMedia(
-    @Param('id') id: string,
-    @Param('mediaId') mediaId: string,
-  ) {
+  eliminarMedia(@Param('id') id: string, @Param('mediaId') mediaId: string) {
     return this.gestionarMedia.eliminarMedia(id, mediaId);
   }
 
   @Post(':id/video/url')
-  @ApiOperation({ summary: 'Guardar URL de video (YouTube, Vimeo o enlace directo)' })
-  guardarVideoUrl(@Param('id') id: string, @Body() dto: GuardarVideoProductoDto) {
+  @ApiOperation({
+    summary: 'Guardar URL de video (YouTube, Vimeo o enlace directo)',
+  })
+  guardarVideoUrl(
+    @Param('id') id: string,
+    @Body() dto: GuardarVideoProductoDto,
+  ) {
     return this.gestionarMedia.guardarVideoUrl(id, dto.url);
   }
 

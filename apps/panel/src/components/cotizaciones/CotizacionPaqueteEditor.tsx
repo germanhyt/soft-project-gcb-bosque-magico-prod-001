@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import { CatalogoSection } from './CatalogoSection';
@@ -12,9 +12,11 @@ import { etiquetaOrigenItem } from '../../lib/origen-item';
 import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
 import { calcularResumenPiqueosCredito } from '../../lib/piqueos-credito';
 import { apiErrorMessage } from '../../lib/api-error';
+import { itemsIncluidosPaquete } from '@bosque/shared';
 import {
   esPaquetePremium,
   esPaquetePersonalizado,
+  esShowPersonalizado,
   seleccionToPayload,
   toggleIdEnLista,
   type SeleccionPaqueteState,
@@ -50,17 +52,35 @@ export function CotizacionPaqueteEditor({
   const qc = useQueryClient();
   const esPremium = esPaquetePremium(paquete);
   const esPersonalizado = esPaquetePersonalizado(paquete);
+  const showPersonalizado = useMemo(
+    () => catalogo.shows.find(esShowPersonalizado),
+    [catalogo.shows],
+  );
+  const showsVisibles = esPersonalizado
+    ? catalogo.shows.filter(esShowPersonalizado)
+    : catalogo.shows;
   const [piqueosBusqueda, setPiqueosBusqueda] = useState('');
   const [showForm, setShowForm] = useState<{ mode: 'create' } | { mode: 'edit'; producto: Producto } | null>(
     null,
   );
-  const payload = useMemo(
-    () => seleccionToPayload(seleccion, catalogo.catering),
-    [seleccion, catalogo.catering],
-  );
+  const payload = useMemo(() => {
+    const base = seleccionToPayload(seleccion, catalogo.catering);
+    if (esPersonalizado && showPersonalizado) {
+      return { ...base, showIds: [showPersonalizado.id] };
+    }
+    return base;
+  }, [seleccion, catalogo.catering, esPersonalizado, showPersonalizado]);
+
+  useEffect(() => {
+    if (!esPersonalizado || !showPersonalizado) return;
+    if (seleccion.showIds.length === 1 && seleccion.showIds[0] === showPersonalizado.id) {
+      return;
+    }
+    onChange({ ...seleccion, showIds: [showPersonalizado.id] });
+  }, [esPersonalizado, showPersonalizado, seleccion, onChange]);
 
   const { data: configPanel } = useQuery({
-    queryKey: ['configuracion-panel'],
+    queryKey: ['config-panel'],
     queryFn: fetchConfiguracionPanel,
     staleTime: 1000 * 60 * 5,
   });
@@ -68,6 +88,16 @@ export function CotizacionPaqueteEditor({
   const paquetesConfig = useMemo(
     () => paquetesConfigDesdeItems(configPanel?.todas),
     [configPanel?.todas],
+  );
+
+  const inclusiones = useMemo(
+    () =>
+      itemsIncluidosPaquete(paquete, {
+        cajitasIncluidas: paquetesConfig.cajitasIncluidas,
+        piqueosCreditoPremium: paquetesConfig.piqueosCreditoPremium,
+        snackUnidadesIncluidas: paquetesConfig.snackPremiumUnidadesIncluidas,
+      }),
+    [paquete, paquetesConfig],
   );
 
   const preview = useQuery({
@@ -144,7 +174,6 @@ export function CotizacionPaqueteEditor({
       if (showForm?.mode === 'create' && !seleccion.showIds.includes(saved.id)) {
         patch({ showIds: [...seleccion.showIds, saved.id] });
       }
-      setShowForm(null);
     },
   });
 
@@ -184,6 +213,7 @@ export function CotizacionPaqueteEditor({
   }, [catalogo.piqueos, piqueosBusqueda]);
 
   const toggleShow = (id: string) => {
+    if (esPersonalizado && showPersonalizado && id === showPersonalizado.id) return;
     const activo = seleccion.showIds.includes(id);
     patch({ showIds: toggleIdEnLista(seleccion.showIds, id, !activo) });
   };
@@ -244,10 +274,14 @@ export function CotizacionPaqueteEditor({
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-primary/20 bg-primary-fixed/15 p-4">
-        <p className="text-body-sm font-semibold text-primary">Configura tu cotización manual</p>
-        <p className="mt-1 text-body-sm text-on-surface-variant">
-          1) Define cajitas y snack, 2) ajusta piqueos, 3) agrega shows/extras/catering adicional.
-          El servidor recalcula crédito y excedentes al guardar.
+        <p className="text-body-sm font-semibold text-primary">Incluido en {paquete}</p>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-body-sm text-on-surface-variant">
+          {inclusiones.map((item) => (
+            <li key={item}>{item}</li>
+          ))}
+        </ul>
+        <p className="mt-3 text-body-sm text-on-surface-variant">
+          Ajusta cajitas, shows y extras abajo. El servidor recalcula crédito y excedentes al guardar.
         </p>
       </div>
 
@@ -404,17 +438,13 @@ export function CotizacionPaqueteEditor({
             ? 'Shows (paquete personalizado · show personalizado con coste)'
             : 'Shows (1.º incluido en Estándar/Premium; adicionales a precio completo)'
         }
-        productos={
-          esPersonalizado
-            ? catalogo.shows.filter((s) => s.codigo === 'SHOW-001')
-            : catalogo.shows
-        }
+        productos={showsVisibles}
         selectedIds={seleccion.showIds}
         cantidades={{}}
         onToggle={toggleShow}
         onCantidad={() => {}}
-        onEditar={esPersonalizado ? undefined : (p) => setShowForm({ mode: 'edit', producto: p })}
-        onEliminar={esPersonalizado ? undefined : confirmarEliminarShow}
+        onEditar={(p) => setShowForm({ mode: 'edit', producto: p })}
+        onEliminar={confirmarEliminarShow}
         headerExtra={
           esPersonalizado ? undefined : (
             <Button type="button" variant="ghost" onClick={() => setShowForm({ mode: 'create' })}>
@@ -526,7 +556,9 @@ export function CotizacionPaqueteEditor({
             <p className="mt-2 text-sm text-outline">Calculando…</p>
           )}
           {preview.isError && (
-            <p className="mt-2 text-sm text-error">No se pudo calcular la vista previa.</p>
+            <p className="mt-2 text-sm text-error">
+              {apiErrorMessage(preview.error, 'No se pudo calcular la vista previa.')}
+            </p>
           )}
           {preview.data && (
             <>
@@ -613,8 +645,20 @@ export function CotizacionPaqueteEditor({
         producto={showForm?.mode === 'edit' ? showForm.producto : null}
         onClose={() => setShowForm(null)}
         onSubmit={async (payload) => {
+          const edicion = showForm?.mode === 'edit';
           try {
-            await guardarShowMut.mutateAsync(payload);
+            const saved = await guardarShowMut.mutateAsync(payload);
+            queueMicrotask(() => {
+              void Swal.fire({
+                icon: 'success',
+                title: edicion ? 'Show actualizado' : 'Show creado',
+                text: edicion
+                  ? `"${saved.nombre}" se actualizó correctamente.`
+                  : `"${saved.nombre}" se agregó al catálogo.`,
+                timer: 1800,
+                showConfirmButton: false,
+              });
+            });
           } catch (err) {
             throw new Error(apiErrorMessage(err, 'No se pudo guardar el show'));
           }

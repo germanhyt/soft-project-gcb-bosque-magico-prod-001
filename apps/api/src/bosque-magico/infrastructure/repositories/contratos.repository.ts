@@ -1,9 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import {
-  EtapaContrato,
-  Prisma,
-  TipoComprobanteContrato,
-} from '@prisma/client';
+import { EtapaContrato, Prisma, TipoComprobanteContrato } from '@prisma/client';
 import { randomBytes } from 'node:crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PREFIJO_NUMERO_CONTRATO } from '../../domain/constants/codigos-secuencia';

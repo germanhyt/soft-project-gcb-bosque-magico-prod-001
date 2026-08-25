@@ -6,6 +6,14 @@ export function esFechaCalendario(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+/** Convierte YYYY-MM-DD (o ISO que empieza así) a DD-MM-YYYY para mensajes. */
+export function formatFechaDdMmYyyy(isoOrClave: string): string {
+  const clave = isoOrClave.trim().slice(0, 10);
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(clave);
+  if (!m) return isoOrClave;
+  return `${m[3]}-${m[2]}-${m[1]}`;
+}
+
 function partesUtc(d: Date): string {
   const y = d.getUTCFullYear();
   const m = String(d.getUTCMonth() + 1).padStart(2, '0');
@@ -41,7 +49,9 @@ export function finDiaCalendarioUtc(fecha: string): Date {
 
 export function parseFechaCalendarioUtc(fecha: string): Date {
   const trimmed = fecha.trim();
-  const clave = esFechaCalendario(trimmed) ? trimmed : claveFechaCalendario(trimmed);
+  const clave = esFechaCalendario(trimmed)
+    ? trimmed
+    : claveFechaCalendario(trimmed);
   if (!esFechaCalendario(clave)) {
     throw new Error(`Fecha de calendario inválida: ${fecha}`);
   }

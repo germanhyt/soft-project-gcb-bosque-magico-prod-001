@@ -29,7 +29,11 @@ export class EnviarCotizacionUseCase {
     private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
-  async ejecutar(id: string, dto: EnviarCotizacionDto, usuarioAsignadoId?: string) {
+  async ejecutar(
+    id: string,
+    dto: EnviarCotizacionDto,
+    usuarioAsignadoId?: string,
+  ) {
     const cot = await this.cotizaciones.obtenerPorId(id);
     if (!cot) throw new NotFoundException('Cotización no encontrada');
     if (
@@ -67,10 +71,8 @@ export class EnviarCotizacionUseCase {
       `Descargar PDF:\n${linkPdf}\n\n` +
       `Saludos cordiales,\nEquipo Bosque Mágico`;
 
-    const correoAsunto =
-      dto.correoAsunto?.trim() || correoAsuntoDefault;
-    const correoCuerpo =
-      dto.correoCuerpo?.trim() || correoCuerpoDefault;
+    const correoAsunto = dto.correoAsunto?.trim() || correoAsuntoDefault;
+    const correoCuerpo = dto.correoCuerpo?.trim() || correoCuerpoDefault;
 
     const mensaje =
       dto.canal === CanalEnvio.whatsapp ? mensajeWhatsApp : correoCuerpo;

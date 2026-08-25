@@ -92,11 +92,15 @@ describe('ResponderPedidoPublicoUseCase', () => {
       notas: null,
     });
 
-    await expect(useCase.confirmar('tok')).rejects.toBeInstanceOf(BadRequestException);
+    await expect(useCase.confirmar('tok')).rejects.toBeInstanceOf(
+      BadRequestException,
+    );
   });
 
   it('404 si token inválido', async () => {
     pedidos.obtenerPorToken.mockResolvedValue(null);
-    await expect(useCase.confirmar('bad')).rejects.toBeInstanceOf(NotFoundException);
+    await expect(useCase.confirmar('bad')).rejects.toBeInstanceOf(
+      NotFoundException,
+    );
   });
 });

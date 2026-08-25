@@ -40,7 +40,9 @@ export class GenerarContratoEventoUseCase {
 
   private async garantiaReferencial(dto: GenerarContratoDto) {
     if (dto.montoGarantia != null) return dto.montoGarantia;
-    const cfg = await this.config.obtenerPorClave('contrato.garantia_referencial');
+    const cfg = await this.config.obtenerPorClave(
+      'contrato.garantia_referencial',
+    );
     const v = cfg?.valor;
     return typeof v === 'number' ? v : CONTRATO_GARANTIA_DEFAULT;
   }
@@ -49,7 +51,9 @@ export class GenerarContratoEventoUseCase {
     const evento = await this.eventos.obtenerPorIdParaContrato(eventoId);
     if (!evento) throw new NotFoundException('Evento no encontrado');
     if (evento.etapa === EtapaEvento.cancelado) {
-      throw new BadRequestException('No se puede generar contrato para un evento cancelado');
+      throw new BadRequestException(
+        'No se puede generar contrato para un evento cancelado',
+      );
     }
     if (evento.cotizacion.etapa !== EtapaCotizacion.aceptada) {
       throw new BadRequestException('La cotización debe estar aceptada');
@@ -57,8 +61,11 @@ export class GenerarContratoEventoUseCase {
 
     const montoTotal = fromDecimal(evento.montoTotal);
     const adelanto2Raw = dto.adelanto2Monto ?? 0;
-    let adelanto1 = Math.min(Math.max(dto.adelanto1Monto, 0), montoTotal);
-    let adelanto2 = Math.min(Math.max(adelanto2Raw, 0), Math.max(montoTotal - adelanto1, 0));
+    const adelanto1 = Math.min(Math.max(dto.adelanto1Monto, 0), montoTotal);
+    const adelanto2 = Math.min(
+      Math.max(adelanto2Raw, 0),
+      Math.max(montoTotal - adelanto1, 0),
+    );
     if (adelanto1 + adelanto2 > montoTotal) {
       throw new BadRequestException(
         'La suma de adelantos no puede superar el monto total del evento.',
@@ -74,7 +81,9 @@ export class GenerarContratoEventoUseCase {
       await this.clientes.actualizar(evento.clienteId, {
         numeroDocumento: dto.numeroDocumento.trim(),
         tipoDocumento:
-          dto.tipoComprobante === 'factura' ? TipoDocumento.ruc : TipoDocumento.dni,
+          dto.tipoComprobante === 'factura'
+            ? TipoDocumento.ruc
+            : TipoDocumento.dni,
       });
     }
 

@@ -20,7 +20,10 @@ describe('prefijoCodigoProducto', () => {
       prefijoCodigoProducto(CategoriaProducto.catering, SubtipoProducto.snack),
     ).toBe('CAT-');
     expect(
-      prefijoCodigoProducto(CategoriaProducto.catering, SubtipoProducto.general),
+      prefijoCodigoProducto(
+        CategoriaProducto.catering,
+        SubtipoProducto.general,
+      ),
     ).toBe('CAT-');
   });
 });

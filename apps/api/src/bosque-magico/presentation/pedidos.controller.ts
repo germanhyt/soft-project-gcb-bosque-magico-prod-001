@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Param,
+  Patch,
+  Post,
+  Query,
+} from '@nestjs/common';
 import { ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ActualizarPedidoDto } from '../application/dto/actualizar-pedido.dto';
 import { CrearPedidoDto } from '../application/dto/crear-pedido.dto';
@@ -23,10 +31,15 @@ export class PedidosController {
   ) {}
 
   @Get('pedidos')
-  @ApiOperation({ summary: 'Pedidos operativos pendientes por rango de fechas' })
+  @ApiOperation({
+    summary: 'Pedidos operativos pendientes por rango de fechas',
+  })
   @ApiQuery({ name: 'desde', required: false })
   @ApiQuery({ name: 'hasta', required: false })
-  listarOperaciones(@Query('desde') desde?: string, @Query('hasta') hasta?: string) {
+  listarOperaciones(
+    @Query('desde') desde?: string,
+    @Query('hasta') hasta?: string,
+  ) {
     return this.listarOps.ejecutar(desde, hasta);
   }
 
@@ -38,7 +51,10 @@ export class PedidosController {
 
   @Post('eventos/:eventoId/pedidos')
   @ApiOperation({ summary: 'Crear pedido manual para un evento' })
-  crearPedido(@Param('eventoId') eventoId: string, @Body() dto: CrearPedidoDto) {
+  crearPedido(
+    @Param('eventoId') eventoId: string,
+    @Body() dto: CrearPedidoDto,
+  ) {
     return this.crear.ejecutar(eventoId, dto);
   }
 
@@ -57,7 +73,9 @@ export class PedidosController {
   }
 
   @Post('pedidos/:id/enviar-correo')
-  @ApiOperation({ summary: 'Enviar pedido a proveedor por correo (SMTP o plantilla mailto)' })
+  @ApiOperation({
+    summary: 'Enviar pedido a proveedor por correo (SMTP o plantilla mailto)',
+  })
   enviarCorreoProveedor(
     @Param('id') id: string,
     @Body() dto: EnviarPedidoProveedorCorreoDto,

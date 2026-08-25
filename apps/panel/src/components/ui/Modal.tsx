@@ -44,7 +44,10 @@ export function Modal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="modal-title"
-      onClick={onClose}
+      onClick={(e) => {
+        e.stopPropagation();
+        onClose();
+      }}
     >
       <div
         className={`${MODAL_PANEL_CLASS} ${maxW}`}
@@ -61,7 +64,10 @@ export function Modal({
           </div>
           <button
             type="button"
-            onClick={onClose}
+            onClick={(e) => {
+              e.stopPropagation();
+              onClose();
+            }}
             className="shrink-0 text-outline transition hover:text-on-surface"
             aria-label="Cerrar"
           >

@@ -1,4 +1,7 @@
+import { formatFechaDdMmYyyy } from '@bosque/shared';
 import type { ConfiguracionItem } from './api';
+
+export { formatFechaDdMmYyyy };
 
 export const MIN_DIAS_ANTICIPACION_DEFAULT = 7;
 

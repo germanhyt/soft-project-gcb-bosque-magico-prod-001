@@ -63,7 +63,8 @@ export class ResponderPedidoPublicoUseCase {
     await this.auditoria.registrar({
       tipoEntidad: 'pedido',
       entidadId: antes.id,
-      accion: accion === 'confirmar' ? 'proveedor_confirmo' : 'proveedor_rechazo',
+      accion:
+        accion === 'confirmar' ? 'proveedor_confirmo' : 'proveedor_rechazo',
       actorTipo: 'proveedor',
       antes: JSON.parse(JSON.stringify(antes)) as Prisma.InputJsonValue,
       despues: JSON.parse(JSON.stringify(despues)) as Prisma.InputJsonValue,

@@ -45,7 +45,9 @@ export class TareasEventoRepository {
     }[],
   ) {
     return this.prisma.$transaction(
-      items.map((item) => this.prisma.bosqueMagicoTareaEvento.create({ data: item })),
+      items.map((item) =>
+        this.prisma.bosqueMagicoTareaEvento.create({ data: item }),
+      ),
     );
   }
 

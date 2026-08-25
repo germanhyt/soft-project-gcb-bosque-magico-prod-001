@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { MOTIVO_CIERRE_LABEL } from '../../constants/solicitudes';
-import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { INPUT_CLASS, INPUT_ERROR_CLASS, LABEL_CLASS } from '../../constants/design';
 import type { MotivoCierre } from '../../lib/api';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
@@ -26,16 +26,29 @@ export function CerrarSolicitudModal({
 }: Props) {
   const [motivo, setMotivo] = useState<MotivoCierre | ''>('');
   const [notas, setNotas] = useState('');
+  const [submitted, setSubmitted] = useState(false);
+
+  useEffect(() => {
+    if (open) return;
+    setMotivo('');
+    setNotas('');
+    setSubmitted(false);
+  }, [open]);
 
   const handleClose = () => {
     setMotivo('');
     setNotas('');
+    setSubmitted(false);
     onClose();
   };
 
+  const motivoError = submitted && !motivo ? 'Selecciona el motivo de cierre' : '';
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (motivo) onConfirm(motivo, notas.trim() || undefined);
+    setSubmitted(true);
+    if (!motivo) return;
+    onConfirm(motivo, notas.trim() || undefined);
   };
 
   return (
@@ -44,10 +57,9 @@ export function CerrarSolicitudModal({
         <label className="block">
           <span className={LABEL_CLASS}>Motivo de cierre *</span>
           <select
-            className={INPUT_CLASS}
+            className={`${INPUT_CLASS} ${motivoError ? INPUT_ERROR_CLASS : ''}`}
             value={motivo}
             onChange={(e) => setMotivo(e.target.value as MotivoCierre)}
-            required
           >
             <option value="">Seleccionar…</option>
             {MOTIVOS.map(([value, label]) => (
@@ -56,6 +68,9 @@ export function CerrarSolicitudModal({
               </option>
             ))}
           </select>
+          {motivoError ? (
+            <p className="mt-1 text-xs font-medium text-error">{motivoError}</p>
+          ) : null}
         </label>
         <label className="block">
           <span className={LABEL_CLASS}>Comentario (opcional)</span>
@@ -83,7 +98,7 @@ export function CerrarSolicitudModal({
           </Button>
           <button
             type="submit"
-            disabled={!motivo || pending}
+            disabled={pending}
             className="rounded-lg bg-secondary px-5 py-2 text-body-sm font-semibold text-on-secondary disabled:opacity-60"
           >
             {pending ? 'Cerrando…' : 'Cerrar solicitud'}

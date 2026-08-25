@@ -47,7 +47,9 @@ export class SubirAdjuntoContratoUseCase {
       throw new BadRequestException('Archivo requerido');
     }
     if (!MIME_PERMITIDOS.has(file.mimetype)) {
-      throw new BadRequestException('Formato no permitido. Use PDF, JPG, PNG o WebP.');
+      throw new BadRequestException(
+        'Formato no permitido. Use PDF, JPG, PNG o WebP.',
+      );
     }
     if (file.size > MAX_BYTES) {
       throw new BadRequestException('El archivo no debe superar 5 MB');
@@ -56,13 +58,17 @@ export class SubirAdjuntoContratoUseCase {
     const contrato = await this.contratos.obtenerPorId(contratoId);
     if (!contrato) throw new NotFoundException('Contrato no encontrado');
 
-    const previo = await this.adjuntos.obtenerPorContratoYTipo(contratoId, tipo);
+    const previo = await this.adjuntos.obtenerPorContratoYTipo(
+      contratoId,
+      tipo,
+    );
     if (previo?.url) {
       eliminarArchivoAdjuntoContrato(path.basename(previo.url));
     }
 
     const ext =
-      EXT_POR_MIME[file.mimetype] ?? (path.extname(file.originalname) || '.bin');
+      EXT_POR_MIME[file.mimetype] ??
+      (path.extname(file.originalname) || '.bin');
     const dir = directorioAdjuntosContratos();
     fs.mkdirSync(dir, { recursive: true });
 
@@ -103,7 +109,10 @@ export class EliminarAdjuntoContratoUseCase {
     const contrato = await this.contratos.obtenerPorId(contratoId);
     if (!contrato) throw new NotFoundException('Contrato no encontrado');
 
-    const adjunto = await this.adjuntos.obtenerPorContratoYTipo(contratoId, tipo);
+    const adjunto = await this.adjuntos.obtenerPorContratoYTipo(
+      contratoId,
+      tipo,
+    );
     if (!adjunto) throw new NotFoundException('Adjunto no encontrado');
 
     eliminarArchivoAdjuntoContrato(path.basename(adjunto.url));
@@ -114,7 +123,7 @@ export class EliminarAdjuntoContratoUseCase {
       entidadId: contratoId,
       accion: 'adjunto_eliminar',
       actorTipo: 'vendedor',
-      metadata: { tipo } as Prisma.InputJsonValue,
+      metadata: { tipo },
     });
 
     return { ok: true };

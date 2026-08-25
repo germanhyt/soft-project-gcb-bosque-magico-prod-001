@@ -49,8 +49,8 @@ export class ActualizarSolicitudDto {
   @ApiPropertyOptional({ example: 25 })
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(50)
+  @Min(1, { message: 'Debe haber al menos 1 niño' })
+  @Max(100, { message: 'La cantidad de niños supera el máximo permitido' })
   cantidadNinosEstimada?: number;
 
   @ApiPropertyOptional()

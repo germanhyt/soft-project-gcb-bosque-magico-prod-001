@@ -12,6 +12,7 @@ import { ActualizarSolicitudDto } from '../dto/actualizar-solicitud.dto';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 
 function nullableText(value?: string) {
@@ -38,10 +39,15 @@ export class ActualizarSolicitudUseCase {
     private readonly solicitudes: SolicitudesRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
     private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
-  async ejecutar(id: string, dto: ActualizarSolicitudDto, usuarioAsignadoId?: string) {
+  async ejecutar(
+    id: string,
+    dto: ActualizarSolicitudDto,
+    usuarioAsignadoId?: string,
+  ) {
     const antes = await this.solicitudes.obtenerPorId(id);
     if (!antes) throw new NotFoundException('Solicitud no encontrada');
     if (antes.etapa === EtapaSolicitud.cerrada) {
@@ -74,6 +80,9 @@ export class ActualizarSolicitudUseCase {
     if (dto.fechaTentativa !== undefined && dto.fechaTentativa.trim()) {
       await this.anticipacion.validar(dto.fechaTentativa.trim());
     }
+    if (dto.cantidadNinosEstimada !== undefined) {
+      await this.capacidad.validar(dto.cantidadNinosEstimada);
+    }
 
     const data: Prisma.BosqueMagicoSolicitudUpdateInput = {
       ...(dto.nombreContacto !== undefined
@@ -84,7 +93,9 @@ export class ActualizarSolicitudUseCase {
       ...(dto.fechaTentativa !== undefined
         ? { fechaTentativa: parseFechaTentativa(dto.fechaTentativa) }
         : {}),
-      ...(dto.turnoInteres !== undefined ? { turnoInteres: dto.turnoInteres } : {}),
+      ...(dto.turnoInteres !== undefined
+        ? { turnoInteres: dto.turnoInteres }
+        : {}),
       ...(dto.cantidadNinosEstimada !== undefined
         ? { cantidadNinosEstimada: dto.cantidadNinosEstimada }
         : {}),

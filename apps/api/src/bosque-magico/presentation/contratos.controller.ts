@@ -10,7 +10,13 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { ApiBody, ApiConsumes, ApiOperation, ApiQuery, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiConsumes,
+  ApiOperation,
+  ApiQuery,
+  ApiTags,
+} from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { EtapaContrato, TipoAdjuntoContrato } from '@prisma/client';
 import { GenerarContratoDto } from '../application/dto/generar-contrato.dto';
@@ -96,7 +102,9 @@ export class ContratosController {
   }
 
   @Post('contratos/:id/adjuntos/:tipo')
-  @ApiOperation({ summary: 'Subir comprobante o documento contable (PDF/imagen, máx. 5 MB)' })
+  @ApiOperation({
+    summary: 'Subir comprobante o documento contable (PDF/imagen, máx. 5 MB)',
+  })
   @ApiConsumes('multipart/form-data')
   @ApiBody({
     schema: {

@@ -36,11 +36,12 @@ import { MotionReveal } from '../ui/MotionReveal';
 import { PartyDecor } from '../ui/PartyDecor';
 import { SectionTitle } from '../ui/SectionTitle';
 import type { QuoteBuilderSelection } from '../../types/quote-builder';
+import { esPaquetePersonalizado, esShowPersonalizado } from '../../types/quote-builder';
 import { buildSeleccionPaquete, type BuildSeleccionPaqueteOptions } from '../../lib/build-seleccion-paquete';
 import { minimoCateringDesdeConfig, minimoUnidadesCatering } from '../../lib/catering-minimo';
 import type { ProductoCatalogo } from '../../lib/api';
 import { consultarIdentidad } from '../../lib/identidad';
-import { fechaMinimaEvento, mensajeAnticipacion } from '../../lib/anticipacion';
+import { fechaMinimaEvento, formatFechaDdMmYyyy, mensajeAnticipacion } from '../../lib/anticipacion';
 import { paquetesConfigDesdeItems } from '../../lib/paquetes-config';
 import { expandIdsFromQty } from '../../lib/expand-catalog-qty';
 
@@ -86,7 +87,7 @@ function buildSchema(tarifas: TarifasConfig, minDiasAnticipacion: number) {
     }),
     fechaTentativa: Yup.string()
       .optional()
-      .test('anticipacion', `Fecha mínima: ${fechaMin}`, (v) => {
+      .test('anticipacion', `Fecha mínima: ${formatFechaDdMmYyyy(fechaMin)}`, (v) => {
         if (!v) return true;
         return v >= fechaMin;
       }),
@@ -431,10 +432,13 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
     },
   });
 
-  const seleccionPreview = useMemo(
-    () => buildSeleccionPaquete(selection, buildSeleccionOpts),
-    [selection, buildSeleccionOpts],
-  );
+  const seleccionPreview = useMemo(() => {
+    const base = buildSeleccionPaquete(selection, buildSeleccionOpts);
+    if (!esPaquetePersonalizado(selection.paquete)) return base;
+    const showPers = data?.productos.shows?.find(esShowPersonalizado);
+    if (!showPers) return base;
+    return { ...base, showIds: [showPers.id] };
+  }, [selection, buildSeleccionOpts, data?.productos.shows]);
 
   const canPreview = Boolean(formik.values.fechaTentativa && selection.paquete);
   const preview = useQuery({
@@ -699,7 +703,8 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                     onBlur={formik.handleBlur}
                   />
                   <span className="mt-1 block text-xs text-outline">
-                    {mensajeAnticipacion(minDiasAnticipacion)} Mínimo: {fechaMinEvento}.
+                    {mensajeAnticipacion(minDiasAnticipacion)} Mínimo:{' '}
+                    {formatFechaDdMmYyyy(fechaMinEvento)}.
                   </span>
                   {formik.touched.fechaTentativa && formik.errors.fechaTentativa && (
                     <span className="mt-1 block text-xs text-red-600">

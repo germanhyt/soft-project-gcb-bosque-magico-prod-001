@@ -17,10 +17,11 @@ export class ListarContratosUseCase {
     pageSize?: string,
     q?: string,
   ) {
-    const { page: p, pageSize: size, skip } = parsePaginationQuery(
-      page,
-      pageSize,
-    );
+    const {
+      page: p,
+      pageSize: size,
+      skip,
+    } = parsePaginationQuery(page, pageSize);
 
     const [items, total] = await Promise.all([
       this.contratos.listar({ etapa, q, skip, take: size }),

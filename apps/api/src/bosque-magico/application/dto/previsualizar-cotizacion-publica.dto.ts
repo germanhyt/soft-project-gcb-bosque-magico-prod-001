@@ -34,11 +34,14 @@ export class PrevisualizarCotizacionPublicaDto {
 
   @ApiProperty({ example: 25 })
   @IsInt()
-  @Min(1)
-  @Max(35)
+  @Min(1, { message: 'Debe haber al menos 1 niño' })
+  @Max(100, { message: 'La cantidad de niños supera el máximo permitido' })
   cantidadNinos!: number;
 
-  @ApiPropertyOptional({ enum: ['paquete', 'solo_espacio'], default: 'paquete' })
+  @ApiPropertyOptional({
+    enum: ['paquete', 'solo_espacio'],
+    default: 'paquete',
+  })
   @IsOptional()
   @IsIn(['paquete', 'solo_espacio'])
   modalidad?: 'paquete' | 'solo_espacio';
@@ -50,7 +53,10 @@ export class PrevisualizarCotizacionPublicaDto {
   @MaxLength(120)
   paquete?: string;
 
-  @ApiPropertyOptional({ example: 0, description: 'Horas adicionales a las 3 h incluidas' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Horas adicionales a las 3 h incluidas',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)

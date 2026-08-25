@@ -8,10 +8,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import type { Server, Socket } from 'socket.io';
-import {
-  isAllowedCorsOrigin,
-  parseCorsOrigins,
-} from '../config/cors-origins';
+import { isAllowedCorsOrigin, parseCorsOrigins } from '../config/cors-origins';
 import type { JwtPayload } from '../auth/types/jwt-payload';
 import type { BosquePanelEvent } from './panel-event.types';
 

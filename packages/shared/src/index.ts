@@ -1,3 +1,9 @@
+export { formatFechaDdMmYyyy } from './fecha-formato';
+export {
+  itemsIncluidosPaquete,
+  PAQUETE_INCLUSIONES_DEFAULT,
+  type PaqueteInclusionesConfig,
+} from './paquete-inclusiones';
 export {
   buildCotizacionPrintHtml,
   type CotizacionPrintData,

@@ -28,7 +28,7 @@ export const PERMISOS_PANEL: PermisoPanelDef[] = [
       'Agenda',
       'Operaciones',
       'Contratos',
-      'Configuración (lectura)',
+      'Catálogo (lectura)',
     ],
   },
   {
@@ -51,7 +51,7 @@ export const PERMISOS_PANEL: PermisoPanelDef[] = [
     modulos: [
       'Tarifas, turnos y feriados',
       'Usuarios del panel',
-      'Configuración completa',
+      'Configuración (tarifas y turnos)',
     ],
   },
 ];

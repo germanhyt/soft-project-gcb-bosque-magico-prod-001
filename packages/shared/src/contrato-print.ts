@@ -548,6 +548,7 @@ export function buildContratoPrintHtml(
       ${cb(pkg === 'basico')} Básico
       ${cb(pkg === 'estandar')} Estándar
       ${cb(pkg === 'premium')} Premium
+      ${cb(pkg === 'personalizado')} Personalizado
     </p>
 
     ${serviciosHtml}

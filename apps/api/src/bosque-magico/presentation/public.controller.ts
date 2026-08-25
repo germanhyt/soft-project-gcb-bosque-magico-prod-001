@@ -124,7 +124,9 @@ export class PublicBosqueMagicoController {
   }
 
   @Get('contratos/:token')
-  @ApiOperation({ summary: 'Ver contrato público por token (vista imprimible)' })
+  @ApiOperation({
+    summary: 'Ver contrato público por token (vista imprimible)',
+  })
   contratoPublico(@Param('token') token: string) {
     return this.obtenerContratoPublico.ejecutar(token);
   }
@@ -144,7 +146,9 @@ export class PublicBosqueMagicoController {
   }
 
   @Get('pedidos/:token')
-  @ApiOperation({ summary: 'Ver pedido a proveedor por token (respuesta pública)' })
+  @ApiOperation({
+    summary: 'Ver pedido a proveedor por token (respuesta pública)',
+  })
   pedidoPublico(@Param('token') token: string) {
     return this.obtenerPedidoPublico.ejecutar(token);
   }

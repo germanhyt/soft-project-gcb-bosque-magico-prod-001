@@ -20,8 +20,12 @@ export class ObtenerCatalogoPublicoUseCase {
       productos.filter((p) => p.categoria === tipo);
 
     const catering = categoria(CategoriaProducto.catering);
-    const piqueos = catering.filter((p) => p.subtipo === SubtipoProducto.piqueo);
-    const cajitas = catering.filter((p) => p.subtipo === SubtipoProducto.cajita);
+    const piqueos = catering.filter(
+      (p) => p.subtipo === SubtipoProducto.piqueo,
+    );
+    const cajitas = catering.filter(
+      (p) => p.subtipo === SubtipoProducto.cajita,
+    );
     const snacks = catering.filter((p) => p.subtipo === SubtipoProducto.snack);
     const cateringGeneral = catering.filter(
       (p) =>

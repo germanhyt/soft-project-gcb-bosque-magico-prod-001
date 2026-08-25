@@ -36,7 +36,9 @@ export class PostventaService {
   async cargarConfig(): Promise<PostventaConfig> {
     const items = await this.configuracion.listarTodas();
     const map = new Map(
-      items.filter((i) => i.clave.startsWith('postventa.')).map((i) => [i.clave, i.valor]),
+      items
+        .filter((i) => i.clave.startsWith('postventa.'))
+        .map((i) => [i.clave, i.valor]),
     );
     return {
       habilitado: map.get('postventa.habilitado') === true,

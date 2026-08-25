@@ -9,7 +9,7 @@ export type ContratoPrintItem = {
   subtotal: number;
 };
 
-export type PaqueteTipo = 'basico' | 'estandar' | 'premium' | null;
+export type PaqueteTipo = 'basico' | 'estandar' | 'premium' | 'personalizado' | null;
 
 const TIPO_LABEL: Record<TipoItemContrato, string> = {
   show: 'Show',
@@ -28,6 +28,7 @@ export function normTexto(s: string) {
 export function paqueteTipo(paquete: string | null): PaqueteTipo {
   if (!paquete) return null;
   const n = normTexto(paquete);
+  if (n.includes('personal')) return 'personalizado';
   if (n.includes('basic')) return 'basico';
   if (n.includes('standar') || n.includes('estandar')) return 'estandar';
   if (n.includes('premiu')) return 'premium';

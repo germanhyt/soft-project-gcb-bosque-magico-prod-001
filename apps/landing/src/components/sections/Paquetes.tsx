@@ -1,19 +1,14 @@
-import { PAQUETES, TERMINOS } from '../../constants/content';
+import { itemsIncluidosPaquete, PAQUETE_INCLUSIONES_DEFAULT } from '@bosque/shared';
 import { motion, useReducedMotion } from 'framer-motion';
+import { PAQUETES, TERMINOS } from '../../constants/content';
+import { CARD_CATALOG, cardCatalogState } from '../../constants/design';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
 import { preciosPaqueteFallback } from '../../lib/pricing';
-import { CARD_CATALOG, GRID_CATALOG_3, cardCatalogState } from '../../constants/design';
+import { CatalogProductMedia } from '../ui/CatalogProductMedia';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SelectionHint } from '../ui/SelectionHint';
-import { CatalogProductMedia } from '../ui/CatalogProductMedia';
 import { StatusBadge } from '../ui/StatusBadge';
-
-const DETALLE: Record<(typeof PAQUETES)[number], string> = {
-  Básico: 'Alquiler 3 h, 1 extra a elegir y 10 cajitas incluidas.',
-  Estándar: 'Alquiler 3 h, 1 show incluido, 1 extra y 10 cajitas.',
-  Premium: 'Alquiler 3 h, asistente, show incluido, snack, crédito S/ 200 en piqueos y 10 cajitas.',
-};
 
 type Props = {
   selectedPaquete: string;
@@ -33,8 +28,7 @@ export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
       precioFds: paquete.precioFinSemana,
       detalle:
         paquete.descripcion ||
-        DETALLE[paquete.nombre as keyof typeof DETALLE] ||
-        'Paquete configurable para tu celebración.',
+        itemsIncluidosPaquete(paquete.nombre, PAQUETE_INCLUSIONES_DEFAULT).join('. ') + '.',
     })) ??
     PAQUETES.map((nombre) => {
       const fb = preciosPaqueteFallback(nombre);
@@ -45,7 +39,7 @@ export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
         videoUrl: null as string | null,
         precioLv: fb.lv,
         precioFds: fb.fds,
-        detalle: DETALLE[nombre],
+        detalle: itemsIncluidosPaquete(nombre, PAQUETE_INCLUSIONES_DEFAULT).join('. ') + '.',
       };
     });
 
@@ -57,7 +51,7 @@ export function Paquetes({ selectedPaquete, onSelectPaquete }: Props) {
         subtitle="Precios referenciales según día y cantidad de niños. El equipo confirma el detalle final."
       />
       <SelectionHint>Toca una tarjeta para seleccionar tu paquete base.</SelectionHint>
-      <div className={GRID_CATALOG_3}>
+      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-4">
         {paquetes.map((paquete, i) => {
           const selected = selectedPaquete === paquete.nombre;
           const highlighted = i === 1;

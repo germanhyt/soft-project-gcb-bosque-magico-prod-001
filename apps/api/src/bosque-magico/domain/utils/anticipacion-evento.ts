@@ -3,6 +3,7 @@ import {
   claveFechaCalendario,
   esFechaCalendario,
   fechaCalendarioHoy,
+  formatFechaDdMmYyyy,
 } from './fecha-calendario';
 
 export const CLAVE_MIN_DIAS_ANTICIPACION = 'solicitud.min_dias_anticipacion';
@@ -52,7 +53,7 @@ export function validarAnticipacionEvento(
     throw new BadRequestException(
       dias < 0
         ? 'La fecha del evento no puede ser anterior a hoy'
-        : `La solicitud requiere al menos ${textoDias} de anticipación. Fecha mínima: ${minima}.`,
+        : `Se requiere al menos ${textoDias} de anticipación. Fecha mínima: ${formatFechaDdMmYyyy(minima)}.`,
     );
   }
 }

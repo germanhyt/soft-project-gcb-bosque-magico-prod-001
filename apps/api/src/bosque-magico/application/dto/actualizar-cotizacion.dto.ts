@@ -28,11 +28,14 @@ export class ActualizarCotizacionDto {
   @ApiPropertyOptional()
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(50)
+  @Min(1, { message: 'Debe haber al menos 1 niño' })
+  @Max(100, { message: 'La cantidad de niños supera el máximo permitido' })
   cantidadNinos?: number;
 
-  @ApiPropertyOptional({ example: 0, description: 'Horas adicionales sobre las 3h incluidas' })
+  @ApiPropertyOptional({
+    example: 0,
+    description: 'Horas adicionales sobre las 3h incluidas',
+  })
   @IsOptional()
   @IsInt()
   @Min(0)

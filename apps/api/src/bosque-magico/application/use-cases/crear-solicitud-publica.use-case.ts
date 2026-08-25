@@ -11,6 +11,7 @@ import {
 } from '../../domain/mappers/landing-a-cotizacion.mapper';
 import { IdentidadContactoService } from '../../domain/services/identidad-contacto.service';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 @Injectable()
 export class CrearSolicitudPublicaUseCase {
@@ -23,6 +24,7 @@ export class CrearSolicitudPublicaUseCase {
     private readonly crearCotizacion: CrearCotizacionUseCase,
     private readonly identidad: IdentidadContactoService,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
   ) {}
 
   private normalizarDetalleOrigen(detalle?: string): string | undefined {
@@ -34,19 +36,24 @@ export class CrearSolicitudPublicaUseCase {
     return limpio;
   }
 
-  private inferirCanalDesdeDetalle(detalle?: string): CanalSolicitud | undefined {
+  private inferirCanalDesdeDetalle(
+    detalle?: string,
+  ): CanalSolicitud | undefined {
     const normalizado = this.normalizarDetalleOrigen(detalle);
     if (!normalizado) return undefined;
     if (normalizado === 'landing') return CanalSolicitud.landing;
     if (normalizado === 'whatsapp') return CanalSolicitud.whatsapp;
     if (normalizado === 'referido') return CanalSolicitud.referido;
-    if (['instagram', 'facebook'].includes(normalizado)) return CanalSolicitud.meta;
+    if (['instagram', 'facebook'].includes(normalizado))
+      return CanalSolicitud.meta;
     if (normalizado === 'tiktok') return CanalSolicitud.otro;
     return undefined;
   }
 
   async ejecutar(dto: CrearSolicitudPublicaDto) {
-    const detalleNormalizado = this.normalizarDetalleOrigen(dto.origen?.detalle);
+    const detalleNormalizado = this.normalizarDetalleOrigen(
+      dto.origen?.detalle,
+    );
     const canal =
       dto.origen?.canal ??
       this.inferirCanalDesdeDetalle(detalleNormalizado) ??
@@ -56,6 +63,7 @@ export class CrearSolicitudPublicaUseCase {
     if (dto.evento?.fechaTentativa) {
       await this.anticipacion.validar(dto.evento.fechaTentativa);
     }
+    await this.capacidad.validar(dto.evento?.cantidadNinos);
     const resumenIdentidad = await this.identidad.resolver(
       dto.cliente.celular,
       dto.cliente.correo,

@@ -1,5 +1,7 @@
 /** Fechas de calendario (sin hora), alineadas con API @db.Date y zona Perú. */
 
+export { formatFechaDdMmYyyy } from '@bosque/shared';
+
 export const ZONA_NEGOCIO = 'America/Lima';
 
 export function esFechaCalendario(value: string): boolean {

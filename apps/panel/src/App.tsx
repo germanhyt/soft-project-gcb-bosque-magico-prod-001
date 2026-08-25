@@ -12,6 +12,7 @@ import {
 } from './pages/CotizacionFormRedirectPage';
 import { AgendaPage } from './pages/AgendaPage';
 import { ConfiguracionPage } from './pages/ConfiguracionPage';
+import { CatalogoPage } from './pages/CatalogoPage';
 import { UsuariosPage } from './pages/UsuariosPage';
 import { SolicitudesPage } from './pages/SolicitudesPage';
 import { ClientesPage } from './pages/ClientesPage';
@@ -38,8 +39,9 @@ function App() {
           <Route path="agenda" element={<AgendaPage />} />
           <Route path="operaciones" element={<OperacionesPage />} />
           <Route path="contratos" element={<ContratosPage />} />
-          <Route path="configuracion" element={<ConfiguracionPage />} />
+          <Route path="catalogo" element={<CatalogoPage />} />
           <Route element={<RequireAdmin />}>
+            <Route path="configuracion" element={<ConfiguracionPage />} />
             <Route path="usuarios" element={<UsuariosPage />} />
           </Route>
           <Route path="*" element={<Navigate to="/solicitudes" replace />} />

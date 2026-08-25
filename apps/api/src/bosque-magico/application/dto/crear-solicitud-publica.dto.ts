@@ -65,8 +65,8 @@ export class EventoSolicitudDto {
   @ApiPropertyOptional({ example: 25 })
   @IsOptional()
   @IsInt()
-  @Min(1)
-  @Max(50)
+  @Min(1, { message: 'Debe haber al menos 1 niño' })
+  @Max(100, { message: 'La cantidad de niños supera el máximo permitido' })
   cantidadNinos?: number;
 
   @ApiPropertyOptional({ example: 'Princesas' })
@@ -83,14 +83,18 @@ export class EventoSolicitudDto {
 }
 
 export class OrigenSolicitudPublicaDto {
-  @ApiPropertyOptional({ enum: CanalSolicitud, default: CanalSolicitud.landing })
+  @ApiPropertyOptional({
+    enum: CanalSolicitud,
+    default: CanalSolicitud.landing,
+  })
   @IsOptional()
   @IsEnum(CanalSolicitud)
   canal?: CanalSolicitud;
 
   @ApiPropertyOptional({
     example: 'instagram',
-    description: 'Detalle de origen declarado o inferido (ej. instagram, referido)',
+    description:
+      'Detalle de origen declarado o inferido (ej. instagram, referido)',
   })
   @IsOptional()
   @IsString()

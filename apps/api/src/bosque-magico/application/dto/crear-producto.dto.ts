@@ -1,5 +1,9 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { CategoriaProducto, OrigenProducto, SubtipoProducto } from '@prisma/client';
+import {
+  CategoriaProducto,
+  OrigenProducto,
+  SubtipoProducto,
+} from '@prisma/client';
 import {
   IsEnum,
   IsInt,
@@ -50,13 +54,17 @@ export class CrearProductoDto {
   @Min(1)
   cantidadMinima?: number;
 
-  @ApiPropertyOptional({ enum: SubtipoProducto, default: SubtipoProducto.general })
+  @ApiPropertyOptional({
+    enum: SubtipoProducto,
+    default: SubtipoProducto.general,
+  })
   @IsOptional()
   @IsEnum(SubtipoProducto)
   subtipo?: SubtipoProducto;
 
   @ApiPropertyOptional({
-    description: 'Unidades por pack (piqueos). Precio del producto es por pack completo.',
+    description:
+      'Unidades por pack (piqueos). Precio del producto es por pack completo.',
   })
   @IsOptional()
   @IsInt()

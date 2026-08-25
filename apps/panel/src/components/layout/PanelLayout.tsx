@@ -16,6 +16,7 @@ const NAV_MAIN = [
   { to: '/agenda', label: 'Agenda', icon: 'calendar_month' },
   { to: '/operaciones', label: 'Operaciones', icon: 'inventory_2' },
   { to: '/contratos', label: 'Contratos', icon: 'description' },
+  { to: '/catalogo', label: 'Catálogo y\nproveedores', icon: 'storefront' },
 ] as const;
 
 const NAV_CONFIG = { to: '/configuracion', label: 'Configuración', icon: 'settings' } as const;
@@ -38,7 +39,7 @@ function NavItem({
     <NavLink
       to={to}
       end={end}
-      title={rail ? label : undefined}
+      title={rail ? label.replace(/\n/g, ' ') : undefined}
       className={({ isActive }) =>
         `flex items-center rounded-xl text-body-sm transition-colors duration-200 active:scale-[0.98] ${rail ? 'justify-center p-2.5' : 'gap-3 px-4 py-3'
         } ${isActive
@@ -54,7 +55,11 @@ function NavItem({
       {({ isActive }) => (
         <>
           <Icon name={icon} size={22} filled={isActive} />
-          {!rail && <span>{label}</span>}
+          {!rail && (
+            <span className={label.includes('\n') ? 'whitespace-pre-line leading-tight' : undefined}>
+              {label}
+            </span>
+          )}
         </>
       )}
     </NavLink>
@@ -132,7 +137,7 @@ export function PanelLayout() {
           <div
             className={`mt-auto space-y-1 border-t border-white/10 pt-3 ${rail ? 'px-0' : 'px-2'}`}
           >
-            <NavItem {...NAV_CONFIG} rail={rail} />
+            {esAdmin && <NavItem {...NAV_CONFIG} rail={rail} />}
             {authRequired && (
               <button
                 type="button"

@@ -39,7 +39,9 @@ describe('AceptarCotizacionUseCase', () => {
     Pick<SolicitudCotizacionSyncService, 'alAceptarCotizacion'>
   >;
   let anticipacion: jest.Mocked<Pick<AnticipacionEventoService, 'validar'>>;
-  let generarPedidos: jest.Mocked<Pick<GenerarPedidosEventoUseCase, 'ejecutar'>>;
+  let generarPedidos: jest.Mocked<
+    Pick<GenerarPedidosEventoUseCase, 'ejecutar'>
+  >;
 
   beforeEach(() => {
     cotizaciones = {
@@ -80,7 +82,9 @@ describe('AceptarCotizacionUseCase', () => {
 
   it('rechaza doble reserva en el mismo slot', async () => {
     cotizaciones.obtenerPorId.mockResolvedValue(cotBase as never);
-    cotizaciones.existeEventoActivoEnSlot.mockResolvedValue({ id: 'evt-bloqueado' } as never);
+    cotizaciones.existeEventoActivoEnSlot.mockResolvedValue({
+      id: 'evt-bloqueado',
+    } as never);
 
     await expect(useCase.ejecutarPorId('cot-1')).rejects.toThrow(
       /ya no están disponibles/,

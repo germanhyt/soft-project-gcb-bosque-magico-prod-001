@@ -17,7 +17,10 @@ export function mapProductoResponse<T extends Record<string, unknown>>(
         orden: number;
       }>
     | undefined;
-  const medios = mapProductoMedios(mediosRaw, producto.imagenUrl as string | null);
+  const medios = mapProductoMedios(
+    mediosRaw,
+    producto.imagenUrl as string | null,
+  );
   return {
     ...producto,
     medios,

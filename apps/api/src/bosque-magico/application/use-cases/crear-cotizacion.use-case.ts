@@ -21,6 +21,7 @@ import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { CrearCotizacionDto } from '../dto/crear-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 
 @Injectable()
@@ -34,6 +35,7 @@ export class CrearCotizacionUseCase {
     private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly auditoria: AuditoriaRepository,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
     private readonly tomarSolicitud: TomarSolicitudUseCase,
   ) {}
 
@@ -95,6 +97,7 @@ export class CrearCotizacionUseCase {
     }
 
     await this.anticipacion.validar(dto.fechaEvento);
+    await this.capacidad.validar(dto.cantidadNinos);
 
     const fechaEvento = new Date(dto.fechaEvento);
     let cliente = await this.clientes.buscarPorCelular(dto.cliente.celular);

@@ -108,9 +108,12 @@ export class EventsService {
       origen === 'cliente'
         ? `${codigo} aceptada por el cliente — evento en Agenda (por confirmar)`
         : `${codigo} aceptada por el equipo — evento en Agenda (por confirmar)`;
-    this.emit('cotizacion.aceptada', 'Cotización aceptada', detalle, eventoId
-      ? { tipo: 'evento', id: eventoId }
-      : { tipo: 'cotizacion', id });
+    this.emit(
+      'cotizacion.aceptada',
+      'Cotización aceptada',
+      detalle,
+      eventoId ? { tipo: 'evento', id: eventoId } : { tipo: 'cotizacion', id },
+    );
   }
 
   eventoActualizado(id: string, detalle: string) {

@@ -14,7 +14,10 @@ export function feriadosComoSet(valor: unknown): Set<string> {
 }
 
 /** Sábado, domingo o fecha en lista de feriados → tarifa fin de semana. */
-export function esTarifaFinSemana(fecha: Date | string, feriados: ReadonlySet<string>): boolean {
+export function esTarifaFinSemana(
+  fecha: Date | string,
+  feriados: ReadonlySet<string>,
+): boolean {
   const clave =
     typeof fecha === 'string'
       ? esFechaCalendario(fecha.trim())

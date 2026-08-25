@@ -26,7 +26,9 @@ export class NotificacionesPanelController {
   }
 
   @Post('marcar-leidas')
-  @ApiOperation({ summary: 'Marcar todas las notificaciones visibles como leídas' })
+  @ApiOperation({
+    summary: 'Marcar todas las notificaciones visibles como leídas',
+  })
   async marcarTodasLeidas(@CurrentUser() user?: JwtPayload) {
     if (!user?.sub) return { ok: true };
     await this.notificaciones.marcarTodasLeidas(user.sub);
@@ -34,7 +36,9 @@ export class NotificacionesPanelController {
   }
 
   @Post('ocultar-todas')
-  @ApiOperation({ summary: 'Ocultar todas las notificaciones del usuario (limpiar bandeja)' })
+  @ApiOperation({
+    summary: 'Ocultar todas las notificaciones del usuario (limpiar bandeja)',
+  })
   async ocultarTodas(@CurrentUser() user?: JwtPayload) {
     if (!user?.sub) return { ok: true };
     await this.notificaciones.ocultarTodas(user.sub);

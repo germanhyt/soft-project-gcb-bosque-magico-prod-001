@@ -2,15 +2,20 @@ import { BadRequestException } from '@nestjs/common';
 import { PrevisualizarCotizacionPublicaUseCase } from './previsualizar-cotizacion-publica.use-case';
 import { ComposicionPaqueteService } from '../../domain/services/composicion-paquete.service';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 describe('PrevisualizarCotizacionPublicaUseCase', () => {
   let useCase: PrevisualizarCotizacionPublicaUseCase;
-  let composicion: jest.Mocked<Pick<ComposicionPaqueteService, 'armarCotizacionConPaquete'>>;
+  let composicion: jest.Mocked<
+    Pick<ComposicionPaqueteService, 'armarCotizacionConPaquete'>
+  >;
   let anticipacion: jest.Mocked<Pick<AnticipacionEventoService, 'validar'>>;
+  let capacidad: jest.Mocked<Pick<CapacidadEventoService, 'validar'>>;
 
   beforeEach(() => {
     composicion = { armarCotizacionConPaquete: jest.fn() };
     anticipacion = { validar: jest.fn().mockResolvedValue(undefined) };
+    capacidad = { validar: jest.fn().mockResolvedValue(undefined) };
     composicion.armarCotizacionConPaquete.mockResolvedValue({
       composicion: {
         paqueteNombre: 'Estándar',
@@ -28,6 +33,7 @@ describe('PrevisualizarCotizacionPublicaUseCase', () => {
     useCase = new PrevisualizarCotizacionPublicaUseCase(
       composicion as unknown as ComposicionPaqueteService,
       anticipacion as unknown as AnticipacionEventoService,
+      capacidad as unknown as CapacidadEventoService,
     );
   });
 
@@ -58,6 +64,7 @@ describe('PrevisualizarCotizacionPublicaUseCase', () => {
     });
 
     expect(anticipacion.validar).toHaveBeenCalledWith('2026-07-08');
+    expect(capacidad.validar).toHaveBeenCalledWith(25);
     expect(composicion.armarCotizacionConPaquete).toHaveBeenCalledWith(
       expect.objectContaining({
         paquete: 'Estándar',

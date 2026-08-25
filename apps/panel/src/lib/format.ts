@@ -1,8 +1,11 @@
 import {
   claveFechaCalendario,
   formatFechaCalendario,
+  formatFechaDdMmYyyy,
   formatMesDiaCalendario,
 } from './fecha-calendario';
+
+export { formatFechaDdMmYyyy };
 
 export function formatFecha(iso: string | null | undefined) {
   if (!iso) return '—';

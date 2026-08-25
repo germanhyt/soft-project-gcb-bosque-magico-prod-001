@@ -15,7 +15,9 @@ export class ActualizarTareaEventoUseCase {
     const row = await this.tareas.actualizar(id, {
       ...(dto.etapa !== undefined ? { etapa: dto.etapa } : {}),
       ...(dto.area !== undefined ? { area: dto.area } : {}),
-      ...(dto.responsable !== undefined ? { responsable: dto.responsable } : {}),
+      ...(dto.responsable !== undefined
+        ? { responsable: dto.responsable }
+        : {}),
       ...(dto.fechaVencimiento !== undefined
         ? { fechaVencimiento: parseFechaCalendarioUtc(dto.fechaVencimiento) }
         : {}),

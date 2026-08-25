@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Seo } from '../components/Seo';
 import { useConfiguracion } from '../hooks/useConfiguracion';
 import { homeJsonLd } from '../constants/seo';
@@ -18,6 +18,8 @@ import { Shows } from '../components/sections/Shows';
 import { SnackPremiumSelector } from '../components/sections/SnackPremiumSelector';
 import {
   INITIAL_QUOTE_SELECTION,
+  esPaquetePersonalizado,
+  esShowPersonalizado,
   type QuoteBuilderSelection,
 } from '../types/quote-builder';
 import { paquetesConfigDesdeItems } from '../lib/paquetes-config';
@@ -43,6 +45,18 @@ export function HomePage() {
     [data?.items],
   );
 
+  useEffect(() => {
+    if (!esPaquetePersonalizado(selection.paquete)) return;
+    const showPers = data?.productos.shows?.find(esShowPersonalizado);
+    if (!showPers) return;
+    if (selection.showIds.length === 1 && selection.showIds[0] === showPers.id) return;
+    setSelection((prev) => ({
+      ...prev,
+      showIds: [showPers.id],
+      showCantidades: { [showPers.id]: 1 },
+    }));
+  }, [selection.paquete, selection.showIds, data?.productos.shows]);
+
   return (
     <>
       <Seo jsonLd={homeJsonLd()} />
@@ -54,17 +68,24 @@ export function HomePage() {
         <Paquetes
           selectedPaquete={selection.paquete}
           onSelectPaquete={(paquete) =>
-            setSelection((prev) => ({
-              ...prev,
-              paquete,
-              cajitasCantidad: paquetesConfig.cajitasIncluidas,
-              cajitasClasica: paquetesConfig.cajitasIncluidas,
-              cajitasSaludable: 0,
-              piqueoIds: [],
-              piqueosCantidades: {},
-              snackId: '',
-              snackCantidad: paquetesConfig.snackPremiumUnidadesIncluidas,
-            }))
+            setSelection((prev) => {
+              const showPers = data?.productos.shows?.find(esShowPersonalizado);
+              const personalizado = esPaquetePersonalizado(paquete);
+              return {
+                ...prev,
+                paquete,
+                cajitasCantidad: paquetesConfig.cajitasIncluidas,
+                cajitasClasica: paquetesConfig.cajitasIncluidas,
+                cajitasSaludable: 0,
+                piqueoIds: [],
+                piqueosCantidades: {},
+                snackId: '',
+                snackCantidad: paquetesConfig.snackPremiumUnidadesIncluidas,
+                showIds: personalizado && showPers ? [showPers.id] : prev.showIds,
+                showCantidades:
+                  personalizado && showPers ? { [showPers.id]: 1 } : prev.showCantidades,
+              };
+            })
           }
         />
         <CajitasSelector
@@ -132,6 +153,7 @@ export function HomePage() {
         <Shows
           selectionMode={selectionModes.shows}
           selectedShowIds={selection.showIds}
+          paquete={selection.paquete}
           onToggleShow={(showId, checked) =>
             setSelection((prev) =>
               toggleCatalogSelection(prev, 'showIds', 'showCantidades', showId, checked, selectionModes.shows, 1),

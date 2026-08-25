@@ -9,13 +9,15 @@ export type ProductoMediaResponse = {
 };
 
 export function mapProductoMedios(
-  medios: Array<{
-    id: string;
-    tipo: TipoMediaProducto;
-    url: string;
-    nombreOriginal: string | null;
-    orden: number;
-  }> | undefined,
+  medios:
+    | Array<{
+        id: string;
+        tipo: TipoMediaProducto;
+        url: string;
+        nombreOriginal: string | null;
+        orden: number;
+      }>
+    | undefined,
   imagenUrlLegacy?: string | null,
 ): ProductoMediaResponse[] {
   const rows = medios ?? [];
@@ -46,6 +48,8 @@ export function imagenesDesdeMedios(medios: ProductoMediaResponse[]): string[] {
   return medios.filter((m) => m.tipo === 'imagen').map((m) => m.url);
 }
 
-export function videoDesdeMedios(medios: ProductoMediaResponse[]): string | null {
+export function videoDesdeMedios(
+  medios: ProductoMediaResponse[],
+): string | null {
   return medios.find((m) => m.tipo === 'video')?.url ?? null;
 }

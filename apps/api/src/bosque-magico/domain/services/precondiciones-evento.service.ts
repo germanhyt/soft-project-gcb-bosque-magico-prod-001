@@ -37,7 +37,9 @@ export class PrecondicionesEventoService {
     }
 
     const pedidos = await this.pedidos.listarPorEvento(eventoId);
-    const pedidosProveedor = pedidos.filter((p) => p.tipo === TipoPedido.proveedor);
+    const pedidosProveedor = pedidos.filter(
+      (p) => p.tipo === TipoPedido.proveedor,
+    );
     const pendientes = pedidosProveedor.filter(
       (p) =>
         p.etapa !== EtapaPedido.cancelado &&

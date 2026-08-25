@@ -1,10 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo } from 'react';
+import { useFormik } from 'formik';
+import * as Yup from 'yup';
 import { apiErrorMessage } from '../../lib/api-error';
 import type { ActualizarSolicitudPayload, Solicitud, TurnoInteres } from '../../lib/api';
 import { TURNOS } from '../../constants/solicitudes';
-import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
+import { LABEL_CLASS } from '../../constants/design';
+import { useCapacidadEvento } from '../../hooks/useCapacidadEvento';
+import {
+  hintCapacidadEvento,
+  mensajeCapacidadMaximo,
+  mensajeCapacidadMinimo,
+  type CapacidadEvento,
+} from '../../lib/capacidad-evento';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import {
+  FieldHint,
+  ValidationBanner,
+  erroresVisibles,
+  inputConError,
+  type FormikLite,
+} from '../ui/FormValidation';
 
 type Props = {
   open: boolean;
@@ -13,18 +29,60 @@ type Props = {
   onSubmit: (payload: ActualizarSolicitudPayload) => Promise<void>;
 };
 
-type FormState = {
+type FormValues = {
   nombreContacto: string;
   celular: string;
   correo: string;
   fechaTentativa: string;
   turnoInteres: '' | TurnoInteres;
-  cantidadNinosEstimada: string;
+  cantidadNinosEstimada: string | number;
   notas: string;
   proximoSeguimiento: string;
 };
 
-const EMPTY: FormState = {
+const FIELD_LABELS: Record<string, string> = {
+  nombreContacto: 'Nombre contacto',
+  celular: 'Celular',
+  correo: 'Correo',
+  fechaTentativa: 'Fecha tentativa',
+  turnoInteres: 'Turno de interés',
+  cantidadNinosEstimada: 'Niños estimados',
+  notas: 'Notas',
+  proximoSeguimiento: 'Próximo seguimiento',
+};
+
+function schemaSolicitud(capacidad: CapacidadEvento) {
+  return Yup.object({
+    nombreContacto: Yup.string()
+      .trim()
+      .min(2, 'Mínimo 2 caracteres')
+      .max(150, 'Máximo 150 caracteres')
+      .required('Indica el nombre de contacto'),
+    celular: Yup.string()
+      .trim()
+      .min(9, 'Mínimo 9 dígitos')
+      .max(40, 'Máximo 40 caracteres')
+      .required('Indica el celular'),
+    correo: Yup.string()
+      .trim()
+      .transform((v) => (v === '' ? undefined : v))
+      .email('Indica un correo válido')
+      .max(150, 'Máximo 150 caracteres')
+      .optional(),
+    fechaTentativa: Yup.string().optional(),
+    turnoInteres: Yup.string().optional(),
+    cantidadNinosEstimada: Yup.number()
+      .transform((value, original) => (original === '' || original == null ? undefined : value))
+      .typeError('Indica un número válido')
+      .min(capacidad.minimo, mensajeCapacidadMinimo(capacidad.minimo))
+      .max(capacidad.maximoPermitido, mensajeCapacidadMaximo(capacidad.maximoPermitido))
+      .optional(),
+    notas: Yup.string().trim().max(2000, 'Máximo 2 000 caracteres').optional(),
+    proximoSeguimiento: Yup.string().optional(),
+  });
+}
+
+const EMPTY: FormValues = {
   nombreContacto: '',
   celular: '',
   correo: '',
@@ -48,7 +106,7 @@ function toDatetimeLocal(value: string | null | undefined) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
-function fromSolicitud(s: Solicitud): FormState {
+function fromSolicitud(s: Solicitud): FormValues {
   return {
     nombreContacto: s.nombreContacto,
     celular: s.celular,
@@ -68,103 +126,116 @@ function optionalText(value: string) {
 }
 
 export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props) {
-  const [form, setForm] = useState<FormState>(EMPTY);
-  const [pending, setPending] = useState(false);
-  const [error, setError] = useState('');
+  const capacidad = useCapacidadEvento();
+  const schema = useMemo(() => schemaSolicitud(capacidad), [capacidad]);
+  const formik = useFormik<FormValues>({
+    enableReinitialize: true,
+    initialValues: solicitud ? fromSolicitud(solicitud) : EMPTY,
+    validationSchema: schema,
+    onSubmit: async (values, helpers) => {
+      if (!solicitud) return;
+      try {
+        await onSubmit({
+          nombreContacto: values.nombreContacto.trim(),
+          celular: values.celular.trim(),
+          correo: optionalText(values.correo),
+          fechaTentativa: values.fechaTentativa.trim(),
+          turnoInteres: values.turnoInteres ? values.turnoInteres : null,
+          cantidadNinosEstimada: values.cantidadNinosEstimada
+            ? Number(values.cantidadNinosEstimada)
+            : undefined,
+          notas: values.notas,
+          proximoSeguimientoEn: values.proximoSeguimiento
+            ? new Date(values.proximoSeguimiento).toISOString()
+            : undefined,
+        });
+        onClose();
+      } catch (err) {
+        helpers.setStatus(apiErrorMessage(err, 'No se pudo guardar la solicitud'));
+      }
+    },
+  });
 
   useEffect(() => {
-    if (!open || !solicitud) return;
-    setForm(fromSolicitud(solicitud));
-    setPending(false);
-    setError('');
-  }, [open, solicitud]);
+    if (!open) return;
+    formik.setStatus(undefined);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, solicitud?.id]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!solicitud) return;
-    if (!form.nombreContacto.trim() || !form.celular.trim()) {
-      setError('Nombre y celular son obligatorios.');
-      return;
-    }
-    setPending(true);
-    setError('');
-    try {
-      await onSubmit({
-        nombreContacto: form.nombreContacto.trim(),
-        celular: form.celular.trim(),
-        correo: optionalText(form.correo),
-        fechaTentativa: form.fechaTentativa.trim(),
-        turnoInteres: form.turnoInteres ? form.turnoInteres : null,
-        cantidadNinosEstimada: form.cantidadNinosEstimada
-          ? Number(form.cantidadNinosEstimada)
-          : undefined,
-        notas: form.notas,
-        proximoSeguimientoEn: form.proximoSeguimiento
-          ? new Date(form.proximoSeguimiento).toISOString()
-          : undefined,
-      });
-      onClose();
-    } catch (err) {
-      setError(apiErrorMessage(err, 'No se pudo guardar la solicitud'));
-    } finally {
-      setPending(false);
-    }
-  };
+  const formikLite = formik as unknown as FormikLite;
+  const validacionItems = erroresVisibles(formikLite, FIELD_LABELS);
+  const apiError = typeof formik.status === 'string' ? formik.status : undefined;
 
   return (
     <Modal open={open} onClose={onClose} title="Editar solicitud" size="lg">
       {!solicitud ? (
         <p className="text-on-surface-variant">Cargando solicitud…</p>
       ) : (
-        <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
+        <form className="grid gap-4 sm:grid-cols-2" onSubmit={formik.handleSubmit}>
+          <div className="sm:col-span-2">
+            <ValidationBanner
+              items={validacionItems}
+              apiError={apiError}
+              title="No se puede guardar la solicitud"
+            />
+          </div>
           <label className="block sm:col-span-2">
             <span className={LABEL_CLASS}>Nombre contacto *</span>
             <input
-              className={INPUT_CLASS}
-              value={form.nombreContacto}
-              onChange={(e) => setForm((p) => ({ ...p, nombreContacto: e.target.value }))}
+              name="nombreContacto"
+              className={inputConError(formikLite, 'nombreContacto')}
+              value={formik.values.nombreContacto}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Ej. Carlos Ruiz"
             />
+            <FieldHint formik={formikLite} name="nombreContacto" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Celular *</span>
             <input
-              className={INPUT_CLASS}
-              value={form.celular}
-              onChange={(e) => setForm((p) => ({ ...p, celular: e.target.value }))}
+              name="celular"
+              className={inputConError(formikLite, 'celular')}
+              value={formik.values.celular}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="988 777 666"
             />
+            <FieldHint formik={formikLite} name="celular" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Correo</span>
             <input
+              name="correo"
               type="email"
-              className={INPUT_CLASS}
-              value={form.correo}
-              onChange={(e) => setForm((p) => ({ ...p, correo: e.target.value }))}
+              className={inputConError(formikLite, 'correo')}
+              value={formik.values.correo}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="contacto@correo.com"
             />
+            <FieldHint formik={formikLite} name="correo" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Fecha tentativa</span>
             <input
+              name="fechaTentativa"
               type="date"
-              className={INPUT_CLASS}
-              value={form.fechaTentativa}
-              onChange={(e) => setForm((p) => ({ ...p, fechaTentativa: e.target.value }))}
+              className={inputConError(formikLite, 'fechaTentativa')}
+              value={formik.values.fechaTentativa}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
             />
+            <FieldHint formik={formikLite} name="fechaTentativa" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Turno de interés</span>
             <select
-              className={INPUT_CLASS}
-              value={form.turnoInteres}
-              onChange={(e) =>
-                setForm((p) => ({
-                  ...p,
-                  turnoInteres: e.target.value as FormState['turnoInteres'],
-                }))
-              }
+              name="turnoInteres"
+              className={inputConError(formikLite, 'turnoInteres')}
+              value={formik.values.turnoInteres}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
             >
               <option value="">Sin turno</option>
               {TURNOS.map((t) => (
@@ -173,57 +244,61 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
                 </option>
               ))}
             </select>
+            <FieldHint formik={formikLite} name="turnoInteres" />
           </label>
           <label className="block">
             <span className={LABEL_CLASS}>Niños estimados</span>
             <input
+              name="cantidadNinosEstimada"
               type="number"
-              min={1}
-              max={50}
-              className={INPUT_CLASS}
-              value={form.cantidadNinosEstimada}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, cantidadNinosEstimada: e.target.value }))
-              }
+              min={capacidad.minimo}
+              max={capacidad.maximoPermitido}
+              className={inputConError(formikLite, 'cantidadNinosEstimada')}
+              value={formik.values.cantidadNinosEstimada}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="25"
             />
+            <span className="mt-1 block text-xs text-on-surface-variant">
+              {hintCapacidadEvento(capacidad)}
+            </span>
+            <FieldHint formik={formikLite} name="cantidadNinosEstimada" />
           </label>
           <label className="block sm:col-span-2">
             <span className={LABEL_CLASS}>Próximo seguimiento</span>
             <input
+              name="proximoSeguimiento"
               type="datetime-local"
-              className={INPUT_CLASS}
-              value={form.proximoSeguimiento}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, proximoSeguimiento: e.target.value }))
-              }
+              className={inputConError(formikLite, 'proximoSeguimiento')}
+              value={formik.values.proximoSeguimiento}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
             />
+            <FieldHint formik={formikLite} name="proximoSeguimiento" />
           </label>
           <label className="block sm:col-span-2">
             <span className={LABEL_CLASS}>Notas</span>
             <textarea
+              name="notas"
               rows={3}
-              className={INPUT_CLASS}
-              value={form.notas}
-              onChange={(e) => setForm((p) => ({ ...p, notas: e.target.value }))}
+              className={inputConError(formikLite, 'notas')}
+              value={formik.values.notas}
+              onChange={formik.handleChange}
+              onBlur={formik.handleBlur}
               placeholder="Detalle del evento o pedido del cliente"
             />
+            <FieldHint formik={formikLite} name="notas" />
           </label>
-          {error && (
-            <p className="sm:col-span-2 rounded-lg bg-error-container/30 px-3 py-2 text-body-sm text-error">
-              {error}
-            </p>
-          )}
           <div className="flex justify-end gap-2 sm:col-span-2">
             <Button type="button" variant="ghost" onClick={onClose}>
               Cancelar
             </Button>
             <button
               type="submit"
-              disabled={pending}
+              disabled={formik.isSubmitting}
               className="rounded-lg bg-primary px-5 py-2 text-body-sm font-semibold text-on-primary disabled:opacity-60"
             >
-              {pending ? 'Guardando…' : 'Guardar cambios'}
+              {formik.isSubmitting ? 'Guardando…' : 'Guardar cambios'}
             </button>
           </div>
         </form>

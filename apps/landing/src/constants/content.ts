@@ -4,7 +4,7 @@ export const TURNOS = [
   { value: 'turno_3', label: 'Turno 3 - 7:00 p.m. - 10:00 p.m.' },
 ] as const;
 
-export const PAQUETES = ['Básico', 'Estándar', 'Premium'] as const;
+export const PAQUETES = ['Básico', 'Estándar', 'Premium', 'Personalizado'] as const;
 
 export const BENEFICIOS = [
   'Espacio privado por turno con atención planificada',

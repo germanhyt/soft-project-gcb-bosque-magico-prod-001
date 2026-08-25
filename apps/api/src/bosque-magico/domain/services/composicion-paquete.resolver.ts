@@ -105,9 +105,7 @@ function resolverSlots(
     if (!producto) continue;
     if (producto.categoria !== categoriaEsperada) continue;
     if (i < cupoIncluido) {
-      items.push(
-        itemIncluido(producto, 1, esFinSemana, 'Incluido en paquete'),
-      );
+      items.push(itemIncluido(producto, 1, esFinSemana, 'Incluido en paquete'));
     } else {
       items.push(itemAdicional(producto, 1, esFinSemana));
     }
@@ -167,58 +165,50 @@ function resolverCajitas(
   const saludableExcedente = Math.max(0, cajitasSaludable - saludableIncluida);
 
   if (clasicaIncluida > 0) {
-    items.push(
-      {
-        ...itemIncluido(
-          cajita,
-          clasicaIncluida,
-          esFinSemana,
-          `${clasicaIncluida} incluidas en paquete`,
-        ),
-        nombre: `${cajita.nombre} Clásica`,
-      },
-    );
+    items.push({
+      ...itemIncluido(
+        cajita,
+        clasicaIncluida,
+        esFinSemana,
+        `${clasicaIncluida} incluidas en paquete`,
+      ),
+      nombre: `${cajita.nombre} Clásica`,
+    });
   }
   if (saludableIncluida > 0) {
-    items.push(
-      {
-        ...itemIncluido(
-          cajita,
-          saludableIncluida,
-          esFinSemana,
-          `${saludableIncluida} incluidas en paquete`,
-        ),
-        nombre: `${cajita.nombre} Saludable`,
-      },
-    );
+    items.push({
+      ...itemIncluido(
+        cajita,
+        saludableIncluida,
+        esFinSemana,
+        `${saludableIncluida} incluidas en paquete`,
+      ),
+      nombre: `${cajita.nombre} Saludable`,
+    });
   }
   if (clasicaExcedente > 0) {
-    items.push(
-      {
-        ...itemExcedente(
-          cajita,
-          clasicaExcedente,
-          precioExcedente,
-          esFinSemana,
-          'Cajitas adicionales',
-        ),
-        nombre: `${cajita.nombre} Clásica`,
-      },
-    );
+    items.push({
+      ...itemExcedente(
+        cajita,
+        clasicaExcedente,
+        precioExcedente,
+        esFinSemana,
+        'Cajitas adicionales',
+      ),
+      nombre: `${cajita.nombre} Clásica`,
+    });
   }
   if (saludableExcedente > 0) {
-    items.push(
-      {
-        ...itemExcedente(
-          cajita,
-          saludableExcedente,
-          precioExcedente,
-          esFinSemana,
-          'Cajitas adicionales',
-        ),
-        nombre: `${cajita.nombre} Saludable`,
-      },
-    );
+    items.push({
+      ...itemExcedente(
+        cajita,
+        saludableExcedente,
+        precioExcedente,
+        esFinSemana,
+        'Cajitas adicionales',
+      ),
+      nombre: `${cajita.nombre} Saludable`,
+    });
   }
 
   return {
@@ -263,7 +253,9 @@ function resolverPiqueos(
             producto,
             1,
             esFinSemana,
-            creditoIncluido > 0 ? 'Incluido en crédito de piqueos' : 'Incluido en paquete',
+            creditoIncluido > 0
+              ? 'Incluido en crédito de piqueos'
+              : 'Incluido en paquete',
           ),
           creditoAplicado,
         });
@@ -416,8 +408,7 @@ export function resolverComposicionPaquete(
     cajitasIncluidas = CAJITAS_INCLUIDAS_DEFAULT,
     cajitasPrecioExcedente = CAJITAS_PRECIO_EXCEDENTE_DEFAULT,
     snackPremiumUnidadesIncluidas = SNACK_PREMIUM_UNIDADES_INCLUIDAS_DEFAULT,
-    snackPremiumPrecioExcedente =
-      SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT,
+    snackPremiumPrecioExcedente = SNACK_PREMIUM_PRECIO_EXCEDENTE_UNIDAD_DEFAULT,
     piqueosCreditoPremium,
   } = input;
 
@@ -465,8 +456,7 @@ export function resolverComposicionPaquete(
         cajitasRegla = regla.cantidad;
         break;
       case ModoComposicionPaquete.credito_piqueos:
-        creditoPiqueos =
-          piqueosCreditoPremium ?? regla.montoCredito ?? 200;
+        creditoPiqueos = piqueosCreditoPremium ?? regla.montoCredito ?? 200;
         break;
       case ModoComposicionPaquete.eleccion_snack: {
         const snack = resolverSnackPremium(

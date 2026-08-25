@@ -63,8 +63,20 @@ describe('ListarConfiguracionPanelUseCase', () => {
 
   it('no incluye smtp.port en numericas (va en sección smtp)', async () => {
     configuracion.listarTodas.mockResolvedValue([
-      { id: 's1', clave: 'smtp.port', valor: 587, descripcion: null, esPublico: false },
-      { id: 's2', clave: 'smtp.host', valor: 'mail.test', descripcion: null, esPublico: false },
+      {
+        id: 's1',
+        clave: 'smtp.port',
+        valor: 587,
+        descripcion: null,
+        esPublico: false,
+      },
+      {
+        id: 's2',
+        clave: 'smtp.host',
+        valor: 'mail.test',
+        descripcion: null,
+        esPublico: false,
+      },
     ] as never);
 
     const res = await useCase.ejecutar();

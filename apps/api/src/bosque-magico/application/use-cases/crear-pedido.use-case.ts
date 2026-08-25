@@ -29,7 +29,10 @@ export class CrearPedidoUseCase {
     if (dto.productoId) {
       const producto = await this.productos.obtenerPorId(dto.productoId);
       if (!producto) throw new NotFoundException('Producto no encontrado');
-      if (dto.tipo === TipoPedido.proveedor && producto.origen !== OrigenProducto.proveedor) {
+      if (
+        dto.tipo === TipoPedido.proveedor &&
+        producto.origen !== OrigenProducto.proveedor
+      ) {
         throw new BadRequestException('El producto no es de proveedor externo');
       }
       if (!proveedorId && producto.proveedorId) {

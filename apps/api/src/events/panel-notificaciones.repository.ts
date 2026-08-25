@@ -30,7 +30,10 @@ export class PanelNotificacionesRepository {
     return this.toEvent(row);
   }
 
-  async listarParaUsuario(usuarioId: string, limite = 50): Promise<PanelNotificacionDto[]> {
+  async listarParaUsuario(
+    usuarioId: string,
+    limite = 50,
+  ): Promise<PanelNotificacionDto[]> {
     const rows = await this.prisma.bosqueMagicoPanelNotificacion.findMany({
       orderBy: { creadoEn: 'desc' },
       take: Math.min(limite + 100, 200),

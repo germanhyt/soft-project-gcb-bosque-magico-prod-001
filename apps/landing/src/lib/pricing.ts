@@ -15,7 +15,7 @@ export const TARIFAS_DEFAULT: TarifasConfig = {
   baseFinSemana: 950,
   minimoNinos: 10,
   maximoBase: 20,
-  maximoPermitido: 30,
+  maximoPermitido: 35,
   adelanto: 500,
   garantia: 500,
 };
@@ -55,6 +55,7 @@ export const PRECIOS_PAQUETE_FALLBACK: Record<string, { lv: number; fds: number 
   basico: { lv: 799, fds: 950 },
   estandar: { lv: 1310, fds: 1650 },
   premium: { lv: 1770, fds: 2100 },
+  personalizado: { lv: 799, fds: 950 },
 };
 
 function normalizarNombrePaquete(nombre: string): string {
@@ -69,6 +70,7 @@ export function preciosPaqueteFallback(nombrePaquete: string): { lv: number; fds
   const key = normalizarNombrePaquete(nombrePaquete);
   if (key.includes('premium')) return PRECIOS_PAQUETE_FALLBACK.premium;
   if (key.includes('estandar') || key.includes('standard')) return PRECIOS_PAQUETE_FALLBACK.estandar;
+  if (key.includes('personal')) return PRECIOS_PAQUETE_FALLBACK.personalizado;
   return PRECIOS_PAQUETE_FALLBACK.basico;
 }
 

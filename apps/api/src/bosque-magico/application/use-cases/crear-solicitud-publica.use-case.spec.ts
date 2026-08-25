@@ -6,6 +6,7 @@ import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { IdentidadContactoService } from '../../domain/services/identidad-contacto.service';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 describe('CrearSolicitudPublicaUseCase', () => {
   let useCase: CrearSolicitudPublicaUseCase;
@@ -21,6 +22,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
     Pick<IdentidadContactoService, 'resolver' | 'vincularClienteConSolicitud'>
   >;
   let anticipacion: jest.Mocked<Pick<AnticipacionEventoService, 'validar'>>;
+  let capacidad: jest.Mocked<Pick<CapacidadEventoService, 'validar'>>;
 
   const resumenSinDuplicado = {
     celularNormalizado: '999888777',
@@ -46,6 +48,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
       vincularClienteConSolicitud: jest.fn().mockResolvedValue({ id: 'cli-1' }),
     };
     anticipacion = { validar: jest.fn().mockResolvedValue(undefined) };
+    capacidad = { validar: jest.fn().mockResolvedValue(undefined) };
     identidad.resolver.mockResolvedValue(resumenSinDuplicado);
     useCase = new CrearSolicitudPublicaUseCase(
       solicitudes as unknown as SolicitudesRepository,
@@ -54,6 +57,7 @@ describe('CrearSolicitudPublicaUseCase', () => {
       crearCotizacion as unknown as CrearCotizacionUseCase,
       identidad as unknown as IdentidadContactoService,
       anticipacion as unknown as AnticipacionEventoService,
+      capacidad as unknown as CapacidadEventoService,
     );
   });
 

@@ -112,6 +112,7 @@ export function ProductoFormModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    e.stopPropagation();
     if (!form.nombre.trim()) {
       setError('El nombre es obligatorio');
       return;

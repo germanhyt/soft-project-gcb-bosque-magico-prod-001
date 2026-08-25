@@ -191,9 +191,7 @@ export class NotificacionProveedorService {
 
     const turnoLabel = await this.etiquetaTurno(evento.turno);
     const costo = fromDecimal(pedido.costo).toFixed(2);
-    const notas = pedido.notas?.trim()
-      ? `Notas: ${pedido.notas.trim()}`
-      : '';
+    const notas = pedido.notas?.trim() ? `Notas: ${pedido.notas.trim()}` : '';
     const siteUrl =
       this.config.get<string>('PUBLIC_SITE_URL') ?? 'http://localhost:5173';
     const link = pedido.tokenPublico

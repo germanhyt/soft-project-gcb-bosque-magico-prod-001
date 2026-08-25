@@ -25,7 +25,10 @@ export class TareasEventoController {
 
   @Post('eventos/:eventoId/tareas')
   @ApiOperation({ summary: 'Crear tarea manual' })
-  crearTarea(@Param('eventoId') eventoId: string, @Body() dto: CrearTareaEventoDto) {
+  crearTarea(
+    @Param('eventoId') eventoId: string,
+    @Body() dto: CrearTareaEventoDto,
+  ) {
     return this.crear.ejecutar(eventoId, dto);
   }
 

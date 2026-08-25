@@ -1,7 +1,4 @@
-import {
-  OrigenItemCotizacion,
-  TipoItemCotizacion,
-} from '@prisma/client';
+import { OrigenItemCotizacion, TipoItemCotizacion } from '@prisma/client';
 import type {
   ItemPaqueteResuelto,
   SeleccionPaqueteInput,
@@ -35,7 +32,8 @@ export function calcularCargosCapacidad(
 ): ResultadoCargosCapacidad {
   const ninos = Math.min(input.cantidadNinos, input.maximoPermitido);
   const items: ItemPaqueteResuelto[] = [];
-  const itemsCobrables: Array<{ cantidad: number; precioUnitario: number }> = [];
+  const itemsCobrables: Array<{ cantidad: number; precioUnitario: number }> =
+    [];
   let montoTotal = 0;
 
   if (ninos > input.ninosIncluidos) {

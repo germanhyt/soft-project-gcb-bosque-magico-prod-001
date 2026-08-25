@@ -4,7 +4,10 @@ import {
   OnModuleDestroy,
   OnModuleInit,
 } from '@nestjs/common';
-import { fechaCalendarioHoy, ZONA_NEGOCIO } from '../../domain/utils/fecha-calendario';
+import {
+  fechaCalendarioHoy,
+  ZONA_NEGOCIO,
+} from '../../domain/utils/fecha-calendario';
 import { ProcesarRecordatoriosEventoUseCase } from '../../application/use-cases/procesar-recordatorios-evento.use-case';
 
 /** Job diario ~08:00 America/Lima — recordatorios de eventos (sin @nestjs/schedule). */
@@ -14,15 +17,16 @@ export class RecordatoriosScheduler implements OnModuleInit, OnModuleDestroy {
   private timer?: ReturnType<typeof setInterval>;
   private lastRunDay: string | null = null;
 
-  constructor(
-    private readonly procesar: ProcesarRecordatoriosEventoUseCase,
-  ) {}
+  constructor(private readonly procesar: ProcesarRecordatoriosEventoUseCase) {}
 
   onModuleInit() {
     // Cada 15 min; dispara una vez al día cuando la hora Lima es >= 8.
-    this.timer = setInterval(() => {
-      void this.tick();
-    }, 15 * 60 * 1000);
+    this.timer = setInterval(
+      () => {
+        void this.tick();
+      },
+      15 * 60 * 1000,
+    );
     // Primera pasada a los 45s (dar tiempo a que arranque la app).
     setTimeout(() => void this.tick(), 45_000);
   }

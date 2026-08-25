@@ -25,7 +25,9 @@ export class ObtenerAgendaUseCase {
         ? finDiaCalendarioUtc(hasta)
         : new Date(hasta)
       : finDiaCalendarioUtc(
-          claveFechaCalendario(new Date(inicio.getTime() + 60 * 24 * 60 * 60 * 1000)),
+          claveFechaCalendario(
+            new Date(inicio.getTime() + 60 * 24 * 60 * 60 * 1000),
+          ),
         );
 
     const [eventos, resumen, proximos] = await Promise.all([

@@ -69,6 +69,13 @@ export function esPaquetePersonalizado(paquete: string): boolean {
   return normalizarPaqueteNombre(paquete).includes('personal');
 }
 
+export const CODIGO_SHOW_PERSONALIZADO = 'SHOW-001';
+
+export function esShowPersonalizado(producto: Pick<Producto, 'codigo' | 'nombre'>): boolean {
+  if (producto.codigo === CODIGO_SHOW_PERSONALIZADO) return true;
+  return normalizarPaqueteNombre(producto.nombre).includes('personalizado');
+}
+
 export function esPaqueteEstandarOMayor(paquete: string): boolean {
   const n = normalizarPaqueteNombre(paquete);
   return n.includes('standar') || n.includes('estandar') || n.includes('premiu');

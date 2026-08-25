@@ -42,11 +42,14 @@ export class CrearSolicitudWhatsappDto {
 
   @ApiProperty({ example: 25 })
   @IsInt()
-  @Min(1)
-  @Max(50)
+  @Min(1, { message: 'Debe haber al menos 1 niño' })
+  @Max(100, { message: 'La cantidad de niños supera el máximo permitido' })
   cantidadNinosEstimada!: number;
 
-  @ApiPropertyOptional({ enum: CanalSolicitud, default: CanalSolicitud.whatsapp })
+  @ApiPropertyOptional({
+    enum: CanalSolicitud,
+    default: CanalSolicitud.whatsapp,
+  })
   @IsOptional()
   @IsEnum(CanalSolicitud)
   canal?: CanalSolicitud;
@@ -94,7 +97,8 @@ export class CrearSolicitudWhatsappDto {
   paqueteInteres?: string;
 
   @ApiPropertyOptional({
-    description: 'Payload técnico (texto original, confianza, metadatos del canal)',
+    description:
+      'Payload técnico (texto original, confianza, metadatos del canal)',
   })
   @IsOptional()
   @IsObject()

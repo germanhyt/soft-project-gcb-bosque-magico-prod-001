@@ -3,12 +3,14 @@ import { ComposicionPaqueteService } from '../../domain/services/composicion-paq
 import type { SeleccionPaqueteInput } from '../../domain/services/composicion-paquete.types';
 import { PrevisualizarCotizacionPublicaDto } from '../dto/previsualizar-cotizacion-publica.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 @Injectable()
 export class PrevisualizarCotizacionPublicaUseCase {
   constructor(
     private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
   ) {}
 
   private mapearSeleccion(
@@ -41,6 +43,7 @@ export class PrevisualizarCotizacionPublicaUseCase {
 
   async ejecutar(dto: PrevisualizarCotizacionPublicaDto) {
     await this.anticipacion.validar(dto.fechaEvento);
+    await this.capacidad.validar(dto.cantidadNinos);
 
     const fechaEvento = new Date(dto.fechaEvento);
     if (Number.isNaN(fechaEvento.getTime())) {

@@ -1,4 +1,7 @@
-import { calcularCargosCapacidad, type ReglasCapacidadInput } from './reglas-capacidad';
+import {
+  calcularCargosCapacidad,
+  type ReglasCapacidadInput,
+} from './reglas-capacidad';
 
 const baseInput = (
   overrides: Partial<ReglasCapacidadInput> = {},

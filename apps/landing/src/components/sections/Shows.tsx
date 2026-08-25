@@ -3,6 +3,7 @@ import { useConfiguracion } from '../../hooks/useConfiguracion';
 import { CatalogConnectionAlert } from '../ui/CatalogConnectionAlert';
 import { CARD_CATALOG, GRID_CATALOG, cardCatalogState } from '../../constants/design';
 import { selectionHint, type SelectionMode } from '../../lib/selection-mode';
+import { esPaquetePersonalizado, esShowPersonalizado } from '../../types/quote-builder';
 import { SectionShell } from '../ui/SectionShell';
 import { SectionTitle } from '../ui/SectionTitle';
 import { SelectionHint } from '../ui/SelectionHint';
@@ -12,21 +13,25 @@ import { StatusBadge } from '../ui/StatusBadge';
 type Props = {
   selectionMode: SelectionMode;
   selectedShowIds: string[];
+  paquete?: string;
   onToggleShow: (showId: string, checked: boolean) => void;
 };
 
-export function Shows({ selectionMode, selectedShowIds, onToggleShow }: Props) {
+export function Shows({ selectionMode, selectedShowIds, paquete, onToggleShow }: Props) {
   const { data, isError, isLoading } = useConfiguracion();
   const reduceMotion = useReducedMotion();
+  const personalizado = esPaquetePersonalizado(paquete ?? '');
   const shows =
-    data?.productos.shows?.map((show) => ({
-      id: show.id,
-      nombre: show.nombre,
-      imagenUrl: show.imagenUrl,
-      imagenes: show.imagenes,
-      videoUrl: show.videoUrl,
-      detalle: show.descripcion || 'Show disponible para complementar tu celebración.',
-    })) ?? [];
+    (data?.productos.shows ?? [])
+      .filter((show) => !personalizado || esShowPersonalizado(show))
+      .map((show) => ({
+        id: show.id,
+        nombre: show.nombre,
+        imagenUrl: show.imagenUrl,
+        imagenes: show.imagenes,
+        videoUrl: show.videoUrl,
+        detalle: show.descripcion || 'Show disponible para complementar tu celebración.',
+      }));
 
   return (
     <SectionShell id="shows">
@@ -49,10 +54,16 @@ export function Shows({ selectionMode, selectedShowIds, onToggleShow }: Props) {
               key={`${show.id || 'fallback'}-${show.nombre}`}
               role={show.id ? 'button' : undefined}
               tabIndex={show.id ? 0 : undefined}
-              onClick={() => show.id && onToggleShow(show.id, !selected)}
+              onClick={() => {
+                if (!show.id) return;
+                if (personalizado && selected) return;
+                onToggleShow(show.id, !selected);
+              }}
               onKeyDown={(event) => {
                 if (!show.id) return;
-                if (event.key === 'Enter' || event.key === ' ') onToggleShow(show.id, !selected);
+                if (event.key !== 'Enter' && event.key !== ' ') return;
+                if (personalizado && selected) return;
+                onToggleShow(show.id, !selected);
               }}
               className={`${CARD_CATALOG} ${cardCatalogState(selected)}`}
               initial={reduceMotion ? false : { opacity: 0, y: 14 }}

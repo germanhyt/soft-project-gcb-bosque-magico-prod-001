@@ -22,6 +22,15 @@ describe('anticipacion-evento', () => {
     expect(() => validarAnticipacionEvento(hoy, 7)).toThrow();
   });
 
+  it('muestra la fecha mínima en formato DD-MM-YYYY', () => {
+    const hoy = fechaCalendarioHoy();
+    const minima = fechaMinimaEvento(7);
+    const [y, m, d] = minima.split('-');
+    expect(() => validarAnticipacionEvento(hoy, 7)).toThrow(
+      new RegExp(`Fecha mínima: ${d}-${m}-${y}`),
+    );
+  });
+
   it('acepta fecha en el mínimo permitido', () => {
     const min = fechaMinimaEvento(3);
     expect(() => validarAnticipacionEvento(min, 3)).not.toThrow();

@@ -8,7 +8,8 @@ import { resolverComposicionPaquete } from './composicion-paquete.resolver';
 import type { ProductoCotizacionRef } from './composicion-paquete.types';
 
 const mk = (
-  partial: Partial<ProductoCotizacionRef> & Pick<ProductoCotizacionRef, 'id' | 'codigo' | 'nombre' | 'categoria'>,
+  partial: Partial<ProductoCotizacionRef> &
+    Pick<ProductoCotizacionRef, 'id' | 'codigo' | 'nombre' | 'categoria'>,
 ): ProductoCotizacionRef => ({
   subtipo: SubtipoProducto.general,
   precioLunesViernes: 0,
@@ -125,9 +126,27 @@ describe('resolverComposicionPaquete', () => {
   ]);
 
   const reglasPremium = [
-    { modo: ModoComposicionPaquete.slot_show, cantidad: 1, montoCredito: null, componenteId: null, metadata: null },
-    { modo: ModoComposicionPaquete.slot_extra, cantidad: 1, montoCredito: null, componenteId: null, metadata: null },
-    { modo: ModoComposicionPaquete.cajitas_incluidas, cantidad: 10, montoCredito: null, componenteId: null, metadata: null },
+    {
+      modo: ModoComposicionPaquete.slot_show,
+      cantidad: 1,
+      montoCredito: null,
+      componenteId: null,
+      metadata: null,
+    },
+    {
+      modo: ModoComposicionPaquete.slot_extra,
+      cantidad: 1,
+      montoCredito: null,
+      componenteId: null,
+      metadata: null,
+    },
+    {
+      modo: ModoComposicionPaquete.cajitas_incluidas,
+      cantidad: 10,
+      montoCredito: null,
+      componenteId: null,
+      metadata: null,
+    },
     {
       modo: ModoComposicionPaquete.eleccion_snack,
       cantidad: 1,
@@ -140,7 +159,13 @@ describe('resolverComposicionPaquete', () => {
         precioUnidadExcedente: 10,
       },
     },
-    { modo: ModoComposicionPaquete.credito_piqueos, cantidad: 1, montoCredito: 200, componenteId: null, metadata: null },
+    {
+      modo: ModoComposicionPaquete.credito_piqueos,
+      cantidad: 1,
+      montoCredito: 200,
+      componenteId: null,
+      metadata: null,
+    },
   ];
 
   it('incluye 10 cajitas sin cargo y cobra excedente a S/ 20.90', () => {
@@ -152,8 +177,14 @@ describe('resolverComposicionPaquete', () => {
       esFinSemana: false,
     });
 
-    const incluidas = r.items.find((i) => i.origenItem === OrigenItemCotizacion.incluido_paquete && i.nombre.includes('Cajita'));
-    const excedente = r.items.find((i) => i.origenItem === OrigenItemCotizacion.excedente_paquete);
+    const incluidas = r.items.find(
+      (i) =>
+        i.origenItem === OrigenItemCotizacion.incluido_paquete &&
+        i.nombre.includes('Cajita'),
+    );
+    const excedente = r.items.find(
+      (i) => i.origenItem === OrigenItemCotizacion.excedente_paquete,
+    );
 
     expect(incluidas?.cantidad).toBe(10);
     expect(incluidas?.precioUnitario).toBe(0);
@@ -256,10 +287,14 @@ describe('resolverComposicionPaquete', () => {
     });
 
     const snackIncluido = r.items.find(
-      (i) => i.nombre === 'Popcorn' && i.origenItem === OrigenItemCotizacion.incluido_paquete,
+      (i) =>
+        i.nombre === 'Popcorn' &&
+        i.origenItem === OrigenItemCotizacion.incluido_paquete,
     );
     const snackExcedente = r.items.find(
-      (i) => i.nombre === 'Popcorn' && i.origenItem === OrigenItemCotizacion.excedente_paquete,
+      (i) =>
+        i.nombre === 'Popcorn' &&
+        i.origenItem === OrigenItemCotizacion.excedente_paquete,
     );
     expect(snackIncluido?.cantidad).toBe(25);
     expect(snackIncluido?.precioCatalogo).toBe(350);

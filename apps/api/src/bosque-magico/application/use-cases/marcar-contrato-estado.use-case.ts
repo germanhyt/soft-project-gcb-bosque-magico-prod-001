@@ -67,8 +67,14 @@ export class MarcarContratoFirmadoUseCase {
     }
 
     const [firmaCliente, firmaEmpresa] = await Promise.all([
-      this.adjuntos.obtenerPorContratoYTipo(id, TipoAdjuntoContrato.firma_cliente),
-      this.adjuntos.obtenerPorContratoYTipo(id, TipoAdjuntoContrato.firma_empresa),
+      this.adjuntos.obtenerPorContratoYTipo(
+        id,
+        TipoAdjuntoContrato.firma_cliente,
+      ),
+      this.adjuntos.obtenerPorContratoYTipo(
+        id,
+        TipoAdjuntoContrato.firma_empresa,
+      ),
     ]);
     if (!firmaCliente || !firmaEmpresa) {
       throw new BadRequestException(

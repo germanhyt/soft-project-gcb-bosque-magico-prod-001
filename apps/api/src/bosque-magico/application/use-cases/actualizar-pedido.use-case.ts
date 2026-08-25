@@ -29,14 +29,17 @@ export class ActualizarPedidoUseCase {
       ...(dto.notas !== undefined ? { notas: dto.notas } : {}),
     });
 
-    let notificacionProveedor: { enviado: boolean; motivo?: string } | undefined;
+    let notificacionProveedor:
+      | { enviado: boolean; motivo?: string }
+      | undefined;
     const pasaASolicitado =
       dto.etapa === EtapaPedido.solicitado &&
       existe.etapa !== EtapaPedido.solicitado &&
       existe.tipo === TipoPedido.proveedor;
 
     if (pasaASolicitado) {
-      notificacionProveedor = await this.notificacionProveedor.notificarAlSolicitar(id);
+      notificacionProveedor =
+        await this.notificacionProveedor.notificarAlSolicitar(id);
     }
 
     return {

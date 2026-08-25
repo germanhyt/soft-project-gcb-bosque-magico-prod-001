@@ -27,6 +27,7 @@ import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria
 import { ActualizarCotizacionDto } from '../dto/actualizar-cotizacion.dto';
 import { ItemCotizacionDto } from '../dto/item-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 @Injectable()
 export class ActualizarCotizacionUseCase {
@@ -37,6 +38,7 @@ export class ActualizarCotizacionUseCase {
     private readonly composicionPaquete: ComposicionPaqueteService,
     private readonly auditoria: AuditoriaRepository,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
   ) {}
 
   private categoriaATipo(cat: CategoriaProducto): TipoItemCotizacion {
@@ -154,6 +156,7 @@ export class ActualizarCotizacionUseCase {
     const feriados = await this.calculo.obtenerFeriados();
     const turno = dto.turno ?? antes.turno;
     const cantidadNinos = dto.cantidadNinos ?? antes.cantidadNinos;
+    await this.capacidad.validar(cantidadNinos);
     const paquete = dto.paquete ?? antes.paquete;
     if (!paquete?.trim()) {
       throw new BadRequestException('Debe elegir un paquete');

@@ -58,7 +58,7 @@ export class CalculoPreciosService {
       baseLunesViernes: num('tarifas.base_lunes_viernes', 799),
       baseFinSemana: num('tarifas.base_fin_semana', 950),
       maximoBase: num('ninos.maximo_base', 20),
-      maximoPermitido: num('ninos.maximo_permitido', 30),
+      maximoPermitido: num('ninos.maximo_permitido', 35),
     };
   }
 

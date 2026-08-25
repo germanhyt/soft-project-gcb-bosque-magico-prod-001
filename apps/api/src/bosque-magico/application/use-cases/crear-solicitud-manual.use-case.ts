@@ -5,6 +5,7 @@ import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 
 @Injectable()
 export class CrearSolicitudManualUseCase {
@@ -13,12 +14,14 @@ export class CrearSolicitudManualUseCase {
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
     private readonly anticipacion: AnticipacionEventoService,
+    private readonly capacidad: CapacidadEventoService,
   ) {}
 
   async ejecutar(dto: CrearSolicitudManualDto) {
     if (dto.fechaTentativa) {
       await this.anticipacion.validar(dto.fechaTentativa);
     }
+    await this.capacidad.validar(dto.cantidadNinosEstimada);
     const etapa =
       dto.etapaInicial === EtapaSolicitud.en_atencion
         ? EtapaSolicitud.en_atencion

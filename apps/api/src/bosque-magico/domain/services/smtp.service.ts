@@ -31,7 +31,11 @@ export class SmtpService {
 
   async cargarConfig(): Promise<SmtpConfigNegocio> {
     const items = await this.configuracion.listarTodas();
-    const map = new Map(items.filter((i) => i.clave.startsWith('smtp.')).map((i) => [i.clave, i.valor]));
+    const map = new Map(
+      items
+        .filter((i) => i.clave.startsWith('smtp.'))
+        .map((i) => [i.clave, i.valor]),
+    );
 
     return {
       habilitado: map.get('smtp.habilitado') === true,
@@ -86,7 +90,9 @@ export class SmtpService {
       });
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Error al enviar correo';
-      throw new InternalServerErrorException(`No se pudo enviar el correo: ${msg}`);
+      throw new InternalServerErrorException(
+        `No se pudo enviar el correo: ${msg}`,
+      );
     }
   }
 }
