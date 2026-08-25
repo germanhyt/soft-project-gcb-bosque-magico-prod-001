@@ -5,13 +5,17 @@ type IconProps = {
   size?: number;
 };
 
-export function Icon({ name, className = '', filled = true, size }: IconProps) {
+export function Icon({ name, className = '', filled = true, size = 24 }: IconProps) {
   return (
     <span
       className={`material-symbols-outlined ${className}`}
+      translate="no"
       style={{
-        fontSize: size ? `${size}px` : undefined,
-        fontVariationSettings: filled ? "'FILL' 1" : "'FILL' 0",
+        fontFamily: "'Material Symbols Outlined'",
+        fontSize: `${size}px`,
+        fontVariationSettings: filled
+          ? "'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24"
+          : "'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24",
       }}
       aria-hidden
     >

@@ -50,7 +50,7 @@ export function KpiCard({
       className={`group relative overflow-hidden rounded-xl border-t-4 bg-surface-container-lowest p-card-padding tactile-card ${BORDER[accent]}`}
     >
       <div className="pointer-events-none absolute -right-4 -bottom-4 opacity-[0.03] transition-opacity group-hover:opacity-[0.05]">
-        <Icon name={watermarkIcon} className={`text-[120px] ${WATERMARK[accent]}`} />
+        <Icon name={watermarkIcon} size={120} className={WATERMARK[accent]} />
       </div>
       <div className="relative z-10 mb-4 flex items-start justify-between">
         <h3 className="text-body-lg font-semibold text-on-surface-variant">{title}</h3>
