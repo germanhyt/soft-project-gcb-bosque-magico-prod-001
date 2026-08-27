@@ -23,6 +23,7 @@ import { GenerarTareasEventoUseCase } from './application/use-cases/generar-tare
 import { ListarTareasEventoUseCase } from './application/use-cases/listar-tareas-evento.use-case';
 import { CrearTareaEventoUseCase } from './application/use-cases/crear-tarea-evento.use-case';
 import { ActualizarTareaEventoUseCase } from './application/use-cases/actualizar-tarea-evento.use-case';
+import { AplicarEtapaTareasEventoUseCase } from './application/use-cases/aplicar-etapa-tareas-evento.use-case';
 import { ListarPedidosEventoUseCase } from './application/use-cases/listar-pedidos-evento.use-case';
 import { ListarPedidosOperacionesUseCase } from './application/use-cases/listar-pedidos-operaciones.use-case';
 import { CrearSolicitudManualUseCase } from './application/use-cases/crear-solicitud-manual.use-case';
@@ -30,6 +31,7 @@ import { CrearSolicitudPublicaUseCase } from './application/use-cases/crear-soli
 import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cases/generar-cotizacion-borrador-solicitud.use-case';
 import { EnviarPedidoProveedorCorreoUseCase } from './application/use-cases/enviar-pedido-proveedor-correo.use-case';
 import { EnviarCorreoContactoUseCase } from './application/use-cases/enviar-correo-contacto.use-case';
+import { EnviarContratoCorreoUseCase } from './application/use-cases/enviar-contrato-correo.use-case';
 import { ListarAuditoriaUseCase } from './application/use-cases/listar-auditoria.use-case';
 import { ListarConfiguracionPanelUseCase } from './application/use-cases/listar-configuracion-panel.use-case';
 import { ProbarSmtpUseCase } from './application/use-cases/probar-smtp.use-case';
@@ -183,6 +185,7 @@ import {
     EnviarCotizacionUseCase,
     EnviarPedidoProveedorCorreoUseCase,
     EnviarCorreoContactoUseCase,
+    EnviarContratoCorreoUseCase,
     AceptarCotizacionUseCase,
     ListarProductosUseCase,
     ListarProductosPanelUseCase,
@@ -198,6 +201,7 @@ import {
     ListarTareasEventoUseCase,
     CrearTareaEventoUseCase,
     ActualizarTareaEventoUseCase,
+    AplicarEtapaTareasEventoUseCase,
     GenerarTareasEventoUseCase,
     ActualizarProductoUseCase,
     ListarEventosUseCase,

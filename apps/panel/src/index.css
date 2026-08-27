@@ -229,3 +229,9 @@ html[data-sidebar='collapsed'] {
     animation: none;
   }
 }
+
+/* SweetAlert por encima de DetalleModal / Modal anidado */
+.swal2-container,
+.swal-over-modal {
+  z-index: 10000 !important;
+}

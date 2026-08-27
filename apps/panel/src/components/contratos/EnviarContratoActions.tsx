@@ -1,4 +1,4 @@
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import Swal from 'sweetalert2';
 import { Button } from '../ui/Button';
@@ -9,11 +9,14 @@ import { abrirWhatsApp, waMeUrlCotizacion } from '../../lib/whatsapp-cotizacion'
 import { Modal } from '../ui/Modal';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { Icon } from '../ui/Icon';
-import { linkMailto } from '../../lib/contacto-links';
+import { fetchConfiguracionPanel } from '../../lib/configuracion';
+import { enviarCorreoContrato } from '../../lib/enviar-contrato-correo';
 import {
   asuntoCorreoContrato,
   mensajeCorreoContrato,
 } from '../../lib/mensajes-contrato-correo';
+import { parseSmtpEstado } from '../../lib/smtp-config';
+import { mostrarErrorApi } from '../../lib/swal-feedback';
 
 type Props = {
   contrato: Contrato;
@@ -41,6 +44,13 @@ export function EnviarContratoActions({
   const puedeEnviar =
     contrato.etapa === 'borrador' || contrato.etapa === 'enviado';
   const correoDestino = correo?.trim() ?? contrato.snapshotJson?.cliente?.correo?.trim() ?? '';
+
+  const { data: smtpActivo = false } = useQuery({
+    queryKey: ['config-panel'],
+    queryFn: fetchConfiguracionPanel,
+    select: (data) => (data.meta?.smtp ?? parseSmtpEstado(data.smtp)).activo,
+    staleTime: 60_000,
+  });
 
   const invalidar = async () => {
     await Promise.all([
@@ -80,11 +90,7 @@ export function EnviarContratoActions({
       onSuccess?.();
     } catch (err: unknown) {
       waTab?.close();
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : 'No se pudo enviar';
-      await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
+      await mostrarErrorApi(err, 'No se pudo enviar por WhatsApp', 'No se pudo enviar');
     } finally {
       setEnviandoWa(false);
     }
@@ -94,26 +100,15 @@ export function EnviarContratoActions({
     if (!correoDestino) return;
     setEnviandoCorreo(true);
     try {
-      if (contrato.etapa === 'borrador') {
-        await marcarContratoEnviado(contrato.id);
-        await invalidar();
-      }
-      window.location.href = linkMailto(correoDestino, asuntoCorreo.trim(), mensajeCorreo.trim());
-      await Swal.fire({
-        icon: 'info',
-        title: 'Cliente de correo',
-        html: '<p class="text-sm">Se abrió tu aplicación de correo para revisar y enviar el mensaje.</p>',
-        timer: 2600,
-        showConfirmButton: false,
+      await enviarCorreoContrato(contrato, qc, {
+        correoDestino,
+        asunto: asuntoCorreo,
+        cuerpo: mensajeCorreo,
       });
       setCorreoModalOpen(false);
       onSuccess?.();
     } catch (err: unknown) {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : 'No se pudo preparar el envío por correo';
-      await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
+      await mostrarErrorApi(err, 'No se pudo enviar el correo', 'No se pudo enviar el correo');
     } finally {
       setEnviandoCorreo(false);
     }
@@ -126,9 +121,9 @@ export function EnviarContratoActions({
 
   return (
     <>
-      <div className={`flex flex-col gap-2 ${className}`}>
+      <div className={`col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-2 ${className}`}>
         <Button
-          className="inline-flex w-full gap-2"
+          className="inline-flex gap-2"
           disabled={pendiente}
           onClick={() => {
             setMensajeWa(mensajeWhatsAppContrato(contrato));
@@ -141,7 +136,7 @@ export function EnviarContratoActions({
         {correoDestino && (
           <Button
             variant="secondary"
-            className="inline-flex w-full gap-2"
+            className="inline-flex gap-2"
             disabled={pendiente}
             onClick={() => {
               const link = contrato.linkPublico || contrato.tokenPublico;
@@ -153,6 +148,11 @@ export function EnviarContratoActions({
               );
               setCorreoModalOpen(true);
             }}
+            title={
+              smtpActivo
+                ? 'Revisar mensaje y enviar vía SMTP'
+                : 'Revisar mensaje y abrir tu cliente de correo'
+            }
           >
             <Icon name="mail" size={20} />
             {etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo'}
@@ -165,6 +165,7 @@ export function EnviarContratoActions({
         title="Enviar contrato por WhatsApp"
         description="Revisa el mensaje antes de abrir WhatsApp."
         size="lg"
+        nested
       >
         <div className="space-y-4">
           <label className="block">
@@ -201,14 +202,24 @@ export function EnviarContratoActions({
         open={correoModalOpen}
         onClose={() => setCorreoModalOpen(false)}
         title="Enviar contrato por correo"
-        description="Revisa el asunto y el mensaje. Se abrirá tu cliente de correo."
+        description={
+          smtpActivo
+            ? 'Revisa el asunto y el mensaje. Se enviará automáticamente vía SMTP.'
+            : 'Revisa el asunto y el mensaje. Luego se abrirá tu cliente de correo para enviar manualmente.'
+        }
         size="lg"
+        nested
       >
         <div className="space-y-4">
           <div className="rounded-lg border border-surface-variant bg-surface-container-low/50 px-3 py-2 text-body-sm">
             <span className="text-outline">Para: </span>
             <span className="font-medium text-on-surface">{correoDestino}</span>
           </div>
+          {!smtpActivo ? (
+            <p className="text-body-sm text-outline">
+              SMTP no está activo en Configuración. El envío abrirá Outlook u otro cliente de correo.
+            </p>
+          ) : null}
           <label className="block">
             <span className={LABEL_CLASS}>Asunto</span>
             <input
@@ -243,7 +254,13 @@ export function EnviarContratoActions({
             onClick={() => void enviarCorreo()}
           >
             <Icon name="mail" size={20} />
-            {enviandoCorreo ? 'Abriendo…' : 'Abrir correo'}
+            {enviandoCorreo
+              ? smtpActivo
+                ? 'Enviando…'
+                : 'Abriendo…'
+              : smtpActivo
+                ? 'Enviar por SMTP'
+                : 'Abrir correo y enviar'}
           </Button>
         </div>
       </Modal>

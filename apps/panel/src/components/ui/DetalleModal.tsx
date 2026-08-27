@@ -76,7 +76,9 @@ export function DetalleModal({
           )}
         </div>
         {footer && !loading && (
-          <div className="shrink-0 border-t border-surface-variant px-5 py-4">{footer}</div>
+          <div className="max-h-[min(38vh,20rem)] shrink-0 overflow-y-auto overscroll-contain border-t border-surface-variant px-4 py-3">
+            {footer}
+          </div>
         )}
       </div>
     </div>,

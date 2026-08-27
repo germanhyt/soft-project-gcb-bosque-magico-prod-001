@@ -20,7 +20,11 @@ export function Header() {
       <header className={HEADER_CLASS}>
         <div className={`${CONTAINER} flex items-center justify-between gap-2 py-3.5 sm:gap-3 md:gap-4`}>
           <a href="#inicio" className="flex min-w-0 items-center gap-2.5 sm:gap-3" onClick={closeMenu}>
-            <img src="/logo-bm.png" alt="Bosque Mágico" className="h-11 w-11 shrink-0 object-contain sm:h-12 sm:w-12 md:h-14 md:w-14" />
+            <img
+              src="/logo-bm.png"
+              alt="Bosque Mágico"
+              className="h-14 w-14 shrink-0 object-contain sm:h-16 sm:w-16 md:h-[4.5rem] md:w-[4.5rem]"
+            />
             <div className="min-w-0">
               <p className="truncate font-display text-base font-bold leading-tight text-primary sm:text-lg md:text-xl">
                 Bosque Mágico

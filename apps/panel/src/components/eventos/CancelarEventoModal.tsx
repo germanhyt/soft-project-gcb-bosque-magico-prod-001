@@ -25,7 +25,7 @@ export function CancelarEventoModal({ open, onClose, onConfirm, pending, error }
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Cancelar evento">
+    <Modal open={open} onClose={handleClose} title="Cancelar evento" nested>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
           <span className={LABEL_CLASS}>Motivo (opcional)</span>

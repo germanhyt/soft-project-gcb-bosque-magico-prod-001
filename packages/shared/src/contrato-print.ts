@@ -452,7 +452,7 @@ export function buildContratoPrintHtml(
     .sheet { }
     .sheet-break { page-break-before: always; }
     .header { text-align: center; border-bottom: 2px solid #2d5a3d; padding-bottom: 12px; margin-bottom: 16px; }
-    .header img { width: 112px; height: 112px; object-fit: contain; }
+    .header img { width: 128px; height: 128px; object-fit: contain; }
     h1 { margin: 8px 0 0; font-size: 18px; color: #2d5a3d; letter-spacing: 0.02em; }
     h2 { font-size: 13px; color: #2d5a3d; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
     h3.sub { font-size: 12px; color: #2d5a3d; margin: 12px 0 6px; font-weight: 700; }

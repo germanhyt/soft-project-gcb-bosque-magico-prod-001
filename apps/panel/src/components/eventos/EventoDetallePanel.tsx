@@ -6,11 +6,13 @@ import { EventoPedidosSection } from '../pedidos/EventoPedidosSection';
 import { CancelarEventoModal } from './CancelarEventoModal';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { EnviarContratoActions } from '../contratos/EnviarContratoActions';
+import { ContratoAdjuntosSection } from '../contratos/ContratoAdjuntosSection';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { ETAPA_EVENTO_LABEL } from '../../constants/eventos';
 import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
 import { Button } from '../ui/Button';
 import { DetalleModal } from '../ui/DetalleModal';
+import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { EventoBadge } from './EventoBadge';
 import {
   cancelarEvento,
@@ -26,6 +28,7 @@ import {
 import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import { formatFecha, formatFechaHora } from '../../lib/format';
 import { fetchTareasEvento } from '../../lib/tareas-api';
+import { mostrarErrorApi, mostrarValidacion } from '../../lib/swal-feedback';
 
 type Props = {
   evento: Evento | null;
@@ -67,11 +70,7 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
       onClose();
     },
     onError: async (err: unknown) => {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String((err as { response?: { data?: { message?: string } } }).response?.data?.message ?? '')
-          : '';
-      await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
+      await mostrarErrorApi(err, 'No se pudo confirmar el evento');
     },
   });
 
@@ -81,6 +80,9 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
       invalidate();
       await Swal.fire({ icon: 'success', title: 'Evento realizado', timer: 1500, showConfirmButton: false });
       onClose();
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo marcar el evento como realizado');
     },
   });
 
@@ -108,6 +110,9 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
       await refetchContrato();
       await Swal.fire({ icon: 'success', title: 'Contrato marcado como enviado', timer: 1500, showConfirmButton: false });
     },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo marcar el contrato como enviado');
+    },
   });
 
   const firmarContratoMut = useMutation({
@@ -115,6 +120,9 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
     onSuccess: async () => {
       await refetchContrato();
       await Swal.fire({ icon: 'success', title: 'Contrato marcado como firmado', timer: 1500, showConfirmButton: false });
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo marcar el contrato como firmado');
     },
   });
 
@@ -125,54 +133,22 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
 
   const footer =
     ev && ev.etapa !== 'cancelado' ? (
-      <div className="flex flex-col gap-2">
-        <GenerarContratoAction
-          eventoId={ev.id}
-          cotizacionId={ev.cotizacionId}
-          evento={ev}
-          fullWidth
-          label={contrato ? 'Ver / editar contrato' : 'Generar contrato'}
-          onGenerado={() => void refetchContrato()}
-        />
-        {contrato && (
-          <>
-            <p className="text-center text-xs text-outline">
-              {contrato.numero} · {ETAPA_CONTRATO_LABEL[contrato.etapa] ?? contrato.etapa}
-            </p>
-            <EnviarContratoActions
-              contrato={contrato}
-              celular={contrato.snapshotJson?.cliente.celular ?? ev.cliente.celular}
-              onSuccess={() => void refetchContrato()}
-            />
-            {contrato.etapa === 'borrador' && (
-              <Button
-                className="w-full"
-                disabled={enviarContratoMut.isPending}
-                onClick={() => enviarContratoMut.mutate()}
-              >
-                Marcar enviado
-              </Button>
-            )}
-            {(contrato.etapa === 'borrador' || contrato.etapa === 'enviado') && (
-              <>
-                <Button
-                  variant="accent"
-                  className="w-full"
-                  disabled={firmarContratoMut.isPending || !firmasCompletasContrato}
-                  onClick={() => firmarContratoMut.mutate()}
-                >
-                  Marcar firmado
-                </Button>
-                {!firmasCompletasContrato && (
-                  <p className="text-center text-xs text-tertiary">
-                    Falta subir firma del cliente y firma de Bosque Mágico.
-                  </p>
-                )}
-              </>
-            )}
+      <DetalleActionsFooter>
+        <DetalleActionGroup label="Contrato">
+          <GenerarContratoAction
+            eventoId={ev.id}
+            cotizacionId={ev.cotizacionId}
+            evento={ev}
+            fullWidth
+            nested
+            redirectToContratos={false}
+            className={contrato ? '' : 'col-span-2'}
+            label={contrato ? 'Ver / editar contrato' : 'Generar contrato'}
+            onGenerado={() => void refetchContrato()}
+          />
+          {contrato ? (
             <Button
               variant="ghost"
-              className="w-full"
               onClick={() => {
                 void imprimirContratoDesdeRegistro(contrato, ev).then((ok) => {
                   if (!ok) {
@@ -181,58 +157,124 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
                 });
               }}
             >
-              Imprimir contrato
+              Imprimir
             </Button>
-          </>
-        )}
-        {ev.etapa !== 'realizado' && ev.etapa === 'por_confirmar' && (
-          <>
-            {(!contrato || (contrato.etapa !== 'enviado' && contrato.etapa !== 'firmado')) && (
-              <p className="text-center text-xs text-tertiary">
-                Genera y envía el contrato antes de confirmar en la agenda.
-              </p>
+          ) : null}
+          {contrato ? (
+            <>
+              <DetalleActionHint>
+                {contrato.numero} · {ETAPA_CONTRATO_LABEL[contrato.etapa] ?? contrato.etapa}
+              </DetalleActionHint>
+              <EnviarContratoActions
+                contrato={contrato}
+                celular={contrato.snapshotJson?.cliente.celular ?? ev.cliente.celular}
+                correo={contrato.snapshotJson?.cliente.correo ?? ev.cliente.correo ?? undefined}
+                onSuccess={() => void refetchContrato()}
+              />
+              {contrato.etapa === 'borrador' ? (
+                <Button
+                  disabled={enviarContratoMut.isPending}
+                  onClick={() => enviarContratoMut.mutate()}
+                >
+                  Marcar enviado
+                </Button>
+              ) : null}
+              {contrato.etapa === 'borrador' || contrato.etapa === 'enviado' ? (
+                <Button
+                  variant="accent"
+                  disabled={firmarContratoMut.isPending}
+                  className={contrato.etapa === 'enviado' ? 'col-span-2' : ''}
+                  onClick={() => {
+                    void (async () => {
+                      if (!firmasCompletasContrato) {
+                        await mostrarValidacion(
+                          'Faltan firmas',
+                          'Debes cargar la firma del cliente y la firma de Bosque Mágico antes de marcar el contrato como firmado.',
+                        );
+                        return;
+                      }
+                      firmarContratoMut.mutate();
+                    })();
+                  }}
+                >
+                  Marcar firmado
+                </Button>
+              ) : null}
+            </>
+          ) : null}
+        </DetalleActionGroup>
+
+        {ev.etapa === 'por_confirmar' || ev.etapa === 'confirmado' ? (
+          <DetalleActionGroup label="Evento">
+            {ev.etapa === 'por_confirmar' ? (
+              <Button
+                className="col-span-2"
+                disabled={confirmarMut.isPending}
+                onClick={() => {
+                  void (async () => {
+                    if (!contrato) {
+                      await mostrarValidacion(
+                        'No se puede confirmar',
+                        'Debes generar el contrato antes de confirmar el evento en la agenda.',
+                      );
+                      return;
+                    }
+                    if (contrato.etapa !== 'enviado' && contrato.etapa !== 'firmado') {
+                      await mostrarValidacion(
+                        'No se puede confirmar',
+                        'El contrato debe estar enviado o firmado antes de programar el evento.',
+                      );
+                      return;
+                    }
+                    if (!firmasCompletasContrato) {
+                      await mostrarValidacion(
+                        'Faltan firmas',
+                        'Debes cargar la firma del cliente y la firma de Bosque Mágico antes de confirmar el evento.',
+                      );
+                      return;
+                    }
+                    confirmarMut.mutate();
+                  })();
+                }}
+              >
+                {confirmarMut.isPending ? 'Confirmando…' : 'Confirmar evento'}
+              </Button>
+            ) : (
+              <Button
+                className="col-span-2 bg-primary-container"
+                disabled={realizarMut.isPending}
+                onClick={async () => {
+                  const pendientes = tareas.filter((t) => t.etapa !== 'completado');
+                  if (pendientes.length > 0) {
+                    const confirm = await Swal.fire({
+                      icon: 'warning',
+                      title: 'Checklist incompleto',
+                      text: `Quedan ${pendientes.length} tarea(s) pendientes. ¿Marcar el evento como realizado igual?`,
+                      showCancelButton: true,
+                      confirmButtonText: 'Marcar realizado',
+                      cancelButtonText: 'Revisar checklist',
+                    });
+                    if (!confirm.isConfirmed) return;
+                  }
+                  realizarMut.mutate();
+                }}
+              >
+                Marcar realizado
+              </Button>
             )}
-            <Button className="w-full" disabled={confirmarMut.isPending} onClick={() => confirmarMut.mutate()}>
-              Confirmar evento (programar en agenda)
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              onClick={() => {
+                setCancelarError('');
+                setCancelarOpen(true);
+              }}
+            >
+              Cancelar evento
             </Button>
-          </>
-        )}
-        {ev.etapa !== 'realizado' && ev.etapa === 'confirmado' && (
-          <Button
-            className="w-full bg-primary-container"
-            disabled={realizarMut.isPending}
-            onClick={async () => {
-              const pendientes = tareas.filter((t) => t.etapa !== 'completado');
-              if (pendientes.length > 0) {
-                const confirm = await Swal.fire({
-                  icon: 'warning',
-                  title: 'Checklist incompleto',
-                  text: `Quedan ${pendientes.length} tarea(s) pendientes. ¿Marcar el evento como realizado igual?`,
-                  showCancelButton: true,
-                  confirmButtonText: 'Marcar realizado',
-                  cancelButtonText: 'Revisar checklist',
-                });
-                if (!confirm.isConfirmed) return;
-              }
-              realizarMut.mutate();
-            }}
-          >
-            Marcar realizado
-          </Button>
-        )}
-        {(ev.etapa === 'por_confirmar' || ev.etapa === 'confirmado') && (
-          <Button
-            variant="ghost"
-            className="w-full"
-            onClick={() => {
-              setCancelarError('');
-              setCancelarOpen(true);
-            }}
-          >
-            Cancelar
-          </Button>
-        )}
-      </div>
+          </DetalleActionGroup>
+        ) : null}
+      </DetalleActionsFooter>
     ) : undefined;
 
   return (
@@ -284,6 +326,7 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
               tematica={ev.tematica}
             />
             <EventoTareasSection eventoId={ev.id} etapaEvento={ev.etapa} />
+            {contrato ? <ContratoAdjuntosSection contrato={contrato} /> : null}
             <p className="text-center text-body-sm text-outline">{ETAPA_EVENTO_LABEL[ev.etapa]}</p>
           </div>
         ) : open && !loading ? (

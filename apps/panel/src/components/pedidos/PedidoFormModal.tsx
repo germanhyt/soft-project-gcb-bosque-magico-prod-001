@@ -127,7 +127,7 @@ export function PedidoFormModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Nuevo pedido" size="lg">
+    <Modal open={open} onClose={onClose} title="Nuevo pedido" size="lg" nested>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block space-y-2">

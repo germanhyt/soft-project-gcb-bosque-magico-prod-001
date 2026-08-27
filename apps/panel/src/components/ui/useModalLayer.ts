@@ -13,7 +13,7 @@ export function useModalLayer(open: boolean) {
 }
 
 export const MODAL_OVERLAY_CLASS =
-  'fixed inset-0 z-[70] flex items-center justify-center bg-primary/35 p-4';
+  'fixed inset-0 flex items-center justify-center bg-primary/35 p-4';
 
 export const MODAL_PANEL_CLASS =
   'flex max-h-[90vh] w-full flex-col overflow-hidden rounded-xl bg-surface-container-lowest shadow-ambient transform-gpu';

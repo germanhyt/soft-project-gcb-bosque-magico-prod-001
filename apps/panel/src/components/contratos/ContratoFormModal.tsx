@@ -17,6 +17,7 @@ import {
 } from '../../lib/contratos';
 import type { Evento } from '../../lib/eventos';
 import { horarioDesdeRango, parseTurnoConfig } from '../../lib/turno-config';
+import { mostrarErrorApi } from '../../lib/swal-feedback';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
 
@@ -27,6 +28,7 @@ type Props = {
   cotizacionId: string;
   evento?: Evento | null;
   onGenerado?: (contrato: Contrato) => void;
+  nested?: boolean;
 };
 
 type FormState = {
@@ -78,6 +80,7 @@ export function ContratoFormModal({
   cotizacionId,
   evento,
   onGenerado,
+  nested = false,
 }: Props) {
   const qc = useQueryClient();
   const [form, setForm] = useState<FormState>(EMPTY);
@@ -97,7 +100,7 @@ export function ContratoFormModal({
   });
 
   const { data: config } = useQuery({
-    queryKey: ['configuracion-panel'],
+    queryKey: ['config-panel'],
     queryFn: fetchConfiguracionPanel,
     enabled: open,
     staleTime: 60_000,
@@ -176,6 +179,9 @@ export function ContratoFormModal({
       });
       onClose();
     },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo guardar el contrato', 'Revisa los datos e inténtalo de nuevo.');
+    },
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -237,6 +243,7 @@ export function ContratoFormModal({
           : 'Completa los datos legales y guarda. El PDF se genera desde el detalle con «Imprimir / PDF».'
       }
       size="lg"
+      nested={nested}
     >
       {loading ? (
         <p className="text-on-surface-variant">Cargando datos…</p>

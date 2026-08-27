@@ -35,8 +35,8 @@ export function Modal({
   const maxW =
     size === 'xl' ? 'max-w-4xl' : size === 'lg' ? 'max-w-2xl' : 'max-w-lg';
   const overlayClass = nested
-    ? MODAL_OVERLAY_CLASS.replace('z-[70]', 'z-[80]')
-    : MODAL_OVERLAY_CLASS;
+    ? `${MODAL_OVERLAY_CLASS} z-[80]`
+    : `${MODAL_OVERLAY_CLASS} z-[70]`;
 
   return createPortal(
     <div

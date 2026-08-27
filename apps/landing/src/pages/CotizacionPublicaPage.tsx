@@ -96,7 +96,7 @@ export function CotizacionPublicaPage() {
       {seoCotizacion}
     <div className="min-h-screen bg-background px-4 py-12">
       <div className={`mx-auto max-w-lg p-8 ${CARD_CLASS}`}>
-        <img src="/logo-bm.png" alt="Bosque Mágico" className="mx-auto h-16 w-16" />
+        <img src="/logo-bm.png" alt="Bosque Mágico" className="mx-auto h-28 w-28 object-contain" />
         <h1 className="mt-4 text-center font-display text-headline-lg text-primary">Tu cotización</h1>
         <p className="text-center text-sm text-on-surface-variant">{data.codigo}</p>
         <p className="mt-4 text-center text-on-surface">

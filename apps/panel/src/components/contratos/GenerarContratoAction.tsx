@@ -15,6 +15,7 @@ type Props = {
   label?: string;
   onGenerado?: (contrato: Contrato) => void;
   redirectToContratos?: boolean;
+  nested?: boolean;
 };
 
 export function GenerarContratoAction({
@@ -27,6 +28,7 @@ export function GenerarContratoAction({
   label = 'Generar contrato',
   onGenerado,
   redirectToContratos = true,
+  nested = false,
 }: Props) {
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
@@ -48,6 +50,7 @@ export function GenerarContratoAction({
         eventoId={eventoId}
         cotizacionId={cotizacionId}
         evento={evento}
+        nested={nested}
         onGenerado={(contrato) => {
           onGenerado?.(contrato);
           if (redirectToContratos) {

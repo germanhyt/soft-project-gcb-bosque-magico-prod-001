@@ -34,7 +34,7 @@ export function MobileNav({ open, onClose }: Props) {
         role="dialog"
         aria-modal="true"
         aria-label="Menú de navegación"
-        className="fixed inset-x-4 top-[4.75rem] z-50 max-h-[calc(100dvh-5.5rem)] overflow-y-auto rounded-2xl border border-surface-variant bg-surface-container-lowest p-4 shadow-[0_24px_48px_-12px_rgba(23,53,14,0.2)] lg:hidden"
+        className="fixed inset-x-4 top-[5.5rem] z-50 max-h-[calc(100dvh-6.25rem)] overflow-y-auto rounded-2xl border border-surface-variant bg-surface-container-lowest p-4 shadow-[0_24px_48px_-12px_rgba(23,53,14,0.2)] lg:hidden"
       >
         <ul className="flex flex-col gap-1">
           {LANDING_NAV.map((item) => (

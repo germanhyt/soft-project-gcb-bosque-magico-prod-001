@@ -95,7 +95,7 @@ export function PanelLayout() {
         >
           <Icon name="menu" size={24} filled={false} />
         </button>
-        <img src="/logo-bm.png" alt="" className="h-9 w-9 rounded-lg" />
+        <img src="/logo-bm.png" alt="" className="h-11 w-11 object-contain" />
         <span className="font-bold text-secondary-fixed">Bosque Mágico</span>
       </header>
 
@@ -108,7 +108,7 @@ export function PanelLayout() {
           <img
             src="/logo-bm.png"
             alt="Bosque Mágico"
-            className="h-12 w-12 rounded-lg"
+            className={rail ? 'h-10 w-10 object-contain' : 'h-16 w-16 object-contain'}
           />
           {!rail && (
             <div className="">

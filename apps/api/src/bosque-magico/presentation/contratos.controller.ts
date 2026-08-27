@@ -19,7 +19,9 @@ import {
 } from '@nestjs/swagger';
 import { memoryStorage } from 'multer';
 import { EtapaContrato, TipoAdjuntoContrato } from '@prisma/client';
+import { EnviarContratoCorreoDto } from '../application/dto/enviar-contrato-correo.dto';
 import { GenerarContratoDto } from '../application/dto/generar-contrato.dto';
+import { EnviarContratoCorreoUseCase } from '../application/use-cases/enviar-contrato-correo.use-case';
 import { GenerarContratoEventoUseCase } from '../application/use-cases/generar-contrato-evento.use-case';
 import { ListarContratosUseCase } from '../application/use-cases/listar-contratos.use-case';
 import {
@@ -44,6 +46,7 @@ export class ContratosController {
     private readonly obtenerPorEvento: ObtenerContratoPorEventoUseCase,
     private readonly generar: GenerarContratoEventoUseCase,
     private readonly marcarEnviado: MarcarContratoEnviadoUseCase,
+    private readonly enviarCorreo: EnviarContratoCorreoUseCase,
     private readonly marcarFirmado: MarcarContratoFirmadoUseCase,
     private readonly subirAdjunto: SubirAdjuntoContratoUseCase,
     private readonly eliminarAdjunto: EliminarAdjuntoContratoUseCase,
@@ -93,6 +96,17 @@ export class ContratosController {
   @ApiOperation({ summary: 'Marcar contrato como enviado' })
   enviar(@Param('id') id: string) {
     return this.marcarEnviado.ejecutar(id);
+  }
+
+  @Post('contratos/:id/enviar-correo')
+  @ApiOperation({
+    summary: 'Enviar contrato por correo (SMTP si está activo; si no, deja listo mailto)',
+  })
+  enviarPorCorreo(
+    @Param('id') id: string,
+    @Body() dto: EnviarContratoCorreoDto,
+  ) {
+    return this.enviarCorreo.ejecutar(id, dto);
   }
 
   @Post('contratos/:id/firmar')

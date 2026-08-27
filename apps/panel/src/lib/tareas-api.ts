@@ -42,6 +42,17 @@ export async function actualizarTareaEvento(
   return data;
 }
 
+export async function aplicarEtapaTareasEvento(
+  eventoId: string,
+  etapa: EtapaTareaEvento,
+) {
+  const { data } = await api.patch<TareaEvento[]>(
+    `/bosque-magico/eventos/${eventoId}/tareas`,
+    { etapa },
+  );
+  return data;
+}
+
 export async function fetchPedidosOperaciones(desde?: string, hasta?: string) {
   const { data } = await api.get<
     Array<

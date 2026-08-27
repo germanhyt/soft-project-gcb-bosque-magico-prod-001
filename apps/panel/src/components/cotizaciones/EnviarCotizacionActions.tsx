@@ -134,9 +134,9 @@ export function EnviarCotizacionActions({
 
   return (
     <>
-      <div className={`flex flex-col gap-2 sm:flex-row sm:flex-wrap ${className}`}>
+      <div className={`col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-2 ${className}`}>
         <Button
-          className="inline-flex gap-2 sm:flex-1"
+          className="inline-flex gap-2"
           disabled={pendiente}
           onClick={() => void preguntarYEnviarWhatsApp()}
         >
@@ -146,7 +146,7 @@ export function EnviarCotizacionActions({
         {cliente.correo && (
           <Button
             variant="secondary"
-            className="sm:flex-1"
+            className="inline-flex gap-2"
             disabled={pendiente}
             onClick={() => setCorreoModalOpen(true)}
             title={

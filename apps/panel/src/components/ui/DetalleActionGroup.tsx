@@ -6,16 +6,25 @@ type GroupProps = {
   className?: string;
 };
 
-/** Agrupa acciones del footer de un detalle con etiqueta y borde sutil. */
+/**
+ * Acciones del footer de un detalle: dos columnas para no empujar
+ * la vista informativa del modal.
+ */
 export function DetalleActionGroup({ label, children, className = '' }: GroupProps) {
   return (
     <div
-      className={`rounded-xl border border-surface-variant/70 bg-surface-container-low/50 p-3 ${className}`}
+      className={`rounded-lg border border-surface-variant/50 bg-surface-container-low/40 px-2.5 py-2 ${className}`}
     >
-      <p className="mb-2 text-label-caps text-outline">{label}</p>
-      <div className="flex flex-col gap-2">{children}</div>
+      <p className="mb-1.5 text-label-caps text-outline">{label}</p>
+      <div className="grid grid-cols-2 gap-2 [&_button]:w-full [&_button]:px-3 [&_button]:py-1.5 [&_button]:leading-tight">
+        {children}
+      </div>
     </div>
   );
+}
+
+export function DetalleActionHint({ children }: { children: ReactNode }) {
+  return <p className="col-span-2 text-xs leading-snug text-outline">{children}</p>;
 }
 
 type FooterProps = {
@@ -23,7 +32,7 @@ type FooterProps = {
   className?: string;
 };
 
-/** Contenedor vertical con separación entre grupos de acciones. */
+/** Contenedor compacto entre grupos de acciones. */
 export function DetalleActionsFooter({ children, className = '' }: FooterProps) {
-  return <div className={`flex flex-col gap-3 ${className}`}>{children}</div>;
+  return <div className={`flex flex-col gap-2 ${className}`}>{children}</div>;
 }

@@ -1,6 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import Swal from 'sweetalert2';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { fetchConfiguracionPanel } from '../../lib/configuracion';
 import {
@@ -9,6 +8,7 @@ import {
 } from '../../lib/whatsapp-pedido-proveedor';
 import { enviarCorreoPedidoProveedor } from '../../lib/enviar-pedido-proveedor-correo';
 import { parseSmtpEstado } from '../../lib/smtp-config';
+import { mostrarErrorApi } from '../../lib/swal-feedback';
 import type { Pedido } from '../../lib/pedidos';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
@@ -82,16 +82,7 @@ export function EnviarPedidoProveedorCorreoModal({
       ),
     onSuccess: () => onClose(),
     onError: async (err: unknown) => {
-      const msg =
-        err && typeof err === 'object' && 'response' in err
-          ? String(
-              (err as { response?: { data?: { message?: string } } }).response?.data
-                ?.message ?? '',
-            )
-          : err instanceof Error
-            ? err.message
-            : 'No se pudo enviar';
-      await Swal.fire({ icon: 'error', title: 'Error', text: msg || undefined });
+      await mostrarErrorApi(err, 'No se pudo enviar el correo', 'No se pudo enviar');
     },
   });
 
@@ -108,6 +99,7 @@ export function EnviarPedidoProveedorCorreoModal({
           : 'Revisa el asunto y el mensaje. Luego se abrirá tu cliente de correo para enviar manualmente.'
       }
       size="lg"
+      nested
     >
       <div className="space-y-4">
         {!correo ? (

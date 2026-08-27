@@ -11,7 +11,7 @@ export function Footer() {
           <img
             src="/logo-bm.png"
             alt=""
-            className="h-14 w-14 rounded-xl border-2 border-primary-fixed/30 bg-primary-container object-contain p-1.5"
+            className="h-20 w-20 object-contain"
           />
           <div>
             <p className="font-display text-lg font-bold">Bosque Mágico</p>

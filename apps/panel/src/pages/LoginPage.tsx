@@ -50,7 +50,11 @@ export function LoginPage() {
         <div className="pointer-events-none absolute -right-10 -top-10 h-56 w-56 rounded-full border border-white/20" />
         <div className="pointer-events-none absolute -left-14 bottom-20 h-44 w-44 rounded-full border border-primary-fixed/35" />
         <div className="relative flex w-full items-center justify-center">
-          <img src="/logo-bm.png" alt="" className="h-100 w-100 opacity-95 drop-shadow-[0_12px_28px_rgba(0,0,0,0.25)]" />
+          <img
+            src="/logo-bm.png"
+            alt=""
+            className="h-auto w-full max-w-[22rem] object-contain drop-shadow-[0_12px_28px_rgba(0,0,0,0.25)]"
+          />
         </div>
         <p className="absolute bottom-8 left-10 text-[1.5rem] font-medium tracking-wide text-white/85">
           Sistema Bosque Mágico
@@ -59,7 +63,7 @@ export function LoginPage() {
 
       <div className="flex flex-1 flex-col items-center justify-center bg-background px-6 py-12">
         <div className="mb-8 flex flex-col items-center lg:hidden">
-          <img src="/logo-bm.png" alt="" className="mb-4 h-16 w-16 rounded-2xl shadow-ambient" />
+          <img src="/logo-bm.png" alt="" className="mb-4 h-28 w-28 object-contain" />
           <p className="text-label-caps text-secondary">Bosque Mágico</p>
           <h1 className="text-headline-lg text-primary">Panel comercial</h1>
         </div>

@@ -23,7 +23,7 @@ import { fetchContratoEvento } from '../../lib/contratos';
 import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
 import { descripcionCantidadProducto, etiquetaOrigenItem } from '../../lib/origen-item';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
-import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
+import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import {
   puedeAceptarCotizacion,
@@ -147,9 +147,9 @@ export function CotizacionDetalle({
             Descargar PDF
           </Button>
           {cot.etapa === 'borrador' && (
-            <p className="text-center text-xs text-outline">
+            <DetalleActionHint>
               Tras enviar, el cliente o el equipo pueden aceptar para crear el evento en Agenda.
-            </p>
+            </DetalleActionHint>
           )}
         </DetalleActionGroup>
 
@@ -178,6 +178,8 @@ export function CotizacionDetalle({
                   eventoId={cot.eventos[0].id}
                   cotizacionId={cot.id}
                   fullWidth
+                  nested
+                  redirectToContratos={false}
                   label="Ver / editar contrato"
                 />
               ) : (
@@ -185,6 +187,8 @@ export function CotizacionDetalle({
                   eventoId={cot.eventos[0].id}
                   cotizacionId={cot.id}
                   fullWidth
+                  nested
+                  redirectToContratos={false}
                 />
               )
             )}
@@ -195,7 +199,7 @@ export function CotizacionDetalle({
           <DetalleActionGroup label="Editar">
             <Button
               variant="accent"
-              className="w-full"
+              className="col-span-2"
               onClick={() => {
                 onClose();
                 if (onEditarBorrador) onEditarBorrador(cot.id);

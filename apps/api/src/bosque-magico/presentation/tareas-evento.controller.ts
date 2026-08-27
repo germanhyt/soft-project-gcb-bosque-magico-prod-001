@@ -1,8 +1,10 @@
 import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
 import { ApiOperation, ApiTags } from '@nestjs/swagger';
 import { ActualizarTareaEventoDto } from '../application/dto/actualizar-tarea-evento.dto';
+import { AplicarEtapaTareasEventoDto } from '../application/dto/aplicar-etapa-tareas-evento.dto';
 import { CrearTareaEventoDto } from '../application/dto/crear-tarea-evento.dto';
 import { ActualizarTareaEventoUseCase } from '../application/use-cases/actualizar-tarea-evento.use-case';
+import { AplicarEtapaTareasEventoUseCase } from '../application/use-cases/aplicar-etapa-tareas-evento.use-case';
 import { CrearTareaEventoUseCase } from '../application/use-cases/crear-tarea-evento.use-case';
 import { GenerarTareasEventoUseCase } from '../application/use-cases/generar-tareas-evento.use-case';
 import { ListarTareasEventoUseCase } from '../application/use-cases/listar-tareas-evento.use-case';
@@ -14,6 +16,7 @@ export class TareasEventoController {
     private readonly listar: ListarTareasEventoUseCase,
     private readonly crear: CrearTareaEventoUseCase,
     private readonly actualizar: ActualizarTareaEventoUseCase,
+    private readonly aplicarEtapa: AplicarEtapaTareasEventoUseCase,
     private readonly generar: GenerarTareasEventoUseCase,
   ) {}
 
@@ -36,6 +39,15 @@ export class TareasEventoController {
   @ApiOperation({ summary: 'Generar checklist por defecto' })
   generarTareas(@Param('eventoId') eventoId: string) {
     return this.generar.ejecutar(eventoId);
+  }
+
+  @Patch('eventos/:eventoId/tareas')
+  @ApiOperation({ summary: 'Aplicar un estado a todas las tareas del checklist' })
+  aplicarEtapaTodas(
+    @Param('eventoId') eventoId: string,
+    @Body() dto: AplicarEtapaTareasEventoDto,
+  ) {
+    return this.aplicarEtapa.ejecutar(eventoId, dto.etapa);
   }
 
   @Patch('tareas/:id')

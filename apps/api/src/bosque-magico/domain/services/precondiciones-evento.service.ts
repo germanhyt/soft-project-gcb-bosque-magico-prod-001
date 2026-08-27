@@ -1,5 +1,10 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
-import { EtapaContrato, EtapaPedido, TipoPedido } from '@prisma/client';
+import {
+  EtapaContrato,
+  EtapaPedido,
+  TipoAdjuntoContrato,
+  TipoPedido,
+} from '@prisma/client';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 
@@ -12,6 +17,13 @@ const ETAPAS_PEDIDO_PROVEEDOR_OK: EtapaPedido[] = [
   EtapaPedido.confirmado,
   EtapaPedido.entregado,
 ];
+
+function tieneAdjunto(
+  adjuntos: Array<{ tipo: TipoAdjuntoContrato }> | undefined,
+  tipo: TipoAdjuntoContrato,
+): boolean {
+  return !!adjuntos?.some((a) => a.tipo === tipo);
+}
 
 @Injectable()
 export class PrecondicionesEventoService {
@@ -33,6 +45,14 @@ export class PrecondicionesEventoService {
     ) {
       throw new BadRequestException(
         'El contrato debe estar enviado o firmado antes de programar el evento.',
+      );
+    }
+    if (
+      !tieneAdjunto(contrato.adjuntos, TipoAdjuntoContrato.firma_cliente) ||
+      !tieneAdjunto(contrato.adjuntos, TipoAdjuntoContrato.firma_empresa)
+    ) {
+      throw new BadRequestException(
+        'Debes cargar la firma del cliente y la firma de Bosque Mágico antes de confirmar el evento.',
       );
     }
 

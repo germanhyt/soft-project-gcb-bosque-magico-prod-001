@@ -7,7 +7,7 @@ import { ContratoFormModal } from './ContratoFormModal';
 import { ContratoAdjuntosSection } from './ContratoAdjuntosSection';
 import { EnviarContratoActions } from './EnviarContratoActions';
 import { DetalleModal } from '../ui/DetalleModal';
-import { DetalleActionGroup, DetalleActionsFooter } from '../ui/DetalleActionGroup';
+import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { Button } from '../ui/Button';
 import { puedeEnviarContrato, puedeMarcarContratoFirmado } from '../../lib/flujo-estados';
 import { CARD_CLASS } from '../../constants/design';
@@ -19,6 +19,7 @@ import {
   type Contrato,
 } from '../../lib/contratos';
 import { formatFecha, formatFechaHora } from '../../lib/format';
+import { mostrarErrorApi, mostrarValidacion } from '../../lib/swal-feedback';
 import { useState } from 'react';
 
 type Props = {
@@ -69,6 +70,9 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
         onClose();
         navigate(`/agenda?detalle=${eventoId}`);
       }
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo marcar el contrato como firmado');
     },
   });
 
@@ -124,16 +128,27 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           <DetalleActionGroup label="Confirmar flujo">
             <Button
               variant="accent"
-              className="w-full"
-              disabled={firmarMut.isPending || !firmasCompletas}
-              onClick={() => firmarMut.mutate()}
+              disabled={firmarMut.isPending}
+              className="col-span-2"
+              onClick={() => {
+                void (async () => {
+                  if (!firmasCompletas) {
+                    await mostrarValidacion(
+                      'Faltan firmas',
+                      'Debes cargar la firma del cliente y la firma de Bosque Mágico antes de marcar el contrato como firmado.',
+                    );
+                    return;
+                  }
+                  firmarMut.mutate();
+                })();
+              }}
             >
               Marcar firmado
             </Button>
             {!firmasCompletas && (
-              <p className="mt-2 text-center text-xs text-tertiary">
+              <DetalleActionHint>
                 Sube firma del cliente y firma de Bosque Mágico para continuar.
-              </p>
+              </DetalleActionHint>
             )}
           </DetalleActionGroup>
         ) : null}
@@ -150,7 +165,7 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           <DetalleActionGroup label="Siguiente paso">
             <Button
               variant="accent"
-              className="w-full"
+              className="col-span-2"
               onClick={() => {
                 onClose();
                 navigate(`/agenda?detalle=${c.eventoId}`);
@@ -283,6 +298,7 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           onClose={() => setEditarOpen(false)}
           eventoId={c.eventoId}
           cotizacionId={c.cotizacionId}
+          nested
           onGenerado={() => {
             setEditarOpen(false);
             void qc.invalidateQueries({ queryKey: ['contrato', contratoId] });

@@ -54,4 +54,11 @@ export class TareasEventoRepository {
   actualizar(id: string, data: Prisma.BosqueMagicoTareaEventoUpdateInput) {
     return this.prisma.bosqueMagicoTareaEvento.update({ where: { id }, data });
   }
+
+  actualizarEtapaPorEvento(eventoId: string, etapa: EtapaTareaEvento) {
+    return this.prisma.bosqueMagicoTareaEvento.updateMany({
+      where: { eventoId },
+      data: { etapa },
+    });
+  }
 }
