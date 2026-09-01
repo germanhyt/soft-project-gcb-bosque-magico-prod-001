@@ -25,6 +25,18 @@ function numero(valor: unknown, fallback: number): number {
   return typeof valor === 'number' && !Number.isNaN(valor) ? valor : fallback;
 }
 
+/** Google SMTP relay rechaza EHLO si el hostname del contenedor no es un FQDN. */
+function ehloHostname(): string | undefined {
+  const raw = process.env.PUBLIC_SITE_URL ?? '';
+  try {
+    const host = new URL(raw).hostname;
+    if (host.includes('.') && host !== 'localhost') return host;
+  } catch {
+    /* ignore */
+  }
+  return undefined;
+}
+
 @Injectable()
 export class SmtpService {
   constructor(private readonly configuracion: ConfiguracionRepository) {}
@@ -79,11 +91,17 @@ export class SmtpService {
         : cfg.fromEmail
       : cfg.user || undefined;
 
+    // Relay Google (smtp-relay.gmail.com) por IP del VPS: sin AUTH si no hay password.
     const transporter = nodemailer.createTransport({
       host: cfg.host,
       port: cfg.port,
       secure: cfg.secure,
-      auth: cfg.user ? { user: cfg.user, pass: cfg.password } : undefined,
+      requireTLS: !cfg.secure && cfg.port === 587,
+      name: ehloHostname(),
+      auth:
+        cfg.user && cfg.password
+          ? { user: cfg.user, pass: cfg.password }
+          : undefined,
     });
 
     try {

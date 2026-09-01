@@ -24,6 +24,7 @@ services:
       context: .
       dockerfile: deploy/Dockerfile.api
     container_name: sandbox-api-bosque
+    hostname: sandbox-api-bosque.gcbprojects.site
     restart: unless-stopped
     environment:
       NODE_ENV: production
