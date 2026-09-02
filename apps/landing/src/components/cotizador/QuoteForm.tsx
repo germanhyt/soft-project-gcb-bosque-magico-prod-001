@@ -1,8 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { useFormik } from 'formik';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Swal from 'sweetalert2';
 import * as Yup from 'yup';
+import type { ResumenEstimado } from '../../types/resumen';
 import { TURNOS } from '../../constants/content';
 import { useConfiguracion } from '../../hooks/useConfiguracion';
 import {
@@ -314,9 +315,10 @@ type Props = {
   selection: QuoteBuilderSelection;
   onSelectionChange: (next: QuoteBuilderSelection | ((prev: QuoteBuilderSelection) => QuoteBuilderSelection)) => void;
   onFechaChange?: (fecha: string) => void;
+  onEstimadoChange?: (estimado: ResumenEstimado) => void;
 };
 
-export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props) {
+export function QuoteForm({ selection, onSelectionChange, onFechaChange, onEstimadoChange }: Props) {
   const [identidadHint, setIdentidadHint] = useState<string | null>(null);
   const { data, isLoading, isError } = useConfiguracion();
   const tarifas = data?.tarifas ?? TARIFAS_DEFAULT;
@@ -338,6 +340,16 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
     [minDiasAnticipacion],
   );
   const turnos = useMemo(() => getTurnos(data?.items), [data?.items]);
+
+  const fechaPreloadedRef = useRef(false);
+  useEffect(() => {
+    if (fechaPreloadedRef.current) return;
+    if (!fechaMinEvento) return;
+    fechaPreloadedRef.current = true;
+    formik.setFieldValue('fechaTentativa', fechaMinEvento, false);
+    onFechaChange?.(fechaMinEvento);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [fechaMinEvento]);
 
   const revisarIdentidad = useCallback(async (celular: string, correo?: string) => {
     if (celular.replace(/\D/g, '').length < 9) {
@@ -496,7 +508,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
     total: number;
     esFinSemana: boolean;
     advertencia?: string;
-  } = useMemo(() => {
+  } | null = useMemo(() => {
     if (preview.data) {
       return {
         base: preview.data.montos.base,
@@ -507,15 +519,44 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
         advertencia: preview.data.advertencia,
       };
     }
-    return {
-      base: estimadoFallback.base,
-      extraNinos: estimadoFallback.extraNinos,
-      items: 0,
-      total: estimadoFallback.total,
-      esFinSemana: estimadoFallback.esFinSemana,
-      advertencia: estimadoFallback.advertencia,
-    };
-  }, [preview.data, estimadoFallback]);
+    if (canPreview && preview.isError) {
+      return {
+        base: estimadoFallback.base,
+        extraNinos: estimadoFallback.extraNinos,
+        items: 0,
+        total: estimadoFallback.total,
+        esFinSemana: estimadoFallback.esFinSemana,
+        advertencia: estimadoFallback.advertencia,
+      };
+    }
+    return null;
+  }, [preview.data, preview.isError, canPreview, estimadoFallback]);
+
+  const esperaPreview = canPreview && !estimado;
+
+  useEffect(() => {
+    onEstimadoChange?.({
+      total: estimado?.total ?? 0,
+      base: estimado?.base ?? 0,
+      extraNinos: estimado?.extraNinos ?? 0,
+      items: estimado?.items ?? 0,
+      esFinSemana: estimado?.esFinSemana ?? false,
+      advertencia: estimado?.advertencia,
+      tienePaquete: Boolean(selection.paquete),
+      cantidadItems: preview.data?.items?.length ?? 0,
+      cargando: isLoading || esperaPreview || (canPreview && preview.isFetching),
+      listo: estimado != null,
+    });
+  }, [
+    estimado,
+    selection.paquete,
+    preview.data?.items,
+    isLoading,
+    esperaPreview,
+    canPreview,
+    preview.isFetching,
+    onEstimadoChange,
+  ]);
 
   const cartItems = useMemo((): CartItemView[] => {
     if (preview.data?.items?.length) {
@@ -926,21 +967,29 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                 Resumen referencial
               </h3>
               {isLoading && <p className="mt-4 text-sm text-on-surface-variant">Cargando tarifas…</p>}
-              {!formik.values.fechaTentativa && (
+              {!selection.paquete && (
                 <p className="mt-4 text-sm text-on-surface-variant">
-                  Elige paquete y fecha para calcular una estimación con composición incluida.
+                  Elige un paquete para calcular una estimación con composición incluida.
                 </p>
+              )}
+              {selection.paquete && !formik.values.fechaTentativa && (
+                <p className="mt-4 text-sm text-on-surface-variant">
+                  Elige una fecha para calcular el desglose según L-V o fin de semana.
+                </p>
+              )}
+              {esperaPreview && (
+                <p className="mt-4 text-sm text-on-surface-variant">Calculando estimación…</p>
               )}
               {preview.isError && formik.values.fechaTentativa && (
                 <p className="mt-4 rounded-lg bg-tertiary-fixed/40 px-3 py-2 text-xs text-tertiary">
                   No pudimos previsualizar complementos en este momento. Mostramos el paquete seleccionado sin complementos.
                 </p>
               )}
-              {estimado && tarifas && (
+              {selection.paquete && estimado && tarifas && (
                 <dl className="mt-4 space-y-3 text-sm">
                   <div className="flex justify-between">
                     <dt>
-                      {selection.paquete ? `Paquete ${selection.paquete}` : 'Tarifa base'} (
+                      {`Paquete ${selection.paquete}`} (
                       {estimado.esFinSemana ? 'fin de semana' : 'L-V'})
                     </dt>
                     <dd className="font-semibold">{formatSoles(estimado.base)}</dd>

@@ -1,9 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
+import type { ContratoSnapshotJson } from '@bosque/shared';
 import { Seo } from '../components/Seo';
+import { ServiciosListado } from '../components/cotizador/ServiciosListado';
 import { BTN_PRIMARY, CARD_CLASS } from '../constants/design';
 import { api } from '../lib/api';
-import type { ContratoSnapshot } from '../lib/contrato-types';
 
 type ContratoPublico = {
   numero: string;
@@ -17,7 +18,7 @@ type ContratoPublico = {
   horarioInicio: string;
   horarioFin: string;
   etapa: string;
-  snapshotJson: ContratoSnapshot;
+  snapshotJson: ContratoSnapshotJson;
   linkPublico: string;
   linkPdfPublico?: string;
 };
@@ -112,16 +113,30 @@ export function ContratoPublicaPage() {
 
           <section className="mb-6">
             <h2 className="mb-2 text-title-sm text-primary">Servicios</h2>
-            <ul className="space-y-1 text-body-sm">
-              {snap.cotizacion.items.map((item) => (
-                <li key={item.id} className="flex justify-between gap-4">
-                  <span>
-                    {item.nombre} × {item.cantidad}
-                  </span>
-                  <span>{formatSoles(item.subtotal)}</span>
-                </li>
-              ))}
-            </ul>
+            <ServiciosListado
+              cot={{
+                codigo: snap.codigoCotizacion,
+                etapa: 'enviada',
+                fechaEvento: snap.evento.fechaEvento,
+                turno: snap.evento.turno,
+                cantidadNinos: snap.evento.cantidadNinos,
+                paquete: snap.cotizacion.paquete,
+                montoBase: snap.cotizacion.montoBase,
+                montoNinosExtra: snap.cotizacion.montoNinosExtra,
+                montoItems: snap.cotizacion.montoItems,
+                montoTotal: snap.cotizacion.montoTotal,
+                cliente: { nombreCompleto: snap.cliente.nombreCompleto, celular: '' },
+                cumpleanero: snap.cumpleanero,
+                items: snap.cotizacion.items.map((i) => ({
+                  nombre: i.nombre,
+                  cantidad: i.cantidad,
+                  precioUnitario: i.precioUnitario,
+                  subtotal: i.subtotal,
+                  origenItem:
+                    i.origenItem ?? (i.precioUnitario <= 0 ? 'incluido_paquete' : 'adicional'),
+                })),
+              }}
+            />
           </section>
 
           <section className="mb-6 rounded-xl bg-surface-container-low p-4 text-body-sm">

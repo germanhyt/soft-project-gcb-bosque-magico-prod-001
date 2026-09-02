@@ -5,6 +5,7 @@ import { homeJsonLd } from '../constants/seo';
 import { Footer } from '../components/layout/Footer';
 import { Header } from '../components/layout/Header';
 import { QuoteForm } from '../components/cotizador/QuoteForm';
+import { ResumenFlotante } from '../components/cotizador/ResumenFlotante';
 import { Beneficios } from '../components/sections/Beneficios';
 import { CajitasSelector } from '../components/sections/CajitasSelector';
 import { Catering } from '../components/sections/Catering';
@@ -22,6 +23,7 @@ import {
   esShowPersonalizado,
   type QuoteBuilderSelection,
 } from '../types/quote-builder';
+import type { ResumenEstimado } from '../types/resumen';
 import { minimoCateringDesdeConfig, minimoUnidadesCatering } from '../lib/catering-minimo';
 import { getSelectionMode, SELECTION_MODE_KEYS } from '../lib/selection-mode';
 import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
@@ -29,6 +31,7 @@ import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
 export function HomePage() {
   const [selection, setSelection] = useState<QuoteBuilderSelection>(INITIAL_QUOTE_SELECTION);
   const [, setFechaPreview] = useState('');
+  const [estimado, setEstimado] = useState<ResumenEstimado | null>(null);
   const { data } = useConfiguracion();
   const minimoCatering = useMemo(
     () => minimoCateringDesdeConfig(data?.items),
@@ -195,10 +198,12 @@ export function HomePage() {
           selection={selection}
           onSelectionChange={setSelection}
           onFechaChange={setFechaPreview}
+          onEstimadoChange={setEstimado}
         />
         <Faq />
       </main>
       <Footer />
+      <ResumenFlotante estimado={estimado} />
     </>
   );
 }

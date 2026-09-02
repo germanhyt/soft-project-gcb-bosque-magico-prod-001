@@ -1,7 +1,9 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import type { CotizacionPrintData } from '@bosque/shared';
 import { Seo } from '../components/Seo';
+import { ServiciosListado } from '../components/cotizador/ServiciosListado';
 import { BTN_PRIMARY, CARD_CLASS, SWAL_CONFIRM_COLOR } from '../constants/design';
 import { SEO_COTIZACION } from '../constants/seo';
 import { api } from '../lib/api';
@@ -11,15 +13,18 @@ type CotizacionPublica = {
   turno: string;
   fechaEvento: string;
   cantidadNinos: number;
+  paquete?: string | null;
+  tematica?: string | null;
+  notas?: string | null;
   montoBase: number;
   montoNinosExtra: number;
   montoItems: number;
   montoTotal: number;
-  etapa: string;
+  etapa: CotizacionPrintData['etapa'];
   puedeAceptar: boolean;
   cliente: { nombreCompleto: string };
   cumpleanero: { nombre: string; edad?: number | null };
-  items?: { nombre: string; cantidad: number; subtotal: number }[];
+  items?: CotizacionPrintData['items'];
 };
 async function fetchPublica(token: string) {
 
@@ -109,9 +114,33 @@ export function CotizacionPublicaPage() {
           <strong>{data.cumpleanero.nombre}</strong>
         </p>
 
+        {data.items && data.items.length > 0 ? (
+          <div className="mt-6">
+            <ServiciosListado
+              cot={{
+                codigo: data.codigo,
+                etapa: data.etapa,
+                fechaEvento: data.fechaEvento,
+                turno: data.turno,
+                cantidadNinos: data.cantidadNinos,
+                paquete: data.paquete,
+                tematica: data.tematica,
+                notas: data.notas,
+                montoBase: data.montoBase,
+                montoNinosExtra: data.montoNinosExtra,
+                montoItems: data.montoItems,
+                montoTotal: data.montoTotal,
+                cliente: { nombreCompleto: data.cliente.nombreCompleto, celular: '' },
+                cumpleanero: data.cumpleanero,
+                items: data.items,
+              }}
+            />
+          </div>
+        ) : null}
+
         <dl className="mt-6 space-y-2 text-sm">
           <div className="flex justify-between">
-            <dt>Tarifa base</dt>
+            <dt>Paquete / tarifa base</dt>
             <dd>S/ {data.montoBase.toFixed(2)}</dd>
           </div>
           {data.montoNinosExtra > 0 && (
@@ -122,25 +151,15 @@ export function CotizacionPublicaPage() {
           )}
           {data.montoItems > 0 && (
             <div className="flex justify-between">
-              <dt>Servicios</dt>
+              <dt>Adicionales y excedentes</dt>
               <dd>S/ {data.montoItems.toFixed(2)}</dd>
             </div>
           )}
-          <div className="flex justify-between border-t border-surface-variant pt-2 text-price-tag text-primary">
+          <div className="flex justify-between border-t border-surface-variant pt-2 text-lg font-bold text-primary">
             <dt>Total</dt>
             <dd>S/ {data.montoTotal.toFixed(2)}</dd>
           </div>
         </dl>
-
-        {data.items && data.items.length > 0 && (
-          <ul className="mt-4 space-y-1 text-xs text-outline">
-            {data.items.map((i, idx) => (
-              <li key={idx}>
-                {i.nombre} × {i.cantidad}
-              </li>
-            ))}
-          </ul>
-        )}
 
         {data.puedeAceptar ? (
           <button
