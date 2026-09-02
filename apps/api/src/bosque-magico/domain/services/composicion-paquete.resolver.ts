@@ -3,10 +3,12 @@ import {
   ModoComposicionPaquete,
   OrigenItemCotizacion,
   SubtipoProducto,
+  TipoItemCotizacion,
 } from '@prisma/client';
 import {
   categoriaATipoItem,
   type ComposicionRegla,
+  type HorarioProductoInput,
   type ItemPaqueteResuelto,
   type ProductoCotizacionRef,
   precioProductoPorCategoria,
@@ -14,6 +16,7 @@ import {
   type ResultadoComposicionPaquete,
   type SeleccionPaqueteInput,
 } from './composicion-paquete.types';
+import { anexarHorarioANotas } from '../utils/horario-servicio';
 
 const CAJITAS_INCLUIDAS_DEFAULT = 10;
 const CAJITAS_PRECIO_EXCEDENTE_DEFAULT = 20.9;
@@ -396,6 +399,27 @@ function idsEnSeleccion(seleccion: SeleccionPaqueteInput): Set<string> {
   return ids;
 }
 
+function aplicarHorarios(
+  items: ItemPaqueteResuelto[],
+  horarios?: HorarioProductoInput[],
+): ItemPaqueteResuelto[] {
+  if (!horarios?.length) return items;
+  const porProducto = new Map(horarios.map((h) => [h.productoId, h]));
+  return items.map((item) => {
+    if (!item.productoId) return item;
+    if (
+      item.tipo !== TipoItemCotizacion.show &&
+      item.tipo !== TipoItemCotizacion.extra
+    ) {
+      return item;
+    }
+    const horario = porProducto.get(item.productoId);
+    if (!horario) return item;
+    const notas = anexarHorarioANotas(item.notas, horario);
+    return notas === item.notas ? item : { ...item, notas };
+  });
+}
+
 export function resolverComposicionPaquete(
   input: ResolverComposicionInput,
 ): ResultadoComposicionPaquete {
@@ -522,8 +546,10 @@ export function resolverComposicionPaquete(
     items.push(itemAdicional(producto, adicional.cantidad, esFinSemana));
   }
 
+  const itemsConHorario = aplicarHorarios(items, seleccion.horarios);
+
   const montoBasePaquete = precioProductoPorCategoria(paquete, esFinSemana);
-  const itemsCobrables = items
+  const itemsCobrables = itemsConHorario
     .filter((i) => i.precioUnitario > 0)
     .map((i) => ({ cantidad: i.cantidad, precioUnitario: i.precioUnitario }));
 
@@ -531,7 +557,7 @@ export function resolverComposicionPaquete(
     paqueteId: paquete.id,
     paqueteNombre: paquete.nombre,
     montoBasePaquete,
-    items,
+    items: itemsConHorario,
     itemsCobrables,
     resumen: {
       ...cajitas.resumen,

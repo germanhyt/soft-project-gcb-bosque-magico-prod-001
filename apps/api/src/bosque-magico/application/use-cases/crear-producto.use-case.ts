@@ -45,6 +45,9 @@ export class CrearProductoUseCase {
       cantidadMinima: dto.cantidadMinima,
       subtipo: dto.subtipo,
       unidadesPack: dto.unidadesPack,
+      unidad:
+        dto.unidad?.trim() ||
+        (dto.categoria === 'extra' ? 'hora' : undefined),
       descripcion: dto.descripcion?.trim(),
       origen: dto.origen,
       costoInterno: dto.costoInterno,

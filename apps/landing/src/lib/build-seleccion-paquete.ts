@@ -32,7 +32,9 @@ export function buildSeleccionPaquete(
     extraIds: extraIds.length ? extraIds : undefined,
     snackId: selection.snackId || undefined,
     snackCantidad: selection.snackId
-      ? Math.max(selection.snackCantidad ?? 25, 25)
+      ? selection.snackCantidad > 0
+        ? selection.snackCantidad
+        : undefined
       : undefined,
     cajitasCantidad,
     cajitasClasica,

@@ -2,9 +2,13 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
-import { linkPdfPublicoCompleto, linkPublicoCompleto } from '../../lib/cotizaciones';
-import type { Cotizacion } from '../../lib/cotizaciones';
-import { ContactoInlineActions } from '../contacto/ContactoInlineActions';
+import { apiErrorMessage } from '../../lib/api-error';
+import {
+  linkPdfPublicoCompleto,
+  linkPublicoCompleto,
+  volverCotizacionABorrador,
+  type Cotizacion,
+} from '../../lib/cotizaciones';
 import { RowActionDivider, RowActionsToolbar } from '../ui/RowActionsToolbar';
 import { RowIconButton } from '../ui/RowIconButton';
 import {
@@ -35,6 +39,25 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
     },
   });
   const aceptarMut = useAceptarCotizacionMutation(cotizacion.id);
+  const volverMut = useMutation({
+    mutationFn: () => volverCotizacionABorrador(cotizacion.id),
+    onSuccess: async () => {
+      await qc.invalidateQueries({ queryKey: ['cotizaciones'] });
+      await qc.invalidateQueries({ queryKey: ['cotizacion', cotizacion.id] });
+      await Swal.fire({
+        icon: 'success',
+        title: 'Volvió a borrador',
+        text: 'El cliente ya no puede aceptar hasta que reenvíes.',
+      });
+    },
+    onError: async (err) => {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo volver a borrador',
+        text: apiErrorMessage(err, 'Inténtalo de nuevo'),
+      });
+    },
+  });
 
   const labelEnviarWa =
     cotizacion.etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp';
@@ -46,21 +69,6 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   return (
     <>
       <RowActionsToolbar>
-        {/* Compartir: links públicos */}
-        <ContactoInlineActions
-          nombre={cotizacion.cliente.nombreCompleto}
-          celular={cotizacion.cliente.celular}
-          correo={cotizacion.cliente.correo}
-          enlaceCopiar={linkPublico}
-          enlaceTitulo="Copiar link (aceptar)"
-          enlaceCopiarSecundario={linkPdf}
-          enlaceTituloSecundario="Copiar link PDF"
-          ocultarCorreo
-          ocultarWhatsApp
-        />
-
-        {/* Registro: ver · editar · solicitud origen */}
-        <RowActionDivider />
         <RowIconButton
           icon="visibility"
           title="Ver cotización"
@@ -79,14 +87,6 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
                 ? onEditar(cotizacion.id)
                 : navigate(`/cotizaciones?editar=${cotizacion.id}`)
             }
-          />
-        )}
-        {cotizacion.solicitudId && (
-          <RowIconButton
-            icon="inbox"
-            title="Solicitud origen"
-            aria-label="Ir a solicitudes"
-            onClick={() => navigate('/solicitudes')}
           />
         )}
 
@@ -124,6 +124,25 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
               onClick={() => {
                 void (async () => {
                   if (await confirmarAceptacionCotizacion()) aceptarMut.mutate();
+                })();
+              }}
+            />
+            <RowIconButton
+              icon="undo"
+              title="Volver a borrador"
+              aria-label="Volver a borrador"
+              disabled={volverMut.isPending}
+              onClick={() => {
+                void (async () => {
+                  const ok = await Swal.fire({
+                    icon: 'question',
+                    title: '¿Volver a borrador?',
+                    text: 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, volver a borrador',
+                    cancelButtonText: 'Cancelar',
+                  });
+                  if (ok.isConfirmed) volverMut.mutate();
                 })();
               }}
             />

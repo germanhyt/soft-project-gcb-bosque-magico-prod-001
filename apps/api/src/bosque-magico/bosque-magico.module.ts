@@ -13,6 +13,7 @@ import { ConfirmarEventoUseCase } from './application/use-cases/confirmar-evento
 import { GenerarPedidosEventoUseCase } from './application/use-cases/generar-pedidos-evento.use-case';
 import { CrearCotizacionUseCase } from './application/use-cases/crear-cotizacion.use-case';
 import { EnviarCotizacionUseCase } from './application/use-cases/enviar-cotizacion.use-case';
+import { VolverABorradorCotizacionUseCase } from './application/use-cases/volver-a-borrador-cotizacion.use-case';
 import { CrearProductoUseCase } from './application/use-cases/crear-producto.use-case';
 import { CrearProveedorUseCase } from './application/use-cases/crear-proveedor.use-case';
 import { ActualizarProveedorUseCase } from './application/use-cases/actualizar-proveedor.use-case';
@@ -32,6 +33,7 @@ import { GenerarCotizacionBorradorSolicitudUseCase } from './application/use-cas
 import { EnviarPedidoProveedorCorreoUseCase } from './application/use-cases/enviar-pedido-proveedor-correo.use-case';
 import { EnviarCorreoContactoUseCase } from './application/use-cases/enviar-correo-contacto.use-case';
 import { EnviarContratoCorreoUseCase } from './application/use-cases/enviar-contrato-correo.use-case';
+import { VolverABorradorContratoUseCase } from './application/use-cases/volver-a-borrador-contrato.use-case';
 import { ListarAuditoriaUseCase } from './application/use-cases/listar-auditoria.use-case';
 import { ListarConfiguracionPanelUseCase } from './application/use-cases/listar-configuracion-panel.use-case';
 import { ProbarSmtpUseCase } from './application/use-cases/probar-smtp.use-case';
@@ -183,9 +185,11 @@ import {
     ObtenerCotizacionUseCase,
     ActualizarCotizacionUseCase,
     EnviarCotizacionUseCase,
+    VolverABorradorCotizacionUseCase,
     EnviarPedidoProveedorCorreoUseCase,
     EnviarCorreoContactoUseCase,
     EnviarContratoCorreoUseCase,
+    VolverABorradorContratoUseCase,
     AceptarCotizacionUseCase,
     ListarProductosUseCase,
     ListarProductosPanelUseCase,

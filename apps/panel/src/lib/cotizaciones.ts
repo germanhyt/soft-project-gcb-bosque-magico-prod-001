@@ -68,11 +68,17 @@ export type SeleccionPaquetePayload = {
   cajitasSaludable?: number;
   piqueos?: Array<{ productoId: string; cantidad: number }>;
   adicionales?: Array<{ productoId: string; cantidad: number }>;
+  horarios?: Array<{ productoId: string; inicio?: string; fin?: string }>;
   salitaLoungeCantidad?: number;
+  precioSalitaLounge?: number;
   derechoIngresoShowExterno?: boolean;
   derechoIngresoDecoracionExterno?: boolean;
   derechoIngresoCarritoSnackExterno?: boolean;
   derechoDecoracionPersonalizada?: boolean;
+  precioDerechoIngresoShowExterno?: number;
+  precioDerechoIngresoDecoracionExterno?: number;
+  precioDerechoIngresoCarritoSnackExterno?: number;
+  precioDerechoDecoracionPersonalizada?: number;
 };
 
 export type PreviewCotizacionResponse = {
@@ -253,6 +259,11 @@ export async function enviarCotizacion(
 
 export async function aceptarCotizacionPanel(id: string) {
   const { data } = await api.post(`/bosque-magico/cotizaciones/${id}/aceptar`);
+  return data;
+}
+
+export async function volverCotizacionABorrador(id: string) {
+  const { data } = await api.post<Cotizacion>(`/bosque-magico/cotizaciones/${id}/volver-borrador`);
   return data;
 }
 

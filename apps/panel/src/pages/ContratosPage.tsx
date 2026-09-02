@@ -9,6 +9,7 @@ import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
 import { PageHeader } from '../components/ui/PageHeader';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
@@ -166,13 +167,9 @@ export function ContratosPage() {
               <th className="px-4 py-3">Estado</th>
             </tr>
           </thead>
-          <tbody className="text-on-surface">
+          <tbody className="text-on-surface" aria-busy={isLoading}>
             {isLoading ? (
-              <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-outline">
-                  Cargando…
-                </td>
-              </tr>
+              <TableSkeletonRows columns={6} lastColumn="chip" />
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={6} className="px-4 py-6" />

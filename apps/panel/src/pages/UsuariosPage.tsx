@@ -11,6 +11,7 @@ import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
@@ -206,13 +207,9 @@ export function UsuariosPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody>
+          <tbody aria-busy={isLoading}>
             {isLoading ? (
-              <tr>
-                <td colSpan={5} className="px-4 py-8 text-center text-outline">
-                  Cargando…
-                </td>
-              </tr>
+              <TableSkeletonRows columns={5} />
             ) : usuariosPaginados.length === 0 ? (
               <tr>
                 <td colSpan={5} className="px-4 py-6" />

@@ -36,6 +36,7 @@ import {
   EliminarAdjuntoContratoUseCase,
   SubirAdjuntoContratoUseCase,
 } from '../application/use-cases/gestionar-adjunto-contrato.use-case';
+import { VolverABorradorContratoUseCase } from '../application/use-cases/volver-a-borrador-contrato.use-case';
 
 @ApiTags('Panel - Contratos')
 @Controller('bosque-magico')
@@ -48,6 +49,7 @@ export class ContratosController {
     private readonly marcarEnviado: MarcarContratoEnviadoUseCase,
     private readonly enviarCorreo: EnviarContratoCorreoUseCase,
     private readonly marcarFirmado: MarcarContratoFirmadoUseCase,
+    private readonly volverABorrador: VolverABorradorContratoUseCase,
     private readonly subirAdjunto: SubirAdjuntoContratoUseCase,
     private readonly eliminarAdjunto: EliminarAdjuntoContratoUseCase,
   ) {}
@@ -107,6 +109,12 @@ export class ContratosController {
     @Body() dto: EnviarContratoCorreoDto,
   ) {
     return this.enviarCorreo.ejecutar(id, dto);
+  }
+
+  @Post('contratos/:id/volver-borrador')
+  @ApiOperation({ summary: 'Volver contrato enviado a borrador para editar' })
+  volverBorrador(@Param('id') id: string) {
+    return this.volverABorrador.ejecutar(id);
   }
 
   @Post('contratos/:id/firmar')

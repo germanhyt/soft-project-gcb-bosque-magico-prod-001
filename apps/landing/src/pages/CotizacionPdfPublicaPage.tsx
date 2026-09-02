@@ -31,6 +31,7 @@ type CotizacionPublica = {
     origenItem?: string;
     subtipo?: string | null;
     unidadesPack?: number | null;
+    notas?: string | null;
   }[];
 };
 

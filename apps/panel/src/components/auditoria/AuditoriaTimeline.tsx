@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchAuditoria } from '../../lib/auditoria';
 import { formatFechaHora } from '../../lib/format';
+import { StackSkeleton } from '../ui/Skeleton';
 
 const ACCION_LABEL: Record<string, string> = {
   crear: 'Creada',
@@ -15,6 +16,7 @@ const ACCION_LABEL: Record<string, string> = {
   actualizar_seguimiento: 'Seguimiento actualizado',
   aceptar: 'Cotización aceptada',
   enviar: 'Cotización enviada',
+  volver_borrador: 'Volvió a borrador',
   confirmar: 'Evento confirmado',
   realizar: 'Evento realizado',
   cancelar: 'Evento cancelado',
@@ -33,7 +35,7 @@ export function AuditoriaTimeline({ tipoEntidad, entidadId }: Props) {
   });
 
   if (isLoading) {
-    return <p className="text-body-sm text-outline">Cargando bitácora…</p>;
+    return <StackSkeleton rows={3} />;
   }
 
   if (data.length === 0) {

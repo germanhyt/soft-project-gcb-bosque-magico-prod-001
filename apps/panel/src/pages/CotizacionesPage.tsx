@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useEffect, useMemo, useState } from 'react';
-import { useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
   CotizacionFormModal,
   type CotizacionFormTarget,
@@ -14,6 +14,7 @@ import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
@@ -35,6 +36,7 @@ import { formatFecha, formatFechaHora } from '../lib/format';
 
 export function CotizacionesPage() {
   const qc = useQueryClient();
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const etapa = (searchParams.get('etapa') ?? '') as '' | EtapaCotizacion;
   const qParam = searchParams.get('q') ?? '';
@@ -209,13 +211,9 @@ export function CotizacionesPage() {
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="text-on-surface">
+          <tbody className="text-on-surface" aria-busy={isLoading}>
             {isLoading ? (
-              <tr>
-                <td colSpan={8} className="px-4 py-8 text-center text-outline">
-                  Cargando…
-                </td>
-              </tr>
+              <TableSkeletonRows columns={8} />
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-6" />
@@ -285,6 +283,12 @@ export function CotizacionesPage() {
         open={!!selectedId}
         onClose={cerrarDetalle}
         onEditarBorrador={(id) => abrirForm({ mode: 'edit', cotizacionId: id })}
+        onAbrirSolicitud={() => {
+          const sid = selectedRow?.solicitudId ?? selectedRow?.solicitud?.id;
+          if (!sid) return;
+          cerrarDetalle();
+          navigate(`/solicitudes?detalle=${sid}`);
+        }}
       />
 
       <CotizacionFormModal

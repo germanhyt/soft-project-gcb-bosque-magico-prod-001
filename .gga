@@ -1,5 +1,11 @@
 # Gentleman Guardian Angel Configuration
 # https://github.com/your-org/gga
+#
+# Estado: DESACTIVADO en este repo (2026-07-02).
+# - Pre-commit hook desinstalado (`gga uninstall`).
+# - Reglas movidas a `.docs/AGENTS.gga.md` (Cursor ya no las aplica automáticamente).
+# - Engram sigue activo en `.cursor/rules/engram.mdc`.
+# Para reactivar: `gga install` y restaurar `AGENTS.md` en la raíz si se desea.
 
 # AI Provider (required)
 # Options: claude, gemini, codex, opencode, ollama:<model>, lmstudio[:model], github:<model>
@@ -34,7 +40,7 @@ EXCLUDE_PATTERNS="*.test.ts,*.spec.ts,*.test.tsx,*.spec.tsx,*.d.ts,dist/*,apps/a
 
 # File containing code review rules
 # Default: AGENTS.md
-RULES_FILE="AGENTS.md"
+RULES_FILE=".docs/AGENTS.gga.md"
 
 # Strict mode: fail if AI response is ambiguous
 # Default: true

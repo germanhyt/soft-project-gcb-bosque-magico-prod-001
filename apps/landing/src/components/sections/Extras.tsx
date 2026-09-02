@@ -1,3 +1,4 @@
+import { esExtraBloque, etiquetaCantidadExtra, etiquetaPrecioPorUnidad } from '@bosque/shared';
 import { motion, useReducedMotion } from 'framer-motion';
 import {
   CARD_CATALOG,
@@ -40,7 +41,7 @@ export function Extras({
       <SectionTitle
         pill="Extras"
         title="Complementa la experiencia"
-        subtitle="El primer extra va incluido en todos los paquetes. El precio de catálogo es por 1 hora."
+        subtitle="El primer extra va incluido en todos los paquetes. El precio sigue la unidad de cada servicio (hora o bloque)."
       />
       <SelectionHint>{selectionHint(selectionMode)}</SelectionHint>
       <div className={`${GRID_CATALOG} lg:grid-cols-3`}>
@@ -73,7 +74,7 @@ export function Extras({
                 {extra.descripcion || 'Servicio adicional configurable para tu evento.'}
               </p>
               <p className="mt-2 text-xs text-on-surface-variant">
-                desde {formatSoles(extra.precioLunesViernes)} / hora
+                desde {formatSoles(extra.precioLunesViernes)} {etiquetaPrecioPorUnidad(extra.unidad)}
               </p>
               <div className="mt-5 flex items-center justify-between gap-2">
                 {selected ? (
@@ -82,17 +83,21 @@ export function Extras({
                     onClick={(e) => e.stopPropagation()}
                     onKeyDown={(e) => e.stopPropagation()}
                   >
-                    <span className="text-on-surface-variant">Horas</span>
-                    <input
-                      type="number"
-                      min={1}
-                      max={10}
-                      className={`${INPUT_CLASS} max-w-20`}
-                      value={qty}
-                      onChange={(e) =>
-                        onCantidadExtra(extra.id, Math.max(1, Number(e.target.value) || 1))
-                      }
-                    />
+                    <span className="text-on-surface-variant">{etiquetaCantidadExtra(extra.unidad)}</span>
+                    {esExtraBloque(extra.unidad) ? (
+                      <span className="font-semibold">1</span>
+                    ) : (
+                      <input
+                        type="number"
+                        min={1}
+                        max={10}
+                        className={`${INPUT_CLASS} max-w-20`}
+                        value={qty}
+                        onChange={(e) =>
+                          onCantidadExtra(extra.id, Math.max(1, Number(e.target.value) || 1))
+                        }
+                      />
+                    )}
                   </div>
                 ) : (
                   <span />

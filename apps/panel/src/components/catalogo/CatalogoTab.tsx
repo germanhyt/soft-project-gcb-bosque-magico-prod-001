@@ -25,6 +25,7 @@ import { FilterSearchInput } from '../ui/FilterSearchInput';
 import { FilterSelect } from '../ui/FilterSelect';
 import { TableFiltersPanel } from '../ui/TableFiltersPanel';
 import { TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../../constants/design';
+import { TableSkeletonRows } from '../ui/Skeleton';
 
 type Props = {
   puedeGestionar: boolean;
@@ -381,6 +382,7 @@ export function CatalogoTab({ puedeGestionar }: Props) {
                 cantidadMinima: payload.cantidadMinima,
                 subtipo: payload.subtipo,
                 unidadesPack: payload.unidadesPack ?? null,
+                unidad: payload.unidad,
                 descripcion: payload.descripcion,
                 origen: payload.origen,
                 costoInterno: payload.costoInterno,
@@ -425,13 +427,9 @@ export function CatalogoTab({ puedeGestionar }: Props) {
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody>
+          <tbody aria-busy={loadingProd}>
             {loadingProd ? (
-              <tr>
-                <td colSpan={9} className="px-4 py-8 text-center">
-                  Cargando…
-                </td>
-              </tr>
+              <TableSkeletonRows columns={9} imageColumn={2} />
             ) : (
               productosPaginados.map((p) => (
                 <tr key={p.id} className={TABLE_ROW_CLASS}>

@@ -71,6 +71,15 @@ export class CrearProductoDto {
   @Min(1)
   unidadesPack?: number;
 
+  @ApiPropertyOptional({
+    example: 'hora',
+    description: 'Unidad de cobro (hora, bloque 3h, servicio)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  unidad?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

@@ -112,6 +112,7 @@ export type ImprimirContratoModo = 'ventana' | 'iframe';
 export type ImprimirContratoOpts = {
   modo?: ImprimirContratoModo;
   adjuntos?: ContratoAdjunto[];
+  esBorrador?: boolean;
 };
 
 /** Abre vista imprimible; el usuario guarda como PDF desde el diálogo del navegador. */
@@ -129,6 +130,7 @@ export async function imprimirContratoPdf(
   const html = buildContratoPrintHtml(payload, {
     logoUrl: `${window.location.origin}/logo-bm.png`,
     autoPrint: true,
+    esBorrador: opts.esBorrador,
     ...firmas,
   });
 
@@ -155,5 +157,6 @@ export async function imprimirContratoDesdeRegistro(
 ) {
   return imprimirContratoPdf(contratoToPrintPayload(contrato, evento), {
     adjuntos: contrato.adjuntos,
+    esBorrador: contrato.etapa === 'borrador',
   });
 }

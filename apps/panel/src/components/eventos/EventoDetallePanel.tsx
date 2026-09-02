@@ -24,11 +24,13 @@ import {
   fetchContratoEvento,
   marcarContratoEnviado,
   marcarContratoFirmado,
+  volverContratoABorrador,
 } from '../../lib/contratos';
 import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import { formatFecha, formatFechaHora } from '../../lib/format';
 import { fetchTareasEvento } from '../../lib/tareas-api';
 import { mostrarErrorApi, mostrarValidacion } from '../../lib/swal-feedback';
+import { puedeVolverABorradorContrato } from '../../lib/flujo-estados';
 
 type Props = {
   evento: Evento | null;
@@ -126,6 +128,26 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
     },
   });
 
+  const volverContratoMut = useMutation({
+    mutationFn: () => volverContratoABorrador(contrato!.id),
+    onSuccess: async () => {
+      await Promise.all([
+        refetchContrato(),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['contrato', contrato?.id] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+      ]);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Volvió a borrador',
+        text: 'El cliente ve una vista previa. Edita y vuelve a enviar. Si cambias montos u horario, recaba de nuevo las firmas.',
+      });
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo volver a borrador');
+    },
+  });
+
   const ev = evento;
   const tieneFirmaCliente = !!contrato?.adjuntos?.some((a) => a.tipo === 'firma_cliente');
   const tieneFirmaEmpresa = !!contrato?.adjuntos?.some((a) => a.tipo === 'firma_empresa');
@@ -177,6 +199,28 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
                   onClick={() => enviarContratoMut.mutate()}
                 >
                   Marcar enviado
+                </Button>
+              ) : null}
+              {puedeVolverABorradorContrato(contrato.etapa, ev.etapa) ? (
+                <Button
+                  variant="ghost"
+                  className="col-span-2"
+                  disabled={volverContratoMut.isPending}
+                  onClick={() => {
+                    void (async () => {
+                      const ok = await Swal.fire({
+                        icon: 'question',
+                        title: '¿Volver a borrador?',
+                        html: '<p class="text-sm">El enlace del cliente pasará a vista previa (no válido para firmar). El evento no se podrá confirmar hasta reenviar. Las firmas se conservan: si cambias montos u horario, vuelve a recabarlas.</p>',
+                        showCancelButton: true,
+                        confirmButtonText: 'Sí, volver a borrador',
+                        cancelButtonText: 'Cancelar',
+                      });
+                      if (ok.isConfirmed) volverContratoMut.mutate();
+                    })();
+                  }}
+                >
+                  {volverContratoMut.isPending ? 'Cambiando…' : 'Volver a borrador'}
                 </Button>
               ) : null}
               {contrato.etapa === 'borrador' || contrato.etapa === 'enviado' ? (

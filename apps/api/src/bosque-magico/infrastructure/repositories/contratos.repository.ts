@@ -200,6 +200,14 @@ export class ContratosRepository {
     });
   }
 
+  marcarBorrador(id: string) {
+    return this.prisma.bosqueMagicoContrato.update({
+      where: { id },
+      data: { etapa: EtapaContrato.borrador, enviadoEn: null },
+      include: this.includeRelaciones,
+    });
+  }
+
   marcarFirmado(id: string) {
     return this.prisma.bosqueMagicoContrato.update({
       where: { id },

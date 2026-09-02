@@ -56,12 +56,11 @@ export function SnackPremiumSelector({
           <span className="text-sm font-medium text-on-surface">Unidades de snack</span>
           <input
             type="number"
-            min={unidadesIncluidas}
-            value={Math.max(selection.snackCantidad, unidadesIncluidas)}
+            min={0}
+            placeholder={`Ej. ${unidadesIncluidas} incluidas`}
+            value={selection.snackCantidad || ''}
             onChange={(e) =>
-              onSnackCantidad(
-                Math.max(Number(e.target.value) || unidadesIncluidas, unidadesIncluidas),
-              )
+              onSnackCantidad(e.target.value === '' ? 0 : Math.max(0, Number(e.target.value) || 0))
             }
             className="mt-1 w-full rounded-lg border border-surface-variant bg-surface px-3 py-2 text-sm text-on-surface"
           />

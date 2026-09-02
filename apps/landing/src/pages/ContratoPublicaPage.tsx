@@ -79,6 +79,11 @@ export function ContratoPublicaPage() {
               <p className="text-body-sm text-on-surface-variant">
                 Emisión: {formatFecha(data.fechaEmision)} · Cotización {snap.codigoCotizacion}
               </p>
+              {data.etapa === 'borrador' && (
+                <p className="mt-3 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm font-semibold text-amber-900">
+                  Borrador — no válido para firmar
+                </p>
+              )}
             </div>
             <div className="flex flex-wrap gap-2 print:hidden">
               <Link to={`/contrato/${token}/pdf`} className={BTN_PRIMARY}>
@@ -142,7 +147,9 @@ export function ContratoPublicaPage() {
           </section>
 
           <p className="text-xs text-outline print:mt-8">
-            Documento generado por Bosque Mágico. Puede guardarlo como PDF desde el diálogo de impresión del navegador.
+            {data.etapa === 'borrador'
+              ? 'Este contrato está en borrador: todavía no es válido para firmar. Si te lo enviaron para revisar, espera la versión final o escríbenos por WhatsApp.'
+              : 'Documento generado por Bosque Mágico. Puede guardarlo como PDF desde el diálogo de impresión del navegador.'}
           </p>
         </div>
       </div>

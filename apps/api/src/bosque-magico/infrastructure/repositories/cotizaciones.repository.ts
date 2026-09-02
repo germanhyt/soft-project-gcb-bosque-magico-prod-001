@@ -85,7 +85,7 @@ export class CotizacionesRepository {
       include: {
         cliente: true,
         cumpleanero: true,
-        solicitud: { select: { id: true, nombreContacto: true } },
+        solicitud: { select: { id: true, nombreContacto: true, etapa: true } },
       },
       skip: params?.skip,
       take: params?.take ?? 20,

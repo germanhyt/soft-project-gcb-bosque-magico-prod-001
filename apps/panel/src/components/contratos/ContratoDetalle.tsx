@@ -9,13 +9,20 @@ import { EnviarContratoActions } from './EnviarContratoActions';
 import { DetalleModal } from '../ui/DetalleModal';
 import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { Button } from '../ui/Button';
-import { puedeEnviarContrato, puedeMarcarContratoFirmado } from '../../lib/flujo-estados';
+import {
+  motivoBloqueoVolverABorradorContrato,
+  puedeEnviarContrato,
+  puedeMarcarContratoFirmado,
+  puedeVolverABorradorContrato,
+} from '../../lib/flujo-estados';
 import { CARD_CLASS } from '../../constants/design';
 import { TURNO_LABEL } from '../../constants/solicitudes';
 import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import {
   fetchContrato,
+  linkPublicoContratoCompleto,
   marcarContratoFirmado,
+  volverContratoABorrador,
   type Contrato,
 } from '../../lib/contratos';
 import { formatFecha, formatFechaHora } from '../../lib/format';
@@ -76,6 +83,51 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
     },
   });
 
+  const volverMut = useMutation({
+    mutationFn: () => volverContratoABorrador(contratoId!),
+    onSuccess: async () => {
+      const eventoId = contrato?.eventoId;
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['contrato', contratoId] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        ...(eventoId
+          ? [
+              qc.invalidateQueries({ queryKey: ['evento', eventoId] }),
+              qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] }),
+            ]
+          : []),
+      ]);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Volvió a borrador',
+        text: 'El cliente ve una vista previa. Edita y vuelve a enviar. Si cambias montos u horario, recaba de nuevo las firmas.',
+      });
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo volver a borrador');
+    },
+  });
+
+  const copiarLink = async () => {
+    if (!contrato) return;
+    const link = linkPublicoContratoCompleto(contrato.tokenPublico);
+    await navigator.clipboard.writeText(link);
+    await Swal.fire({ icon: 'success', title: 'Link copiado', timer: 1200, showConfirmButton: false });
+  };
+
+  const confirmarVolverABorrador = async () => {
+    const ok = await Swal.fire({
+      icon: 'question',
+      title: '¿Volver a borrador?',
+      html: '<p class="text-sm">El enlace del cliente pasará a vista previa (no válido para firmar). El evento no se podrá confirmar hasta reenviar. Las firmas se conservan: si cambias montos u horario, vuelve a recabarlas.</p>',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, volver a borrador',
+      cancelButtonText: 'Cancelar',
+    });
+    if (ok.isConfirmed) volverMut.mutate();
+  };
+
   if (!open || !contratoId) return null;
 
   const c = contrato;
@@ -85,6 +137,10 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const tieneFirmaCliente = !!c?.adjuntos?.some((a) => a.tipo === 'firma_cliente');
   const tieneFirmaEmpresa = !!c?.adjuntos?.some((a) => a.tipo === 'firma_empresa');
   const firmasCompletas = tieneFirmaCliente && tieneFirmaEmpresa;
+  const puedeVolver = c ? puedeVolverABorradorContrato(c.etapa, c.evento?.etapa) : false;
+  const motivoBloqueoVolver = c
+    ? motivoBloqueoVolverABorradorContrato(c.etapa, c.evento?.etapa)
+    : null;
 
   const footer =
     c && !isLoading ? (
@@ -92,6 +148,9 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
         {celular && puedeEnviarContrato(c.etapa) ? (
           <DetalleActionGroup label="Compartir con el cliente">
             <EnviarContratoActions contrato={c} celular={celular} correo={correo} />
+            <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
+              {c.etapa === 'borrador' ? 'Copiar link (vista previa)' : 'Copiar link'}
+            </Button>
             <Button
               variant="ghost"
               className="w-full"
@@ -108,6 +167,9 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           </DetalleActionGroup>
         ) : (
           <DetalleActionGroup label="Documento">
+            <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
+              {c.etapa === 'borrador' ? 'Copiar link (vista previa)' : 'Copiar link'}
+            </Button>
             <Button
               variant="ghost"
               className="w-full"
@@ -202,6 +264,25 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
                 <span className="font-mono text-xs text-outline">{c.cotizacion.codigo}</span>
               )}
             </div>
+
+            {c.etapa === 'enviado' ? (
+              <div className="space-y-2">
+                <Button
+                  variant="secondary"
+                  disabled={!puedeVolver || volverMut.isPending}
+                  onClick={() => void confirmarVolverABorrador()}
+                >
+                  {volverMut.isPending ? 'Cambiando…' : 'Volver a borrador'}
+                </Button>
+                {motivoBloqueoVolver ? (
+                  <p className="text-body-sm text-on-surface-variant">{motivoBloqueoVolver}</p>
+                ) : (
+                  <p className="text-body-sm text-on-surface-variant">
+                    Para corregir montos u horario. Las firmas se conservan.
+                  </p>
+                )}
+              </div>
+            ) : null}
 
             <dl className={`grid gap-3 p-4 sm:grid-cols-2 ${CARD_CLASS}`}>
               <div>

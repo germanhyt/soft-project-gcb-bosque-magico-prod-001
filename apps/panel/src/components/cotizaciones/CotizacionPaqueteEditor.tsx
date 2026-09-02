@@ -4,6 +4,8 @@ import Swal from 'sweetalert2';
 import { CatalogoSection } from './CatalogoSection';
 import { ProductoFormModal, type ProductoFormPayload } from '../catalogo/ProductoFormModal';
 import { Button } from '../ui/Button';
+import { Modal } from '../ui/Modal';
+import { Skeleton } from '../ui/Skeleton';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { previewCotizacion, type Producto } from '../../lib/cotizaciones';
 import { crearProducto, actualizarProducto, fetchConfiguracionPanel } from '../../lib/configuracion';
@@ -63,6 +65,13 @@ export function CotizacionPaqueteEditor({
   const [showForm, setShowForm] = useState<{ mode: 'create' } | { mode: 'edit'; producto: Producto } | null>(
     null,
   );
+  const [precioExtraEdit, setPrecioExtraEdit] = useState<{
+    label: string;
+    tarifa: number;
+    valorActual?: number;
+    onSave: (precio?: number) => void;
+  } | null>(null);
+  const [precioExtraDraft, setPrecioExtraDraft] = useState('');
   const payload = useMemo(() => {
     const base = seleccionToPayload(seleccion, catalogo.catering);
     if (esPersonalizado && showPersonalizado) {
@@ -215,20 +224,33 @@ export function CotizacionPaqueteEditor({
   const toggleShow = (id: string) => {
     if (esPersonalizado && showPersonalizado && id === showPersonalizado.id) return;
     const activo = seleccion.showIds.includes(id);
-    patch({ showIds: toggleIdEnLista(seleccion.showIds, id, !activo) });
+    const horarios = { ...seleccion.horarios };
+    if (activo) delete horarios[id];
+    patch({ showIds: toggleIdEnLista(seleccion.showIds, id, !activo), horarios });
   };
 
   const toggleExtra = (id: string) => {
     const activo = seleccion.extraIds.includes(id);
     const extraIds = toggleIdEnLista(seleccion.extraIds, id, !activo);
     const extraCantidades = { ...seleccion.extraCantidades };
+    const horarios = { ...seleccion.horarios };
     if (!activo) {
       const p = catalogo.extras.find((x) => x.id === id);
       extraCantidades[id] = cantidadItemProducto(p!, extraCantidades);
     } else {
       delete extraCantidades[id];
+      delete horarios[id];
     }
-    patch({ extraIds, extraCantidades });
+    patch({ extraIds, extraCantidades, horarios });
+  };
+
+  const cambiarHorario = (id: string, horario: { inicio?: string; fin?: string }) => {
+    patch({
+      horarios: {
+        ...seleccion.horarios,
+        [id]: horario,
+      },
+    });
   };
 
   const cambiarCantidadExtra = (id: string, cantidad: number) => {
@@ -292,13 +314,14 @@ export function CotizacionPaqueteEditor({
             type="number"
             min={0}
             className={INPUT_CLASS}
-            value={seleccion.cajitasClasica}
+            placeholder={`Ej. ${paquetesConfig.cajitasIncluidas} incluidas`}
+            value={seleccion.cajitasClasica || ''}
             onChange={(e) => {
               const clasica = Math.max(0, Number(e.target.value) || 0);
               const saludable = seleccion.cajitasSaludable;
               patch({
                 cajitasClasica: clasica,
-                cajitasCantidad: Math.max(paquetesConfig.cajitasIncluidas, clasica + saludable),
+                cajitasCantidad: clasica + saludable,
               });
             }}
           />
@@ -309,13 +332,14 @@ export function CotizacionPaqueteEditor({
             type="number"
             min={0}
             className={INPUT_CLASS}
-            value={seleccion.cajitasSaludable}
+            placeholder="Ej. 0"
+            value={seleccion.cajitasSaludable || ''}
             onChange={(e) => {
               const saludable = Math.max(0, Number(e.target.value) || 0);
               const clasica = seleccion.cajitasClasica;
               patch({
                 cajitasSaludable: saludable,
-                cajitasCantidad: Math.max(paquetesConfig.cajitasIncluidas, clasica + saludable),
+                cajitasCantidad: clasica + saludable,
               });
             }}
           />
@@ -341,13 +365,7 @@ export function CotizacionPaqueteEditor({
                 onClick={() =>
                   patch({
                     snackId: seleccion.snackId === s.id ? '' : s.id,
-                    snackCantidad:
-                      seleccion.snackId === s.id
-                        ? paquetesConfig.snackPremiumUnidadesIncluidas
-                        : Math.max(
-                            seleccion.snackCantidad,
-                            paquetesConfig.snackPremiumUnidadesIncluidas,
-                          ),
+                    snackCantidad: seleccion.snackId === s.id ? 0 : seleccion.snackCantidad,
                   })
                 }
                 className={`rounded-lg border px-3 py-2 text-sm ${
@@ -365,15 +383,13 @@ export function CotizacionPaqueteEditor({
               <span className={LABEL_CLASS}>Unidades snack (carrito Premium)</span>
               <input
                 type="number"
-                min={paquetesConfig.snackPremiumUnidadesIncluidas}
+                min={0}
                 className={INPUT_CLASS}
-                value={Math.max(seleccion.snackCantidad, paquetesConfig.snackPremiumUnidadesIncluidas)}
+                placeholder={`Ej. ${paquetesConfig.snackPremiumUnidadesIncluidas} incluidas`}
+                value={seleccion.snackCantidad || ''}
                 onChange={(e) =>
                   patch({
-                    snackCantidad: Math.max(
-                      Number(e.target.value) || paquetesConfig.snackPremiumUnidadesIncluidas,
-                      paquetesConfig.snackPremiumUnidadesIncluidas,
-                    ),
+                    snackCantidad: e.target.value === '' ? 0 : Math.max(0, Number(e.target.value) || 0),
                   })
                 }
               />
@@ -443,6 +459,8 @@ export function CotizacionPaqueteEditor({
         cantidades={{}}
         onToggle={toggleShow}
         onCantidad={() => {}}
+        horarios={seleccion.horarios}
+        onHorario={cambiarHorario}
         onEditar={(p) => setShowForm({ mode: 'edit', producto: p })}
         onEliminar={confirmarEliminarShow}
         headerExtra={
@@ -455,88 +473,212 @@ export function CotizacionPaqueteEditor({
       />
 
       <CatalogoSection
-        titulo="Servicios extra (1.º incluido en todos los paquetes · precio por 1 h)"
+        titulo="Servicios extra (1.º incluido en todos los paquetes)"
         productos={catalogo.extras}
         selectedIds={seleccion.extraIds}
         cantidades={seleccion.extraCantidades}
         onToggle={toggleExtra}
         onCantidad={cambiarCantidadExtra}
+        horarios={seleccion.horarios}
+        onHorario={cambiarHorario}
       />
 
       <div className="rounded-xl border border-outline-variant/50 p-4">
         <p className={LABEL_CLASS}>Extras institucionales cobrables</p>
         <p className="mt-1 text-xs text-on-surface-variant">
-          Lounge y derechos de ingreso externos. Tarifas desde Configuración.
+          Lounge y derechos de ingreso. El monto se puede editar en esta cotización (placeholder = tarifa de Configuración).
         </p>
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
-          <label className="block">
+          <div>
             <span className="text-xs text-on-surface-variant">
               Salita lounge (8 pax)
-              {configPanel?.todas
-                ? ` · S/ ${Number(
-                    configPanel.todas.find((c) => c.clave === 'extras.salita_lounge')?.valor ?? 50,
-                  ).toFixed(0)} / uni.`
-                : ''}
+              {` · S/ ${(seleccion.precioSalitaLounge ?? Number(configPanel?.todas.find((c) => c.clave === 'extras.salita_lounge')?.valor ?? 50)).toFixed(0)} / uni.`}
             </span>
             <input
               type="number"
               min={0}
-              className={INPUT_CLASS}
-              value={seleccion.salitaLoungeCantidad}
+              className={`${INPUT_CLASS} mt-1`}
+              placeholder="Ej. 1"
+              value={seleccion.salitaLoungeCantidad || ''}
               onChange={(e) =>
                 patch({ salitaLoungeCantidad: Math.max(0, Number(e.target.value) || 0) })
               }
             />
-          </label>
+            <button
+              type="button"
+              className="mt-1 text-xs font-semibold text-secondary hover:text-primary"
+              onClick={() => {
+                const tarifa = Number(
+                  configPanel?.todas.find((c) => c.clave === 'extras.salita_lounge')?.valor ?? 50,
+                );
+                setPrecioExtraDraft(
+                  seleccion.precioSalitaLounge != null ? String(seleccion.precioSalitaLounge) : '',
+                );
+                setPrecioExtraEdit({
+                  label: 'Salita lounge (S/ por unidad)',
+                  tarifa,
+                  valorActual: seleccion.precioSalitaLounge,
+                  onSave: (precio) => patch({ precioSalitaLounge: precio }),
+                });
+              }}
+            >
+              Editar monto
+            </button>
+          </div>
           <div className="space-y-2 sm:col-span-2">
             {(
               [
                 {
                   key: 'derechoIngresoShowExterno' as const,
+                  precioKey: 'precioDerechoIngresoShowExterno' as const,
                   label: 'Derecho ingreso show externo',
                   clave: 'extras.ingreso_show_externo',
                   def: 300,
                 },
                 {
                   key: 'derechoIngresoDecoracionExterno' as const,
+                  precioKey: 'precioDerechoIngresoDecoracionExterno' as const,
                   label: 'Derecho ingreso decoración externo',
                   clave: 'extras.ingreso_decoracion_externo',
                   def: 100,
                 },
                 {
                   key: 'derechoIngresoCarritoSnackExterno' as const,
+                  precioKey: 'precioDerechoIngresoCarritoSnackExterno' as const,
                   label: 'Derecho ingreso carrito snack externo',
                   clave: 'extras.ingreso_carrito_snack_externo',
                   def: 300,
                 },
                 {
                   key: 'derechoDecoracionPersonalizada' as const,
+                  precioKey: 'precioDerechoDecoracionPersonalizada' as const,
                   label: 'Derechos de decoración personalizada',
                   clave: 'extras.decoracion_personalizada',
                   def: 100,
                 },
               ] as const
             ).map((opt) => {
-              const precio = Number(
+              const tarifa = Number(
                 configPanel?.todas.find((c) => c.clave === opt.clave)?.valor ?? opt.def,
               );
+              const override = seleccion[opt.precioKey];
+              const precio = override ?? tarifa;
               return (
-                <label key={opt.key} className="flex items-center gap-2 text-sm">
-                  <input
-                    type="checkbox"
-                    checked={seleccion[opt.key]}
-                    onChange={(e) => patch({ [opt.key]: e.target.checked })}
-                  />
-                  <span>
-                    {opt.label}
-                    <span className="text-on-surface-variant"> · S/ {precio.toFixed(0)}</span>
-                  </span>
-                </label>
+                <div key={opt.key} className="flex flex-wrap items-center gap-2 text-sm">
+                  <label className="flex min-w-0 flex-1 items-center gap-2">
+                    <input
+                      type="checkbox"
+                      checked={seleccion[opt.key]}
+                      onChange={(e) => patch({ [opt.key]: e.target.checked })}
+                    />
+                    <span>
+                      {opt.label}
+                      <span className="text-on-surface-variant"> · S/ {precio.toFixed(0)}</span>
+                      {override != null && override !== tarifa ? (
+                        <span className="ml-1 text-xs text-secondary">(editado)</span>
+                      ) : null}
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    className="text-xs font-semibold text-secondary hover:text-primary"
+                    onClick={() => {
+                      setPrecioExtraDraft(override != null ? String(override) : '');
+                      setPrecioExtraEdit({
+                        label: opt.label,
+                        tarifa,
+                        valorActual: override,
+                        onSave: (precio) =>
+                          patch({
+                            [opt.key]: true,
+                            [opt.precioKey]: precio,
+                          }),
+                      });
+                    }}
+                  >
+                    Editar
+                  </button>
+                </div>
               );
             })}
           </div>
         </div>
       </div>
+
+      <Modal
+        open={Boolean(precioExtraEdit)}
+        nested
+        size="md"
+        title={precioExtraEdit ? `Editar monto · ${precioExtraEdit.label}` : 'Editar monto'}
+        description="El cambio aplica solo a esta cotización. Vacío = tarifa de Configuración."
+        onClose={() => setPrecioExtraEdit(null)}
+      >
+        {precioExtraEdit && (
+          <div className="space-y-4">
+            <label className="block">
+              <span className={LABEL_CLASS}>Monto (S/)</span>
+              <input
+                type="number"
+                min={0}
+                step="0.01"
+                className={INPUT_CLASS}
+                placeholder={`Ej. ${precioExtraEdit.tarifa.toFixed(0)}`}
+                value={precioExtraDraft}
+                onChange={(e) => setPrecioExtraDraft(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key !== 'Enter') return;
+                  e.preventDefault();
+                  e.stopPropagation();
+                  const raw = precioExtraDraft.trim();
+                  if (raw === '') {
+                    precioExtraEdit.onSave(undefined);
+                  } else {
+                    const n = Number(raw);
+                    if (Number.isNaN(n) || n < 0) return;
+                    precioExtraEdit.onSave(n);
+                  }
+                  setPrecioExtraEdit(null);
+                }}
+                autoFocus
+              />
+              <span className="mt-1 block text-xs text-on-surface-variant">
+                Tarifa de Configuración: S/ {precioExtraEdit.tarifa.toFixed(2)}
+              </span>
+            </label>
+            <div className="flex flex-wrap justify-end gap-2">
+              <Button type="button" variant="ghost" onClick={() => setPrecioExtraEdit(null)}>
+                Cancelar
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                onClick={() => {
+                  precioExtraEdit.onSave(undefined);
+                  setPrecioExtraEdit(null);
+                }}
+              >
+                Usar tarifa de config
+              </Button>
+              <Button
+                type="button"
+                onClick={() => {
+                  const raw = precioExtraDraft.trim();
+                  if (raw === '') {
+                    precioExtraEdit.onSave(undefined);
+                  } else {
+                    const n = Number(raw);
+                    if (Number.isNaN(n) || n < 0) return;
+                    precioExtraEdit.onSave(n);
+                  }
+                  setPrecioExtraEdit(null);
+                }}
+              >
+                Guardar monto
+              </Button>
+            </div>
+          </div>
+        )}
+      </Modal>
 
       <CatalogoSection
         titulo="Catering adicional (fuera del paquete)"
@@ -553,7 +695,19 @@ export function CotizacionPaqueteEditor({
         <div className="rounded-xl border border-surface-variant bg-surface-container-low/80 p-4">
           <p className="font-semibold text-primary">Vista previa de montos</p>
           {preview.isLoading && (
-            <p className="mt-2 text-sm text-outline">Calculando…</p>
+            <div className="mt-3 space-y-2.5" aria-busy>
+              <span className="sr-only">Calculando montos…</span>
+              {Array.from({ length: 4 }, (_, i) => (
+                <div
+                  key={i}
+                  className="flex justify-between"
+                  style={{ ['--skeleton-delay' as string]: `${i * 90}ms` }}
+                >
+                  <Skeleton className="h-2.5 w-28 rounded-full" />
+                  <Skeleton className="h-2.5 w-12 rounded-full" />
+                </div>
+              ))}
+            </div>
           )}
           {preview.isError && (
             <p className="mt-2 text-sm text-error">
@@ -622,6 +776,11 @@ export function CotizacionPaqueteEditor({
                               }`}
                             >
                               {origen}
+                            </span>
+                          )}
+                          {item.notas?.includes('Horario:') && (
+                            <span className="ml-1 text-[10px] text-outline">
+                              {item.notas.replace(/^.*?(Horario:)/, '$1')}
                             </span>
                           )}
                         </span>

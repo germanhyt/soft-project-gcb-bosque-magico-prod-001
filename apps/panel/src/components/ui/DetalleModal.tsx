@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { Icon } from './Icon';
+import { DetalleSkeleton } from './Skeleton';
 import {
   MODAL_OVERLAY_CLASS,
   MODAL_PANEL_CLASS,
@@ -69,11 +70,7 @@ export function DetalleModal({
           </button>
         </div>
         <div className={MODAL_SCROLL_CLASS}>
-          {loading ? (
-            <p className="py-8 text-center text-on-surface-variant">Cargando…</p>
-          ) : (
-            children
-          )}
+          {loading ? <DetalleSkeleton /> : children}
         </div>
         {footer && !loading && (
           <div className="max-h-[min(38vh,20rem)] shrink-0 overflow-y-auto overscroll-contain border-t border-surface-variant px-4 py-3">

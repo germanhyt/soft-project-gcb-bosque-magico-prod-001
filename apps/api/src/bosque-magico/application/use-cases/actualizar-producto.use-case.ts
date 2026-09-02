@@ -33,6 +33,7 @@ export class ActualizarProductoUseCase {
       ...(dto.unidadesPack !== undefined
         ? { unidadesPack: dto.unidadesPack }
         : {}),
+      ...(dto.unidad !== undefined ? { unidad: dto.unidad.trim() || 'servicio' } : {}),
       ...(dto.descripcion !== undefined
         ? { descripcion: dto.descripcion }
         : {}),

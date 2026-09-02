@@ -14,6 +14,7 @@ import {
 } from '../../lib/capacidad-evento';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/Skeleton';
 import {
   FieldHint,
   ValidationBanner,
@@ -169,7 +170,7 @@ export function SolicitudFormModal({ open, solicitud, onClose, onSubmit }: Props
   return (
     <Modal open={open} onClose={onClose} title="Editar solicitud" size="lg">
       {!solicitud ? (
-        <p className="text-on-surface-variant">Cargando solicitud…</p>
+        <FormSkeleton fields={6} />
       ) : (
         <form className="grid gap-4 sm:grid-cols-2" onSubmit={formik.handleSubmit}>
           <div className="sm:col-span-2">

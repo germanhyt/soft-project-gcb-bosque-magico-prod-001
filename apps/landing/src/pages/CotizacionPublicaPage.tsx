@@ -8,8 +8,8 @@ import { api } from '../lib/api';
 
 type CotizacionPublica = {
   codigo: string;
-  fechaEvento: string;
   turno: string;
+  fechaEvento: string;
   cantidadNinos: number;
   montoBase: number;
   montoNinosExtra: number;
@@ -21,8 +21,8 @@ type CotizacionPublica = {
   cumpleanero: { nombre: string; edad?: number | null };
   items?: { nombre: string; cantidad: number; subtotal: number }[];
 };
-
 async function fetchPublica(token: string) {
+
   const { data } = await api.get<CotizacionPublica>(`/public/bosque-magico/cotizaciones/${token}`);
   return data;
 }
@@ -99,6 +99,11 @@ export function CotizacionPublicaPage() {
         <img src="/logo-bm.png" alt="Bosque Mágico" className="mx-auto h-28 w-28 object-contain" />
         <h1 className="mt-4 text-center font-display text-headline-lg text-primary">Tu cotización</h1>
         <p className="text-center text-sm text-on-surface-variant">{data.codigo}</p>
+        {data.etapa === 'borrador' && (
+          <p className="mt-4 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-center text-sm font-semibold text-amber-900">
+            Borrador — no válida para aceptar
+          </p>
+        )}
         <p className="mt-4 text-center text-on-surface">
           Hola <strong>{data.cliente.nombreCompleto}</strong>, propuesta para la fiesta de{' '}
           <strong>{data.cumpleanero.nombre}</strong>
@@ -151,7 +156,7 @@ export function CotizacionPublicaPage() {
             {data.etapa === 'aceptada'
               ? 'Esta cotización ya fue aceptada. El equipo Bosque Mágico te contactará para confirmar los detalles finales.'
               : data.etapa === 'borrador'
-                ? 'Esta propuesta aún no está disponible para aceptar en línea. Si tienes dudas, escríbenos por WhatsApp.'
+                ? 'Esta es una propuesta en borrador: todavía no se puede aceptar en línea. Si te la enviaron para revisar, espera la versión final o escríbenos por WhatsApp.'
                 : data.etapa === 'cerrada'
                   ? 'Esta cotización ya no está activa. Contáctanos si deseas una nueva propuesta.'
                   : 'Esta cotización ya no admite aceptación en línea. Contáctanos para más información.'}

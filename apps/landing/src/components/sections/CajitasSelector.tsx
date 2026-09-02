@@ -45,7 +45,8 @@ export function CajitasSelector({ selection, onChange }: Props) {
             min={0}
             max={200}
             className={`${INPUT_CLASS} mt-2`}
-            value={selection.cajitasClasica}
+            placeholder={`Ej. ${incluidas} incluidas`}
+            value={selection.cajitasClasica || ''}
             onChange={(e) => {
               const clasica = Math.max(0, Number(e.target.value) || 0);
               const saludable = selection.cajitasSaludable;
@@ -64,7 +65,8 @@ export function CajitasSelector({ selection, onChange }: Props) {
             min={0}
             max={200}
             className={`${INPUT_CLASS} mt-2`}
-            value={selection.cajitasSaludable}
+            placeholder="Ej. 0"
+            value={selection.cajitasSaludable || ''}
             onChange={(e) => {
               const saludable = Math.max(0, Number(e.target.value) || 0);
               const clasica = selection.cajitasClasica;

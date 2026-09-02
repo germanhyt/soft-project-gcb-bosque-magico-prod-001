@@ -25,6 +25,7 @@ import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { useListPagination } from '../hooks/useListPagination';
@@ -351,13 +352,9 @@ export function SolicitudesPage() {
                 </tr>
               ))}
             </thead>
-            <tbody className="text-on-surface">
+            <tbody className="text-on-surface" aria-busy={isLoading}>
               {isLoading ? (
-                <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-outline">
-                    Cargando…
-                  </td>
-                </tr>
+                <TableSkeletonRows columns={columns.length} />
               ) : table.getRowModel().rows.length === 0 ? (
                 <tr>
                   <td colSpan={columns.length} className="px-4 py-8 text-center text-outline">

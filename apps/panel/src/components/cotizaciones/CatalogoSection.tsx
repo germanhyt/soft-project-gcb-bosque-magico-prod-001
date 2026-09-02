@@ -1,4 +1,10 @@
 import type { ReactNode } from 'react';
+import {
+  esExtraBloque,
+  etiquetaCantidadExtra,
+  etiquetaPrecioPorUnidad,
+  type HorarioServicio,
+} from '@bosque/shared';
 import type { Producto } from '../../lib/cotizaciones';
 import { cantidadItemProducto } from '../../lib/producto-cotizacion';
 import { descripcionPrecioProducto } from '../../lib/origen-item';
@@ -12,6 +18,8 @@ type Props = {
   cantidades: Record<string, number>;
   onToggle: (id: string) => void;
   onCantidad: (id: string, cantidad: number) => void;
+  horarios?: Record<string, HorarioServicio>;
+  onHorario?: (id: string, horario: HorarioServicio) => void;
   onEditar?: (producto: Producto) => void;
   onEliminar?: (producto: Producto) => void;
   headerExtra?: ReactNode;
@@ -21,14 +29,13 @@ function esPiqueo(p: Producto) {
   return p.subtipo === 'piqueo';
 }
 
-function esExtraBloque(p: Producto) {
-  return p.categoria === 'extra' && Boolean(p.unidad) && p.unidad !== 'hora';
+function extraEsBloque(p: Producto) {
+  return p.categoria === 'extra' && esExtraBloque(p.unidad);
 }
 
 function etiquetaCantidad(p: Producto): string {
   if (esPiqueo(p)) return 'Nº de packs';
-  if (esExtraBloque(p)) return p.unidad ?? 'bloque';
-  if (p.categoria === 'extra') return 'Horas';
+  if (p.categoria === 'extra') return etiquetaCantidadExtra(p.unidad);
   return 'Cantidad';
 }
 
@@ -39,6 +46,8 @@ export function CatalogoSection({
   cantidades,
   onToggle,
   onCantidad,
+  horarios,
+  onHorario,
   onEditar,
   onEliminar,
   headerExtra,
@@ -57,7 +66,8 @@ export function CatalogoSection({
         {productos.map((p) => {
           const selected = selectedIds.includes(p.id);
           const permiteCantidad = p.categoria === 'catering' || p.categoria === 'extra';
-          const qty = cantidades[p.id] ?? cantidadItemProducto(p, {});
+          const qtyDefinida = cantidades[p.id];
+          const qty = qtyDefinida ?? cantidadItemProducto(p, {});
           const udsPack = p.unidadesPack ?? 1;
 
           return (
@@ -94,7 +104,7 @@ export function CatalogoSection({
                     {p.categoria === 'catering'
                       ? `S/ ${p.precioLunesViernes}`
                       : `L-V S/ ${p.precioLunesViernes} · FDS S/ ${p.precioFinSemana}`}
-                    {p.categoria === 'extra' ? ' · por 1 h' : ''}
+                    {p.categoria === 'extra' ? ` · ${etiquetaPrecioPorUnidad(p.unidad)}` : ''}
                     {esPiqueo(p)
                       ? ` · pack ${udsPack} uds (${descripcionPrecioProducto(p)})`
                       : p.cantidadMinima > 1
@@ -136,15 +146,23 @@ export function CatalogoSection({
                   onKeyDown={(e) => e.stopPropagation()}
                 >
                   <span className="text-on-surface-variant">{etiquetaCantidad(p)}</span>
-                  {esExtraBloque(p) ? (
+                  {extraEsBloque(p) ? (
                     <span className="font-semibold text-on-surface">1</span>
                   ) : (
                     <input
                       type="number"
                       min={p.cantidadMinima}
                       className={`${INPUT_CLASS} max-w-24`}
-                      value={qty}
-                      onChange={(e) => onCantidad(p.id, Math.max(p.cantidadMinima, Number(e.target.value) || 0))}
+                      placeholder={`Ej. ${p.cantidadMinima}`}
+                      value={qtyDefinida ?? ''}
+                      onChange={(e) =>
+                        onCantidad(
+                          p.id,
+                          e.target.value === ''
+                            ? 0
+                            : Math.max(p.cantidadMinima, Number(e.target.value) || 0),
+                        )
+                      }
                     />
                   )}
                   {esPiqueo(p) && (
@@ -152,6 +170,42 @@ export function CatalogoSection({
                       = {(qty * udsPack).toLocaleString('es-PE')} porciones
                     </span>
                   )}
+                </div>
+              )}
+              {selected && onHorario && (p.categoria === 'show' || p.categoria === 'extra') && (
+                <div
+                  className="mt-2 grid grid-cols-2 gap-2 text-body-sm"
+                  onClick={(e) => e.stopPropagation()}
+                  onKeyDown={(e) => e.stopPropagation()}
+                >
+                  <label className="block">
+                    <span className="text-xs text-on-surface-variant">Desde (opcional)</span>
+                    <input
+                      type="time"
+                      className={INPUT_CLASS}
+                      value={horarios?.[p.id]?.inicio ?? ''}
+                      onChange={(e) =>
+                        onHorario(p.id, {
+                          inicio: e.target.value,
+                          fin: horarios?.[p.id]?.fin,
+                        })
+                      }
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="text-xs text-on-surface-variant">Hasta (opcional)</span>
+                    <input
+                      type="time"
+                      className={INPUT_CLASS}
+                      value={horarios?.[p.id]?.fin ?? ''}
+                      onChange={(e) =>
+                        onHorario(p.id, {
+                          inicio: horarios?.[p.id]?.inicio,
+                          fin: e.target.value,
+                        })
+                      }
+                    />
+                  </label>
                 </div>
               )}
             </div>

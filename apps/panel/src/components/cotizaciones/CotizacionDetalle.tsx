@@ -1,8 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
-import { useMemo } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
+import { CerrarSolicitudModal } from '../solicitudes/CerrarSolicitudModal';
 import { AceptarCotizacionAction } from './AceptarCotizacionAction';
 import { CotizacionBadge } from './CotizacionBadge';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
@@ -16,22 +17,28 @@ import {
   fetchCotizacion,
   linkPdfPublicoCompleto,
   linkPublicoCompleto,
+  volverCotizacionABorrador,
   type Cotizacion,
+  type ItemCotizacion,
   type Producto,
 } from '../../lib/cotizaciones';
 import { fetchContratoEvento } from '../../lib/contratos';
 import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
-import { descripcionCantidadProducto, etiquetaOrigenItem } from '../../lib/origen-item';
+import { agruparItemsPorOrigen, descripcionCantidadProducto } from '../../lib/origen-item';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../ui/DetalleActionGroup';
 import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import {
   puedeAceptarCotizacion,
+  puedeCerrarSolicitudDesdeCotizacion,
   puedeEditarCotizacionBorrador,
   puedeEnviarCotizacion,
   puedeGenerarContrato,
+  puedeVolverABorradorCotizacion,
 } from '../../lib/flujo-estados';
 import { formatFecha } from '../../lib/format';
+import { apiErrorMessage } from '../../lib/api-error';
+import { cerrarSolicitud, type MotivoCierre } from '../../lib/api';
 
 type Props = {
   cotizacionId: string | null;
@@ -42,6 +49,77 @@ type Props = {
   onEditarBorrador?: (id: string) => void;
 };
 
+function horarioDesdeNotas(notas?: string | null): string | null {
+  if (!notas?.includes('Horario:')) return null;
+  const texto = notas.replace(/^.*?(Horario:)/, 'Horario:').trim();
+  return texto || null;
+}
+
+function FilaServicio({
+  item,
+  producto,
+  indent = false,
+}: {
+  item: ItemCotizacion;
+  producto?: Producto;
+  indent?: boolean;
+}) {
+  const productoCantidad =
+    producto ??
+    (item.subtipo === 'piqueo' || item.subtipo === 'cajita' || item.subtipo === 'snack'
+      ? { subtipo: item.subtipo, unidadesPack: item.unidadesPack }
+      : undefined);
+  const cantidadTexto = descripcionCantidadProducto(productoCantidad, item.cantidad);
+  const horario = horarioDesdeNotas(item.notas);
+
+  return (
+    <li className={`flex justify-between gap-3 py-1.5 ${indent ? 'pl-3' : ''}`}>
+      <span className="min-w-0">
+        <span className="font-medium">{item.nombre}</span>{' '}
+        <span className="text-sm text-on-surface-variant">{cantidadTexto}</span>
+        {item.creditoAplicado != null && item.creditoAplicado > 0 && (
+          <span className="ml-1 text-xs text-outline">
+            (crédito S/ {item.creditoAplicado.toFixed(2)})
+          </span>
+        )}
+        {horario ? <span className="mt-0.5 block text-xs text-outline">{horario}</span> : null}
+      </span>
+      <span className="shrink-0 font-semibold">
+        {item.precioUnitario <= 0 ? 'Incluido' : `S/ ${item.subtotal.toFixed(2)}`}
+      </span>
+    </li>
+  );
+}
+
+function SeccionServicios({
+  titulo,
+  items,
+  productosById,
+  indent = false,
+}: {
+  titulo: string;
+  items: ItemCotizacion[];
+  productosById: Map<string, Producto>;
+  indent?: boolean;
+}) {
+  if (!items.length) return null;
+  return (
+    <div>
+      <p className="text-label-caps text-outline">{titulo}</p>
+      <ul className="mt-0.5 divide-y divide-surface-variant/50">
+        {items.map((item) => (
+          <FilaServicio
+            key={item.id ?? `${item.nombre}-${item.origenItem}-${item.cantidad}`}
+            item={item}
+            producto={item.productoId ? productosById.get(item.productoId) : undefined}
+            indent={indent}
+          />
+        ))}
+      </ul>
+    </div>
+  );
+}
+
 export function CotizacionDetalle({
   cotizacionId,
   listItem,
@@ -51,6 +129,61 @@ export function CotizacionDetalle({
   onEditarBorrador,
 }: Props) {
   const navigate = useNavigate();
+  const qc = useQueryClient();
+  const [cerrarOpen, setCerrarOpen] = useState(false);
+  const [cerrarError, setCerrarError] = useState('');
+  const volverMut = useMutation({
+    mutationFn: () => volverCotizacionABorrador(cotizacionId!),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
+        qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
+      ]);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Volvió a borrador',
+        text: 'El cliente ya no puede aceptar. Edita y vuelve a enviar cuando esté lista.',
+      });
+    },
+    onError: async (err) => {
+      await Swal.fire({
+        icon: 'error',
+        title: 'No se pudo volver a borrador',
+        text: apiErrorMessage(err, 'Inténtalo de nuevo'),
+      });
+    },
+  });
+
+  const cerrarMut = useMutation({
+    mutationFn: ({ motivo, notas }: { motivo: MotivoCierre; notas?: string }) =>
+      cerrarSolicitud(cot!.solicitudId ?? cot!.solicitud!.id, {
+        motivoCierre: motivo,
+        notas,
+      }),
+    onSuccess: async (res) => {
+      setCerrarOpen(false);
+      setCerrarError('');
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
+        qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
+        qc.invalidateQueries({ queryKey: ['solicitudes'] }),
+        qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
+        qc.invalidateQueries({ queryKey: ['solicitud', cot?.solicitudId ?? cot?.solicitud?.id] }),
+      ]);
+      const n = res.cotizacionesCerradas?.length ?? 0;
+      await Swal.fire({
+        icon: 'success',
+        title: 'Solicitud cerrada',
+        text:
+          n > 0
+            ? `Se cerraron ${n} cotización${n > 1 ? 'es' : ''} en borrador o enviada. El cliente ya no puede aceptar.`
+            : undefined,
+      });
+    },
+    onError: (err: unknown) => {
+      setCerrarError(apiErrorMessage(err, 'No se pudo cerrar la solicitud'));
+    },
+  });
 
   const { data: cot, isLoading, isError } = useQuery({
     queryKey: ['cotizacion', cotizacionId],
@@ -83,20 +216,20 @@ export function CotizacionDetalle({
     await Swal.fire({ icon: 'success', title: 'Link copiado', timer: 1200, showConfirmButton: false });
   };
 
-  const copiarLinkPdf = async () => {
-    if (!cot) return;
-    const link = linkPdfPublicoCompleto(cot.tokenPublico);
-    await navigator.clipboard.writeText(link);
-    await Swal.fire({ icon: 'success', title: 'Link PDF copiado', timer: 1200, showConfirmButton: false });
-  };
-
   if (!open || !cotizacionId) return null;
 
   const titulo = cot?.codigo ?? listItem?.codigo ?? 'Cotización';
   const evento = cot?.eventos?.[0];
   const solicitud = cot?.solicitud;
+  const solicitudId = cot?.solicitudId ?? solicitud?.id ?? null;
+  const puedeCerrarSolicitud = puedeCerrarSolicitudDesdeCotizacion(
+    cot?.etapa ?? 'cerrada',
+    solicitudId,
+    solicitud?.etapa,
+  );
   const link = cot ? linkPublicoCompleto(cot.tokenPublico) : '';
   const linkPdf = cot ? linkPdfPublicoCompleto(cot.tokenPublico) : '';
+  const gruposServicios = agruparItemsPorOrigen(cot?.items ?? []);
 
   const footer =
     cot && !isLoading ? (
@@ -117,10 +250,7 @@ export function CotizacionDetalle({
             />
           )}
           <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
-            Copiar link (aceptar)
-          </Button>
-          <Button variant="ghost" className="w-full" onClick={() => void copiarLinkPdf()}>
-            Copiar link PDF
+            {cot.etapa === 'borrador' ? 'Copiar link (vista previa)' : 'Copiar link (aceptar)'}
           </Button>
           <Button
             variant="ghost"
@@ -148,7 +278,7 @@ export function CotizacionDetalle({
           </Button>
           {cot.etapa === 'borrador' && (
             <DetalleActionHint>
-              Tras enviar, el cliente o el equipo pueden aceptar para crear el evento en Agenda.
+              Este enlace es de borrador: el cliente no puede aceptar. Envía la cotización para habilitar la aceptación.
             </DetalleActionHint>
           )}
         </DetalleActionGroup>
@@ -210,10 +340,53 @@ export function CotizacionDetalle({
             </Button>
           </DetalleActionGroup>
         )}
+        {puedeVolverABorradorCotizacion(cot.etapa) && (
+          <DetalleActionGroup label="Corregir propuesta">
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              disabled={volverMut.isPending}
+              onClick={() => {
+                void (async () => {
+                  const ok = await Swal.fire({
+                    icon: 'question',
+                    title: '¿Volver a borrador?',
+                    text: 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
+                    showCancelButton: true,
+                    confirmButtonText: 'Sí, volver a borrador',
+                    cancelButtonText: 'Cancelar',
+                  });
+                  if (ok.isConfirmed) volverMut.mutate();
+                })();
+              }}
+            >
+              {volverMut.isPending ? 'Cambiando…' : 'Volver a borrador'}
+            </Button>
+          </DetalleActionGroup>
+        )}
+        {puedeCerrarSolicitud ? (
+          <DetalleActionGroup label="Cerrar lead">
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              onClick={() => {
+                setCerrarError('');
+                setCerrarOpen(true);
+              }}
+            >
+              Cerrar solicitud
+            </Button>
+            <DetalleActionHint>
+              Cierra el lead. Esta y otras propuestas en borrador o enviada quedarán cerradas. Las
+              aceptadas no se tocan.
+            </DetalleActionHint>
+          </DetalleActionGroup>
+        ) : null}
       </DetalleActionsFooter>
     ) : undefined;
 
   return (
+    <>
     <DetalleModal
       open={open}
       onClose={onClose}
@@ -239,16 +412,36 @@ export function CotizacionDetalle({
           </div>
 
           {(solicitud || evento || contratoEvento) && (
-            <div className={`flex flex-wrap gap-3 p-4 ${CARD_CLASS}`}>
-              {solicitud && onAbrirSolicitud && (
-                <button
-                  type="button"
-                  className="text-body-sm font-semibold text-primary hover:underline"
-                  onClick={onAbrirSolicitud}
-                >
-                  Solicitud: {solicitud.nombreContacto}
-                </button>
-              )}
+            <div className={`flex flex-wrap items-center gap-3 p-4 ${CARD_CLASS}`}>
+              {solicitud ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  {onAbrirSolicitud ? (
+                    <button
+                      type="button"
+                      className="text-body-sm font-semibold text-primary hover:underline"
+                      onClick={onAbrirSolicitud}
+                    >
+                      Solicitud: {solicitud.nombreContacto}
+                    </button>
+                  ) : (
+                    <span className="text-body-sm text-on-surface-variant">
+                      Solicitud: {solicitud.nombreContacto}
+                    </span>
+                  )}
+                  {puedeCerrarSolicitud ? (
+                    <Button
+                      variant="ghost"
+                      className="h-auto min-h-0 px-2 py-1 text-body-sm"
+                      onClick={() => {
+                        setCerrarError('');
+                        setCerrarOpen(true);
+                      }}
+                    >
+                      Cerrar solicitud
+                    </Button>
+                  ) : null}
+                </div>
+              ) : null}
               {evento && (
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="text-body-sm text-on-surface-variant">
@@ -286,7 +479,7 @@ export function CotizacionDetalle({
 
           {cot.etapa === 'borrador' && (
             <p className="rounded-lg border border-primary/30 bg-primary-fixed/20 px-4 py-3 text-primary">
-              Borrador listo: revisa montos y envía el link al cliente.
+              Borrador: puedes compartir el PDF para negociar, pero el cliente no puede aceptar hasta que envíes la cotización.
             </p>
           )}
 
@@ -334,50 +527,46 @@ export function CotizacionDetalle({
           </div>
 
           {cot.items && cot.items.length > 0 && (
-            <div className={`p-4 ${CARD_CLASS}`}>
-              <h3 className="font-bold text-primary">Detalle de servicios</h3>
-              <p className="mt-1 text-xs text-on-surface-variant">
-                En piqueos, la cantidad indica packs; el tamaño del pack está en catálogo.
-              </p>
-              <ul className="mt-3 space-y-2">
-                {cot.items.map((i) => {
-                  const producto: Producto | undefined = i.productoId
-                    ? productosById.get(i.productoId)
-                    : undefined;
-                  const origen = etiquetaOrigenItem(i.origenItem);
-                  const cantidadTexto = descripcionCantidadProducto(producto, i.cantidad);
-
-                  return (
-                    <li key={i.id ?? `${i.nombre}-${i.origenItem}-${i.cantidad}`} className="flex justify-between gap-3">
-                      <span className="min-w-0">
-                        <span className="font-medium">{i.nombre}</span>{' '}
-                        <span className="text-sm text-on-surface-variant">{cantidadTexto}</span>
-                        {origen && (
-                          <span
-                            className={`ml-2 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${
-                              i.origenItem === 'incluido_paquete'
-                                ? 'bg-primary-fixed/40 text-primary'
-                                : i.origenItem === 'excedente_paquete'
-                                  ? 'bg-tertiary-fixed/50 text-tertiary'
-                                  : 'bg-surface-container-high text-outline'
-                            }`}
-                          >
-                            {origen}
-                          </span>
-                        )}
-                        {i.creditoAplicado != null && i.creditoAplicado > 0 && (
-                          <span className="ml-1 text-xs text-outline">
-                            (crédito S/ {i.creditoAplicado.toFixed(2)})
-                          </span>
-                        )}
-                      </span>
-                      <span className="shrink-0 font-semibold">
-                        {i.precioUnitario <= 0 ? 'Incluido' : `S/ ${i.subtotal.toFixed(2)}`}
-                      </span>
-                    </li>
-                  );
-                })}
-              </ul>
+            <div className={`space-y-4 p-4 ${CARD_CLASS}`}>
+              <div>
+                <h3 className="font-bold text-primary">Detalle de servicios</h3>
+                {cot.items.some(
+                  (i) =>
+                    i.subtipo === 'piqueo' ||
+                    (i.productoId ? productosById.get(i.productoId)?.subtipo === 'piqueo' : false),
+                ) ? (
+                  <p className="mt-1 text-xs text-on-surface-variant">
+                    En piqueos, la cantidad indica packs; el tamaño del pack está en catálogo.
+                  </p>
+                ) : null}
+              </div>
+              {cot.paquete ? (
+                <div className="flex justify-between gap-3 border-b border-surface-variant pb-3">
+                  <span>
+                    <span className="font-semibold">Paquete {cot.paquete}</span>
+                    <span className="mt-0.5 block text-xs text-on-surface-variant">
+                      Espacio y servicios incluidos
+                    </span>
+                  </span>
+                  <span className="shrink-0 font-semibold">S/ {cot.montoBase.toFixed(2)}</span>
+                </div>
+              ) : null}
+              <SeccionServicios
+                titulo="Incluido en el paquete"
+                items={gruposServicios.incluidos}
+                productosById={productosById}
+                indent
+              />
+              <SeccionServicios
+                titulo="Excedentes del paquete"
+                items={gruposServicios.excedentes}
+                productosById={productosById}
+              />
+              <SeccionServicios
+                titulo="Adicionales"
+                items={gruposServicios.adicionales}
+                productosById={productosById}
+              />
             </div>
           )}
 
@@ -391,6 +580,17 @@ export function CotizacionDetalle({
           </div>
         </div>
       ) : null}
-    </DetalleModal>
+      </DetalleModal>
+
+      <CerrarSolicitudModal
+        open={cerrarOpen}
+        onClose={() => setCerrarOpen(false)}
+        nested
+        pending={cerrarMut.isPending}
+        error={cerrarError}
+        avisoCotizaciones="Las cotizaciones en borrador o enviada de este lead pasarán a cerradas. El cliente ya no podrá aceptar. Las aceptadas no se modifican."
+        onConfirm={(motivo, notas) => cerrarMut.mutate({ motivo, notas })}
+      />
+    </>
   );
 }

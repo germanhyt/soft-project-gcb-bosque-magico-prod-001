@@ -351,4 +351,26 @@ describe('resolverComposicionPaquete', () => {
     expect(r.resumen.piqueosValorSeleccionado).toBe(150);
     expect(r.resumen.piqueosExcedente).toBe(50);
   });
+
+  it('anexa horario opcional a shows y extras', () => {
+    const r = resolverComposicionPaquete({
+      paquete: paquetePremium,
+      reglas: reglasPremium,
+      productos,
+      seleccion: {
+        showIds: ['show1'],
+        extraIds: ['extra1'],
+        horarios: [
+          { productoId: 'show1', inicio: '16:00', fin: '16:45' },
+          { productoId: 'extra1', inicio: '17:00', fin: '18:00' },
+        ],
+      },
+      esFinSemana: false,
+    });
+
+    const show = r.items.find((i) => i.productoId === 'show1');
+    const extra = r.items.find((i) => i.productoId === 'extra1');
+    expect(show?.notas).toContain('Horario: 16:00–16:45');
+    expect(extra?.notas).toContain('Horario: 17:00–18:00');
+  });
 });

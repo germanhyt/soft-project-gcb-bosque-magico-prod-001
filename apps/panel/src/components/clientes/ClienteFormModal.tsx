@@ -4,6 +4,7 @@ import type { ActualizarClientePayload, ClienteDetalle } from '../../lib/cliente
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/Skeleton';
 
 type Props = {
   open: boolean;
@@ -95,7 +96,7 @@ export function ClienteFormModal({ open, cliente, onClose, onSubmit }: Props) {
   return (
     <Modal open={open} onClose={onClose} title="Editar cliente" size="lg">
       {!cliente ? (
-        <p className="text-on-surface-variant">Cargando datos del cliente…</p>
+        <FormSkeleton fields={6} />
       ) : (
       <form className="grid gap-4 sm:grid-cols-2" onSubmit={handleSubmit}>
         <label className="block sm:col-span-2">

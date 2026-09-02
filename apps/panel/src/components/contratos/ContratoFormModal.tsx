@@ -13,13 +13,16 @@ import {
 import {
   fetchContratoEvento,
   generarContratoEvento,
+  volverContratoABorrador,
   type Contrato,
 } from '../../lib/contratos';
+import { puedeVolverABorradorContrato } from '../../lib/flujo-estados';
 import type { Evento } from '../../lib/eventos';
 import { horarioDesdeRango, parseTurnoConfig } from '../../lib/turno-config';
 import { mostrarErrorApi } from '../../lib/swal-feedback';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/Skeleton';
 
 type Props = {
   open: boolean;
@@ -184,6 +187,27 @@ export function ContratoFormModal({
     },
   });
 
+  const volverMut = useMutation({
+    mutationFn: () => volverContratoABorrador(contratoExistente!.id),
+    onSuccess: async () => {
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['contrato', contratoExistente?.id] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['evento', eventoId] }),
+      ]);
+      await Swal.fire({
+        icon: 'success',
+        title: 'Volvió a borrador',
+        text: 'Ya puedes editar. Si cambias montos u horario, recaba de nuevo las firmas y vuelve a enviar.',
+      });
+    },
+    onError: async (err: unknown) => {
+      await mostrarErrorApi(err, 'No se pudo volver a borrador');
+    },
+  });
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!cot || !config) return;
@@ -231,6 +255,13 @@ export function ContratoFormModal({
   const loading = loadingCot || loadingContrato || !initialized;
   const bloqueado =
     contratoExistente?.etapa === 'enviado' || contratoExistente?.etapa === 'firmado';
+  const puedeVolver = Boolean(
+    contratoExistente &&
+      puedeVolverABorradorContrato(
+        contratoExistente.etapa,
+        evento?.etapa ?? contratoExistente.evento?.etapa,
+      ),
+  );
 
   return (
     <Modal
@@ -239,14 +270,16 @@ export function ContratoFormModal({
       title="Generar contrato"
       description={
         bloqueado
-          ? 'Contrato registrado. Para imprimir o subir firmas, abre el detalle del contrato.'
+          ? contratoExistente?.etapa === 'enviado'
+            ? 'Contrato enviado. Vuelve a borrador para corregir montos u horario. Las firmas se conservan: si cambias esos datos, vuelve a recabarlas.'
+            : 'Contrato registrado. Para imprimir o subir firmas, abre el detalle del contrato.'
           : 'Completa los datos legales y guarda. El PDF se genera desde el detalle con «Imprimir / PDF».'
       }
       size="lg"
       nested={nested}
     >
       {loading ? (
-        <p className="text-on-surface-variant">Cargando datos…</p>
+        <FormSkeleton fields={6} />
       ) : (
         <form onSubmit={(e) => void handleSubmit(e)} className="space-y-4">
           {contratoExistente && (
@@ -380,6 +413,28 @@ export function ContratoFormModal({
             <Button type="button" variant="ghost" onClick={onClose}>
               {bloqueado ? 'Cerrar' : 'Cancelar'}
             </Button>
+            {puedeVolver ? (
+              <Button
+                type="button"
+                variant="secondary"
+                disabled={volverMut.isPending}
+                onClick={() => {
+                  void (async () => {
+                    const ok = await Swal.fire({
+                      icon: 'question',
+                      title: '¿Volver a borrador?',
+                      html: '<p class="text-sm">El enlace del cliente pasará a vista previa (no válido para firmar). El evento no se podrá confirmar hasta reenviar. Las firmas se conservan: si cambias montos u horario, vuelve a recabarlas.</p>',
+                      showCancelButton: true,
+                      confirmButtonText: 'Sí, volver a borrador',
+                      cancelButtonText: 'Cancelar',
+                    });
+                    if (ok.isConfirmed) volverMut.mutate();
+                  })();
+                }}
+              >
+                {volverMut.isPending ? 'Cambiando…' : 'Volver a borrador'}
+              </Button>
+            ) : null}
             {!bloqueado && (
               <Button type="submit" disabled={generarMut.isPending}>
                 {generarMut.isPending ? 'Guardando…' : 'Guardar contrato'}

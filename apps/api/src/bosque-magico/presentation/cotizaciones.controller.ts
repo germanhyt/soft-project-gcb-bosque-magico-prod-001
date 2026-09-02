@@ -18,6 +18,7 @@ import { AceptarCotizacionUseCase } from '../application/use-cases/aceptar-cotiz
 import { ActualizarCotizacionUseCase } from '../application/use-cases/actualizar-cotizacion.use-case';
 import { CrearCotizacionUseCase } from '../application/use-cases/crear-cotizacion.use-case';
 import { EnviarCotizacionUseCase } from '../application/use-cases/enviar-cotizacion.use-case';
+import { VolverABorradorCotizacionUseCase } from '../application/use-cases/volver-a-borrador-cotizacion.use-case';
 import { ListarCotizacionesUseCase } from '../application/use-cases/listar-cotizaciones.use-case';
 import { ObtenerCotizacionUseCase } from '../application/use-cases/obtener-cotizacion.use-case';
 
@@ -30,6 +31,7 @@ export class CotizacionesController {
     private readonly crear: CrearCotizacionUseCase,
     private readonly actualizar: ActualizarCotizacionUseCase,
     private readonly enviar: EnviarCotizacionUseCase,
+    private readonly volverABorrador: VolverABorradorCotizacionUseCase,
     private readonly aceptar: AceptarCotizacionUseCase,
   ) {}
 
@@ -81,6 +83,12 @@ export class CotizacionesController {
     @CurrentUser() user?: JwtPayload,
   ) {
     return this.enviar.ejecutar(id, dto, user?.sub);
+  }
+
+  @Post('cotizaciones/:id/volver-borrador')
+  @ApiOperation({ summary: 'Volver cotización enviada a borrador para editar' })
+  volverBorrador(@Param('id') id: string) {
+    return this.volverABorrador.ejecutar(id);
   }
 
   @Post('cotizaciones/:id/aceptar')

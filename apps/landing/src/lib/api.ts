@@ -25,6 +25,7 @@ export type ProductoCatalogo = {
   precioFinSemana: number;
   cantidadMinima: number;
   unidadesPack?: number | null;
+  unidad?: string | null;
   descripcion: string | null;
   imagenUrl: string | null;
   imagenes?: string[];

@@ -59,6 +59,12 @@ export class ActualizarProductoDto {
   @Min(1)
   unidadesPack?: number | null;
 
+  @ApiPropertyOptional({ example: 'hora' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  unidad?: string;
+
   @ApiPropertyOptional()
   @IsOptional()
   @IsString()

@@ -86,7 +86,9 @@ export class ActualizarCotizacionUseCase {
         ...(dto.seleccion.adicionales ?? []),
         ...adicionalesManuales,
       ],
+      horarios: dto.seleccion.horarios,
       salitaLoungeCantidad: dto.seleccion.salitaLoungeCantidad,
+      precioSalitaLounge: dto.seleccion.precioSalitaLounge,
       derechoIngresoShowExterno: dto.seleccion.derechoIngresoShowExterno,
       derechoIngresoDecoracionExterno:
         dto.seleccion.derechoIngresoDecoracionExterno,
@@ -94,6 +96,14 @@ export class ActualizarCotizacionUseCase {
         dto.seleccion.derechoIngresoCarritoSnackExterno,
       derechoDecoracionPersonalizada:
         dto.seleccion.derechoDecoracionPersonalizada,
+      precioDerechoIngresoShowExterno:
+        dto.seleccion.precioDerechoIngresoShowExterno,
+      precioDerechoIngresoDecoracionExterno:
+        dto.seleccion.precioDerechoIngresoDecoracionExterno,
+      precioDerechoIngresoCarritoSnackExterno:
+        dto.seleccion.precioDerechoIngresoCarritoSnackExterno,
+      precioDerechoDecoracionPersonalizada:
+        dto.seleccion.precioDerechoDecoracionPersonalizada,
     };
   }
 

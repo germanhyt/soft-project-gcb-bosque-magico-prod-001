@@ -1,3 +1,5 @@
+import { parseHorarioDesdeNotas } from './horario-servicio';
+
 export type CotizacionPrintEtapa = 'borrador' | 'enviada' | 'aceptada' | 'cerrada';
 
 export type CotizacionPrintItem = {
@@ -8,6 +10,7 @@ export type CotizacionPrintItem = {
   origenItem?: string;
   subtipo?: string | null;
   unidadesPack?: number | null;
+  notas?: string | null;
 };
 
 export type CotizacionPrintData = {
@@ -74,6 +77,119 @@ function money(n: number) {
   return `S/ ${n.toFixed(2)}`;
 }
 
+const ORDEN_ORIGEN: Record<string, number> = {
+  incluido_paquete: 0,
+  excedente_paquete: 1,
+  adicional: 2,
+  manual: 2,
+};
+
+function descripcionItem(i: CotizacionPrintItem): string {
+  const partes: string[] = [];
+  if (i.subtipo === 'piqueo' && i.unidadesPack) {
+    partes.push(`${i.cantidad} pack${i.cantidad > 1 ? 's' : ''} · ${i.unidadesPack} uds c/u`);
+  }
+  const horario = parseHorarioDesdeNotas(i.notas);
+  if (horario?.inicio && horario.fin) {
+    partes.push(`${horario.inicio}–${horario.fin}`);
+  } else if (horario?.inicio) {
+    partes.push(`desde ${horario.inicio}`);
+  } else if (horario?.fin) {
+    partes.push(`hasta ${horario.fin}`);
+  }
+  return partes.join(' · ');
+}
+
+export type FilaPrintCotizacion = {
+  clase: 'seccion' | 'paquete' | 'subitem' | 'item';
+  nombre: string;
+  descripcion: string;
+  cantidad: string;
+  unitario: string;
+  subtotal: string;
+};
+
+function filaSeccion(titulo: string): FilaPrintCotizacion {
+  return {
+    clase: 'seccion',
+    nombre: titulo,
+    descripcion: '',
+    cantidad: '',
+    unitario: '',
+    subtotal: '',
+  };
+}
+
+/** Paquete como ítem padre; subítems incluidos; luego excedente y adicionales. */
+export function filasTablaCotizacionPrint(cot: CotizacionPrintData): FilaPrintCotizacion[] {
+  const items = [...(cot.items ?? [])].sort(
+    (a, b) => (ORDEN_ORIGEN[a.origenItem ?? ''] ?? 1) - (ORDEN_ORIGEN[b.origenItem ?? ''] ?? 1),
+  );
+  const incluidos = items.filter((i) => i.origenItem === 'incluido_paquete');
+  const adicionales = items.filter(
+    (i) => i.origenItem !== 'incluido_paquete' && i.origenItem !== 'excedente_paquete',
+  );
+  const excedentes = items.filter((i) => i.origenItem === 'excedente_paquete');
+
+  const toFila = (i: CotizacionPrintItem, clase: 'subitem' | 'item'): FilaPrintCotizacion => {
+    const incluido = i.precioUnitario <= 0;
+    return {
+      clase,
+      nombre: i.nombre,
+      descripcion: descripcionItem(i),
+      cantidad: String(i.cantidad),
+      unitario: incluido ? '—' : money(i.precioUnitario),
+      subtotal: incluido ? '—' : money(i.subtotal),
+    };
+  };
+
+  const filas: FilaPrintCotizacion[] = [];
+  if (cot.paquete) {
+    filas.push({
+      clase: 'paquete',
+      nombre: `Paquete ${cot.paquete}`,
+      descripcion: 'Espacio y servicios incluidos en el paquete',
+      cantidad: '1',
+      unitario: money(cot.montoBase),
+      subtotal: money(cot.montoBase),
+    });
+    if (incluidos.length) {
+      filas.push(filaSeccion('Incluido en el paquete'));
+      for (const i of incluidos) filas.push(toFila(i, 'subitem'));
+    }
+  } else if (incluidos.length) {
+    filas.push(filaSeccion('Incluido en el paquete'));
+    for (const i of incluidos) filas.push(toFila(i, 'item'));
+  }
+  if (excedentes.length) {
+    filas.push(filaSeccion('Excedentes del paquete'));
+    for (const i of excedentes) filas.push(toFila(i, 'item'));
+  }
+  if (adicionales.length) {
+    filas.push(filaSeccion('Adicionales'));
+    for (const i of adicionales) filas.push(toFila(i, 'item'));
+  }
+  return filas;
+}
+
+function renderFilasDetalle(cot: CotizacionPrintData): string {
+  const filas = filasTablaCotizacionPrint(cot);
+  if (!filas.length) return '';
+  const body = filas
+    .map((f) => {
+      if (f.clase === 'seccion') {
+        return `<tr class="seccion"><td colspan="5">${escapeHtml(f.nombre)}</td></tr>`;
+      }
+      return `<tr class="${f.clase}"><td>${escapeHtml(f.nombre)}</td><td>${escapeHtml(f.descripcion)}</td><td>${escapeHtml(f.cantidad)}</td><td>${escapeHtml(f.unitario)}</td><td>${escapeHtml(f.subtotal)}</td></tr>`;
+    })
+    .join('');
+  return `<h2 class="bloque-titulo">Detalle de servicios</h2>
+  <table class="detalle">
+    <thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
+    <tbody>${body}</tbody>
+  </table>`;
+}
+
 const DEFAULT_FOOTER =
   'Documento generado por Bosque Mágico. Los montos son referenciales según la propuesta vigente.';
 
@@ -82,7 +198,6 @@ export function buildCotizacionPrintHtml(
   cot: CotizacionPrintData,
   options: CotizacionPrintOptions,
 ): string {
-  const items = cot.items ?? [];
   const cliente = escapeHtml(cot.cliente.nombreCompleto);
   const celular = escapeHtml(cot.cliente.celular ?? '');
   const correo = cot.cliente.correo ? escapeHtml(cot.cliente.correo) : '';
@@ -90,7 +205,6 @@ export function buildCotizacionPrintHtml(
   const codigo = escapeHtml(cot.codigo);
   const etapa = escapeHtml(ETAPA_LABEL[cot.etapa] ?? cot.etapa);
   const turno = escapeHtml(TURNO_LABEL[cot.turno] ?? cot.turno);
-  const paquete = cot.paquete ? escapeHtml(cot.paquete) : '';
   const tematica = cot.tematica ? escapeHtml(cot.tematica) : '';
   const notas = cot.notas ? escapeHtml(cot.notas).replace(/\n/g, '<br/>') : '';
   const footer = escapeHtml(options.footerNote ?? DEFAULT_FOOTER);
@@ -123,15 +237,23 @@ export function buildCotizacionPrintHtml(
     .header img { width: 128px; height: 128px; object-fit: contain; }
     h1 { margin: 0; font-size: 22px; color: #2d5a3d; }
     .meta { color: #5a6b5e; font-size: 13px; margin-top: 4px; }
-    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; margin-bottom: 24px; }
+    .datos { background: #f6faf7; border: 1px solid #d5e3d8; border-radius: 10px; padding: 16px 18px; margin-bottom: 28px; }
+    .datos-titulo { margin: 0 0 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: #2d5a3d; }
+    .banner-borrador { background: #fbf3d5; border: 1px solid #e0c35c; color: #6b5300; padding: 10px 14px; border-radius: 8px; margin: 0 0 20px; font-weight: 700; text-align: center; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px 24px; }
     .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: #6b7c6f; }
     .value { font-size: 14px; font-weight: 600; margin-top: 2px; }
-    table { width: 100%; border-collapse: collapse; margin: 16px 0 24px; font-size: 13px; }
-    th, td { border: 1px solid #d8e3db; padding: 8px 10px; text-align: left; }
-    th { background: #eef4ef; color: #2d5a3d; font-size: 12px; }
-    .totals { margin-left: auto; width: 280px; font-size: 14px; }
-    .totals div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e8efe9; }
-    .totals .grand { font-size: 18px; font-weight: 700; color: #2d5a3d; border-bottom: none; padding-top: 10px; }
+    .bloque-titulo { margin: 0 0 8px; font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: #2d5a3d; }
+    table.detalle { width: 100%; border-collapse: collapse; margin: 0 0 8px; font-size: 13px; }
+    table.detalle th, table.detalle td { border: 1px solid #d8e3db; padding: 8px 10px; text-align: left; }
+    table.detalle th { background: #2d5a3d; color: #fff; font-size: 11px; letter-spacing: 0.03em; }
+    table.detalle tr.seccion td { background: #e8f0ea; font-size: 11px; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; color: #2d5a3d; }
+    table.detalle tr.paquete td { background: #f3f8f4; font-weight: 700; }
+    table.detalle tr.subitem td { color: #3d5344; font-size: 12px; }
+    table.detalle tr.subitem td:first-child { padding-left: 22px; }
+    .resumen { margin: 24px 0 0 auto; width: 280px; font-size: 14px; border: 1px solid #d5e3d8; border-radius: 10px; padding: 12px 16px; background: #f6faf7; }
+    .resumen div { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #e8efe9; }
+    .resumen .grand { font-size: 18px; font-weight: 700; color: #2d5a3d; border-bottom: none; padding-top: 10px; }
     .footer { margin-top: 32px; font-size: 12px; color: #6b7c6f; border-top: 1px solid #e8efe9; padding-top: 12px; }
     .accept { margin-top: 8px; font-size: 12px; word-break: break-all; }
     @media print {
@@ -149,51 +271,26 @@ export function buildCotizacionPrintHtml(
       <p class="meta">Bosque Mágico · ${etapa}</p>
     </div>
   </div>
+  ${cot.etapa === 'borrador' ? '<p class="banner-borrador">Borrador — no válida para aceptar</p>' : ''}
 
-  <div class="grid">
-    <div><div class="label">Cliente</div><div class="value">${cliente}</div></div>
-    <div><div class="label">Contacto</div><div class="value">${celular}${correo ? ` · ${correo}` : ''}</div></div>
-    <div><div class="label">Cumpleañero</div><div class="value">${cumple}${cot.cumpleanero.edad ? ` (${cot.cumpleanero.edad} años)` : ''}</div></div>
-    <div><div class="label">Evento</div><div class="value">${formatFecha(cot.fechaEvento)} · ${turno} · ${cot.cantidadNinos} niños</div></div>
-    ${paquete ? `<div><div class="label">Paquete</div><div class="value">${paquete}</div></div>` : ''}
-    ${tematica ? `<div><div class="label">Temática</div><div class="value">${tematica}</div></div>` : ''}
-  </div>
+  <section class="datos">
+    <p class="datos-titulo">Datos del evento</p>
+    <div class="grid">
+      <div><div class="label">Cliente</div><div class="value">${cliente}</div></div>
+      <div><div class="label">Contacto</div><div class="value">${celular}${correo ? ` · ${correo}` : ''}</div></div>
+      <div><div class="label">Cumpleañero</div><div class="value">${cumple}${cot.cumpleanero.edad ? ` (${cot.cumpleanero.edad} años)` : ''}</div></div>
+      <div><div class="label">Fecha y turno</div><div class="value">${formatFecha(cot.fechaEvento)} · ${turno}</div></div>
+      <div><div class="label">Niños</div><div class="value">${cot.cantidadNinos}</div></div>
+      ${tematica ? `<div><div class="label">Temática</div><div class="value">${tematica}</div></div>` : ''}
+    </div>
+  </section>
 
-  ${
-    items.length > 0
-      ? `<table>
-    <thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>Tipo</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
-    <tbody>
-      ${items
-        .map((i) => {
-          const incluido = i.precioUnitario <= 0;
-          const tipo = i.origenItem
-            ? (i.origenItem === 'incluido_paquete'
-              ? 'Incluido'
-              : i.origenItem === 'excedente_paquete'
-                ? 'Excedente'
-                : i.origenItem === 'manual'
-                  ? 'Manual'
-                  : 'Adicional')
-            : '';
-          const descripcion =
-            i.subtipo === 'piqueo' && i.unidadesPack
-              ? `${i.cantidad} pack${i.cantidad > 1 ? 's' : ''} · ${i.unidadesPack} uds c/u`
-              : '';
-          const costo = incluido ? '—' : money(i.precioUnitario);
-          const subtotalTxt = incluido ? '—' : money(i.subtotal);
-          return `<tr><td>${escapeHtml(i.nombre)}</td><td>${escapeHtml(descripcion)}</td><td>${i.cantidad}</td><td>${escapeHtml(tipo)}</td><td>${costo}</td><td>${subtotalTxt}</td></tr>`;
-        })
-        .join('')}
-    </tbody>
-  </table>`
-      : ''
-  }
+  ${renderFilasDetalle(cot)}
 
-  <div class="totals">
-    <div><span>Tarifa base</span><span>${money(cot.montoBase)}</span></div>
+  <div class="resumen">
+    <div><span>Paquete / tarifa base</span><span>${money(cot.montoBase)}</span></div>
     ${cot.montoNinosExtra > 0 ? `<div><span>Niños adicionales</span><span>${money(cot.montoNinosExtra)}</span></div>` : ''}
-    ${cot.montoItems > 0 ? `<div><span>Servicios</span><span>${money(cot.montoItems)}</span></div>` : ''}
+    ${cot.montoItems > 0 ? `<div><span>Adicionales y excedentes</span><span>${money(cot.montoItems)}</span></div>` : ''}
     <div class="grand"><span>Total</span><span>${money(cot.montoTotal)}</span></div>
   </div>
 

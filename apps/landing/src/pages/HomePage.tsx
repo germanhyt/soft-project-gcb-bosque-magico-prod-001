@@ -22,7 +22,6 @@ import {
   esShowPersonalizado,
   type QuoteBuilderSelection,
 } from '../types/quote-builder';
-import { paquetesConfigDesdeItems } from '../lib/paquetes-config';
 import { minimoCateringDesdeConfig, minimoUnidadesCatering } from '../lib/catering-minimo';
 import { getSelectionMode, SELECTION_MODE_KEYS } from '../lib/selection-mode';
 import { toggleCatalogSelection } from '../lib/toggle-catalog-selection';
@@ -35,7 +34,6 @@ export function HomePage() {
     () => minimoCateringDesdeConfig(data?.items),
     [data?.items],
   );
-  const paquetesConfig = useMemo(() => paquetesConfigDesdeItems(data?.items), [data?.items]);
   const selectionModes = useMemo(
     () => ({
       shows: getSelectionMode(data?.items, SELECTION_MODE_KEYS.shows, 'single'),
@@ -74,13 +72,13 @@ export function HomePage() {
               return {
                 ...prev,
                 paquete,
-                cajitasCantidad: paquetesConfig.cajitasIncluidas,
-                cajitasClasica: paquetesConfig.cajitasIncluidas,
+                cajitasCantidad: 0,
+                cajitasClasica: 0,
                 cajitasSaludable: 0,
                 piqueoIds: [],
                 piqueosCantidades: {},
                 snackId: '',
-                snackCantidad: paquetesConfig.snackPremiumUnidadesIncluidas,
+                snackCantidad: 0,
                 showIds: personalizado && showPers ? [showPers.id] : prev.showIds,
                 showCantidades:
                   personalizado && showPers ? { [showPers.id]: 1 } : prev.showCantidades,
@@ -105,18 +103,13 @@ export function HomePage() {
             setSelection((prev) => ({
               ...prev,
               snackId,
-              snackCantidad: snackId
-                ? Math.max(prev.snackCantidad, paquetesConfig.snackPremiumUnidadesIncluidas)
-                : paquetesConfig.snackPremiumUnidadesIncluidas,
+              snackCantidad: snackId ? prev.snackCantidad : 0,
             }))
           }
           onSnackCantidad={(snackCantidad) =>
             setSelection((prev) => ({
               ...prev,
-              snackCantidad: Math.max(
-                snackCantidad,
-                paquetesConfig.snackPremiumUnidadesIncluidas,
-              ),
+              snackCantidad,
             }))
           }
         />

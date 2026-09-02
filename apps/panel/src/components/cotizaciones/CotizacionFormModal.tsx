@@ -8,6 +8,7 @@ import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { SolicitudPreferenciasLanding } from '../solicitudes/SolicitudPreferenciasLanding';
 import { Button } from '../ui/Button';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/Skeleton';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import {
   FieldHint,
@@ -79,10 +80,16 @@ function schemaCrear(capacidad: CapacidadEvento) {
     fechaEvento: Yup.string().required('Indica la fecha del evento'),
     turno: Yup.string().required('Indica el turno'),
     cantidadNinos: Yup.number()
+      .transform((value, original) => (original === '' || original == null ? undefined : value))
+      .typeError('Indica un número válido de niños')
       .min(capacidad.minimo, mensajeCapacidadMinimo(capacidad.minimo))
       .max(capacidad.maximoPermitido, mensajeCapacidadMaximo(capacidad.maximoPermitido))
       .required('Indica la cantidad de niños'),
-    horasAdicionales: Yup.number().min(0, 'No puede ser negativo').max(8, 'Máximo 8 horas'),
+    horasAdicionales: Yup.number()
+      .transform((value, original) => (original === '' || original == null ? 0 : value))
+      .typeError('Indica un número válido de horas')
+      .min(0, 'No puede ser negativo')
+      .max(8, 'Máximo 8 horas'),
     paquete: Yup.string().trim().required('Selecciona el paquete'),
   });
 }
@@ -92,10 +99,16 @@ function schemaEditar(capacidad: CapacidadEvento) {
     fechaEvento: Yup.string().required('Indica la fecha del evento'),
     turno: Yup.string().required('Indica el turno'),
     cantidadNinos: Yup.number()
+      .transform((value, original) => (original === '' || original == null ? undefined : value))
+      .typeError('Indica un número válido de niños')
       .min(capacidad.minimo, mensajeCapacidadMinimo(capacidad.minimo))
       .max(capacidad.maximoPermitido, mensajeCapacidadMaximo(capacidad.maximoPermitido))
       .required('Indica la cantidad de niños'),
-    horasAdicionales: Yup.number().min(0, 'No puede ser negativo').max(8, 'Máximo 8 horas'),
+    horasAdicionales: Yup.number()
+      .transform((value, original) => (original === '' || original == null ? 0 : value))
+      .typeError('Indica un número válido de horas')
+      .min(0, 'No puede ser negativo')
+      .max(8, 'Máximo 8 horas'),
     paquete: Yup.string().trim().required('Selecciona el paquete'),
   });
 }
@@ -107,6 +120,7 @@ const FIELD_LABELS: Record<string, string> = {
   fechaEvento: 'Fecha del evento',
   turno: 'Turno',
   cantidadNinos: 'Cantidad de niños',
+  horasAdicionales: 'Horas adicionales',
   paquete: 'Paquete',
 };
 
@@ -229,8 +243,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           cumpleaneroEdad: landing?.cumpleaneroEdad ?? '',
           fechaEvento: solicitudActiva?.fechaTentativa?.slice(0, 10) ?? '',
           turno: solicitudActiva?.turnoInteres ?? 'turno_1',
-          cantidadNinos: solicitudActiva?.cantidadNinosEstimada ?? 25,
-          horasAdicionales: 0,
+          cantidadNinos: solicitudActiva?.cantidadNinosEstimada ?? '',
+          horasAdicionales: '' as const,
           tematica: landing?.tematica ?? '',
           paquete: paqueteDefault,
           notas: solicitudActiva?.notas ?? '',
@@ -257,7 +271,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           correo: string;
           cumpleaneroNombre: string;
           cumpleaneroEdad: string;
-          horasAdicionales?: number;
+          horasAdicionales?: number | string;
           tematica: string;
           notas: string;
         };
@@ -369,7 +383,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
   if (activeEsEdicion && loadingCot) {
     return (
       <Modal open onClose={onClose} title="Editar borrador" size="xl">
-        <p className="text-outline">Cargando cotización…</p>
+        <FormSkeleton fields={8} />
       </Modal>
     );
   }
@@ -399,7 +413,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
   if (!activeEsEdicion && activeSolicitudId && loadingSolicitud && !resolvedTarget) {
     return (
       <Modal open onClose={onClose} title="Nueva cotización" size="xl">
-        <p className="text-outline">Cargando solicitud…</p>
+        <FormSkeleton fields={6} />
       </Modal>
     );
   }
@@ -573,8 +587,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                     min={capacidad.minimo}
                     max={capacidad.maximoPermitido}
                     className={inputConError(formikLite, 'cantidadNinos')}
-                    placeholder="Ej. 25"
-                    value={formik.values.cantidadNinos}
+                  placeholder={`Ej. ${capacidad.minimo}`}
+                  value={formik.values.cantidadNinos}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
                   />
@@ -592,7 +606,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                   max={8}
                   className={inputConError(formikLite, 'horasAdicionales')}
                   placeholder="Ej. 1"
-                  value={(formik.values as { horasAdicionales?: number }).horasAdicionales ?? 0}
+                  value={(formik.values as { horasAdicionales?: number | '' }).horasAdicionales ?? ''}
                   onChange={formik.handleChange}
                   onBlur={formik.handleBlur}
                 />
@@ -611,6 +625,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                         ...INITIAL_SELECCION_PAQUETE,
                         showIds: seleccion.showIds,
                         extraIds: seleccion.extraIds,
+                        extraCantidades: seleccion.extraCantidades,
+                        horarios: seleccion.horarios,
                       });
                     }}
                     onBlur={formik.handleBlur}
@@ -666,7 +682,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
               <CotizacionPaqueteEditor
                 paquete={formik.values.paquete}
                 fechaEvento={formik.values.fechaEvento}
-                cantidadNinos={Number(formik.values.cantidadNinos) || 25}
+                cantidadNinos={Number(formik.values.cantidadNinos) || capacidad.minimo}
                 horasAdicionales={Number((formik.values as { horasAdicionales?: number }).horasAdicionales) || 0}
                 seleccion={seleccion}
                 onChange={setSeleccion}

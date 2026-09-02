@@ -21,6 +21,7 @@ import { FilterSelect } from '../components/ui/FilterSelect';
 import { Icon } from '../components/ui/Icon';
 
 import { PageHeader } from '../components/ui/PageHeader';
+import { CalendarSkeleton, MediaRowSkeleton } from '../components/ui/Skeleton';
 
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 
@@ -531,7 +532,9 @@ export function AgendaPage() {
 
         <div className="overflow-y-auto p-4">
 
-          {isLoading && <p className="text-outline">Cargando agenda…</p>}
+          {isLoading && vista === 'mes' && <CalendarSkeleton />}
+
+          {isLoading && vista === 'lista' && <MediaRowSkeleton rows={4} />}
 
 
 

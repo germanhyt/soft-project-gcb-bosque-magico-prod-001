@@ -12,6 +12,7 @@ import { calcularCargosCapacidad } from './reglas-capacidad';
 import { validarSeleccionPaquete } from './validar-seleccion-paquete';
 import {
   coincidePaquete,
+  precioOverride,
   type ComposicionRegla,
   type ItemPaqueteResuelto,
   type ProductoCotizacionRef,
@@ -186,7 +187,7 @@ export class ComposicionPaqueteService {
     pushExtra(
       NOMBRE_ITEM_SALITA_LOUNGE,
       salitaLoungeCantidad,
-      tarifasExtras.salitaLounge,
+      precioOverride(params.seleccion.precioSalitaLounge, tarifasExtras.salitaLounge),
       'Mobiliario lounge para 8 pax',
     );
 
@@ -194,7 +195,10 @@ export class ComposicionPaqueteService {
       pushExtra(
         NOMBRE_ITEM_INGRESO_SHOW_EXTERNO,
         1,
-        tarifasExtras.ingresoShowExterno,
+        precioOverride(
+          params.seleccion.precioDerechoIngresoShowExterno,
+          tarifasExtras.ingresoShowExterno,
+        ),
         'Derecho de ingreso show externo',
       );
     }
@@ -202,7 +206,10 @@ export class ComposicionPaqueteService {
       pushExtra(
         NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO,
         1,
-        tarifasExtras.ingresoDecoracionExterno,
+        precioOverride(
+          params.seleccion.precioDerechoIngresoDecoracionExterno,
+          tarifasExtras.ingresoDecoracionExterno,
+        ),
         'Derecho de ingreso decoración externo',
       );
     }
@@ -210,7 +217,10 @@ export class ComposicionPaqueteService {
       pushExtra(
         NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO,
         1,
-        tarifasExtras.ingresoCarritoSnackExterno,
+        precioOverride(
+          params.seleccion.precioDerechoIngresoCarritoSnackExterno,
+          tarifasExtras.ingresoCarritoSnackExterno,
+        ),
         'Derecho de ingreso carrito snack externo',
       );
     }
@@ -218,7 +228,10 @@ export class ComposicionPaqueteService {
       pushExtra(
         NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA,
         1,
-        tarifasExtras.decoracionPersonalizada,
+        precioOverride(
+          params.seleccion.precioDerechoDecoracionPersonalizada,
+          tarifasExtras.decoracionPersonalizada,
+        ),
         'Derechos de decoración personalizada',
       );
     }

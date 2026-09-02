@@ -67,3 +67,6 @@ coverage/
 *.key
 id_rsa
 id_ed25519
+
+# Dumps locales de PostgreSQL (datos de sandbox/prod)
+backups/

@@ -1,14 +1,31 @@
 export { formatFechaDdMmYyyy } from './fecha-formato';
 export {
+  anexarHorarioANotas,
+  formatearHorarioServicio,
+  horariosConValor,
+  parseHorarioDesdeNotas,
+  textoHorarioEnNotas,
+  type HorarioServicio,
+} from './horario-servicio';
+export {
+  esExtraBloque,
+  esUnidadPorHora,
+  etiquetaCantidadExtra,
+  etiquetaPrecioPorUnidad,
+  unidadProductoNormalizada,
+} from './producto-unidad';
+export {
   itemsIncluidosPaquete,
   PAQUETE_INCLUSIONES_DEFAULT,
   type PaqueteInclusionesConfig,
 } from './paquete-inclusiones';
 export {
   buildCotizacionPrintHtml,
+  filasTablaCotizacionPrint,
   type CotizacionPrintData,
   type CotizacionPrintEtapa,
   type CotizacionPrintOptions,
+  type FilaPrintCotizacion,
 } from './cotizacion-print';
 export {
   buildContratoPrintHtml,

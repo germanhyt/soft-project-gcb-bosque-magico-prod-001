@@ -21,6 +21,7 @@ import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 import { FloatingSaveBar } from '../components/ui/FloatingSaveBar';
 import { PasswordInput } from '../components/ui/PasswordInput';
 import { CARD_CLASS, INPUT_CLASS } from '../constants/design';
+import { FormSkeleton } from '../components/ui/Skeleton';
 
 const LABELS: Record<string, string> = {
   'tarifas.base_lunes_viernes': 'Base lunes–viernes (S/)',
@@ -562,7 +563,11 @@ export function ConfiguracionPage() {
       <PageHeader breadcrumbs={[CRUMB_INICIO, crumb('Configuración')]} />
 
       <div className="mt-6 w-full">
-          {loadingConfig && <p className="text-outline">Cargando…</p>}
+          {loadingConfig ? (
+            <div className={`w-full p-6 ${CARD_CLASS}`}>
+              <FormSkeleton fields={8} />
+            </div>
+          ) : (
           <form
             onSubmit={(e) => {
               e.preventDefault();
@@ -991,12 +996,15 @@ export function ConfiguracionPage() {
               </div>
             </section>
           </form>
+          )}
 
+          {!loadingConfig && (
           <FloatingSaveBar
             disabled={!hayCambios}
             saving={guardarConfigMut.isPending}
             onSave={() => guardarConfigMut.mutate()}
           />
+          )}
         </div>
     </div>
   );

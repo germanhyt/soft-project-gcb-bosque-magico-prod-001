@@ -12,6 +12,7 @@ type Props = {
   pending?: boolean;
   error?: string;
   avisoCotizaciones?: string;
+  nested?: boolean;
 };
 
 const MOTIVOS = Object.entries(MOTIVO_CIERRE_LABEL) as [MotivoCierre, string][];
@@ -23,6 +24,7 @@ export function CerrarSolicitudModal({
   pending,
   error,
   avisoCotizaciones,
+  nested = false,
 }: Props) {
   const [motivo, setMotivo] = useState<MotivoCierre | ''>('');
   const [notas, setNotas] = useState('');
@@ -52,7 +54,7 @@ export function CerrarSolicitudModal({
   };
 
   return (
-    <Modal open={open} onClose={handleClose} title="Cerrar solicitud">
+    <Modal open={open} onClose={handleClose} title="Cerrar solicitud" nested={nested}>
       <form onSubmit={handleSubmit} className="space-y-4">
         <label className="block">
           <span className={LABEL_CLASS}>Motivo de cierre *</span>

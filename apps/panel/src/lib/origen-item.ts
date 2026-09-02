@@ -12,6 +12,20 @@ export function etiquetaOrigenItem(origen?: OrigenItemCotizacion): string | null
   return ORIGEN_LABEL[origen] ?? origen;
 }
 
+export function agruparItemsPorOrigen<T extends { origenItem?: OrigenItemCotizacion }>(
+  items: T[],
+): { incluidos: T[]; excedentes: T[]; adicionales: T[] } {
+  const incluidos: T[] = [];
+  const excedentes: T[] = [];
+  const adicionales: T[] = [];
+  for (const item of items) {
+    if (item.origenItem === 'incluido_paquete') incluidos.push(item);
+    else if (item.origenItem === 'excedente_paquete') excedentes.push(item);
+    else adicionales.push(item);
+  }
+  return { incluidos, excedentes, adicionales };
+}
+
 export function descripcionCantidadProducto(
   producto: Pick<Producto, 'subtipo' | 'unidadesPack'> | undefined,
   cantidad: number,

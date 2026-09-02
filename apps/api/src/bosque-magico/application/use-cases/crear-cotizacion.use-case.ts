@@ -73,11 +73,18 @@ export class CrearCotizacionUseCase {
       cajitasSaludable: base.cajitasSaludable,
       piqueos: base.piqueos,
       adicionales: [...(base.adicionales ?? []), ...adicionalesManuales],
+      horarios: base.horarios,
       salitaLoungeCantidad: base.salitaLoungeCantidad,
+      precioSalitaLounge: base.precioSalitaLounge,
       derechoIngresoShowExterno: base.derechoIngresoShowExterno,
       derechoIngresoDecoracionExterno: base.derechoIngresoDecoracionExterno,
       derechoIngresoCarritoSnackExterno: base.derechoIngresoCarritoSnackExterno,
       derechoDecoracionPersonalizada: base.derechoDecoracionPersonalizada,
+      precioDerechoIngresoShowExterno: base.precioDerechoIngresoShowExterno,
+      precioDerechoIngresoDecoracionExterno: base.precioDerechoIngresoDecoracionExterno,
+      precioDerechoIngresoCarritoSnackExterno:
+        base.precioDerechoIngresoCarritoSnackExterno,
+      precioDerechoDecoracionPersonalizada: base.precioDerechoDecoracionPersonalizada,
     };
   }
 

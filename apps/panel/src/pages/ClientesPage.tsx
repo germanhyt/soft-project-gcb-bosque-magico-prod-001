@@ -9,6 +9,7 @@ import { AlertError } from '../components/ui/Alert';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
 import { TableStatusMessage } from '../components/ui/TableStatusMessage';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
@@ -151,13 +152,9 @@ export function ClientesPage() {
               <th className="px-4 py-3 text-right">Acciones</th>
             </tr>
           </thead>
-          <tbody className="text-on-surface">
+          <tbody className="text-on-surface" aria-busy={isLoading}>
             {isLoading ? (
-              <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-outline">
-                  Cargando…
-                </td>
-              </tr>
+              <TableSkeletonRows columns={7} />
             ) : data.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-6" />

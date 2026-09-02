@@ -1,6 +1,9 @@
 import type { ItemCotizacion, Producto, SeleccionPaquetePayload } from './cotizaciones';
 import { PAQUETES_CONFIG_DEFAULT } from './paquetes-config';
 import {
+  horariosConValor,
+  parseHorarioDesdeNotas,
+  type HorarioServicio,
   NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA,
   NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO,
   NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO,
@@ -26,11 +29,17 @@ export type SeleccionPaqueteState = {
   piqueosCantidades: Record<string, number>;
   adicionalIds: string[];
   adicionalCantidades: Record<string, number>;
+  horarios: Record<string, HorarioServicio>;
   salitaLoungeCantidad: number;
+  precioSalitaLounge?: number;
   derechoIngresoShowExterno: boolean;
   derechoIngresoDecoracionExterno: boolean;
   derechoIngresoCarritoSnackExterno: boolean;
   derechoDecoracionPersonalizada: boolean;
+  precioDerechoIngresoShowExterno?: number;
+  precioDerechoIngresoDecoracionExterno?: number;
+  precioDerechoIngresoCarritoSnackExterno?: number;
+  precioDerechoDecoracionPersonalizada?: number;
 };
 
 export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
@@ -38,14 +47,15 @@ export const INITIAL_SELECCION_PAQUETE: SeleccionPaqueteState = {
   extraIds: [],
   extraCantidades: {},
   snackId: '',
-  snackCantidad: 25,
-  cajitasCantidad: CAJITAS_INCLUIDAS_DEFAULT,
-  cajitasClasica: CAJITAS_INCLUIDAS_DEFAULT,
+  snackCantidad: 0,
+  cajitasCantidad: 0,
+  cajitasClasica: 0,
   cajitasSaludable: 0,
   piqueoIds: [],
   piqueosCantidades: {},
   adicionalIds: [],
   adicionalCantidades: {},
+  horarios: {},
   salitaLoungeCantidad: 0,
   derechoIngresoShowExterno: false,
   derechoIngresoDecoracionExterno: false,
@@ -105,7 +115,11 @@ export function seleccionToPayload(
       })
       : undefined,
     snackId: state.snackId || undefined,
-    snackCantidad: state.snackId ? Math.max(state.snackCantidad ?? 25, 25) : undefined,
+    snackCantidad: state.snackId
+      ? state.snackCantidad > 0
+        ? state.snackCantidad
+        : undefined
+      : undefined,
     cajitasCantidad,
     cajitasClasica,
     cajitasSaludable,
@@ -124,11 +138,30 @@ export function seleccionToPayload(
           };
         })
       : undefined,
+    horarios: horariosConValor(state.horarios),
     salitaLoungeCantidad: state.salitaLoungeCantidad > 0 ? state.salitaLoungeCantidad : undefined,
+    precioSalitaLounge:
+      typeof state.precioSalitaLounge === 'number' ? state.precioSalitaLounge : undefined,
     derechoIngresoShowExterno: state.derechoIngresoShowExterno || undefined,
     derechoIngresoDecoracionExterno: state.derechoIngresoDecoracionExterno || undefined,
     derechoIngresoCarritoSnackExterno: state.derechoIngresoCarritoSnackExterno || undefined,
     derechoDecoracionPersonalizada: state.derechoDecoracionPersonalizada || undefined,
+    precioDerechoIngresoShowExterno:
+      typeof state.precioDerechoIngresoShowExterno === 'number'
+        ? state.precioDerechoIngresoShowExterno
+        : undefined,
+    precioDerechoIngresoDecoracionExterno:
+      typeof state.precioDerechoIngresoDecoracionExterno === 'number'
+        ? state.precioDerechoIngresoDecoracionExterno
+        : undefined,
+    precioDerechoIngresoCarritoSnackExterno:
+      typeof state.precioDerechoIngresoCarritoSnackExterno === 'number'
+        ? state.precioDerechoIngresoCarritoSnackExterno
+        : undefined,
+    precioDerechoDecoracionPersonalizada:
+      typeof state.precioDerechoDecoracionPersonalizada === 'number'
+        ? state.precioDerechoDecoracionPersonalizada
+        : undefined,
   };
 }
 
@@ -166,14 +199,15 @@ export function seleccionDesdePreferenciasLanding(
     extraIds: sel.extraIds ?? [],
     extraCantidades: { ...((sel as { extraCantidades?: Record<string, number> }).extraCantidades ?? {}) },
     snackId: sel.snackId ?? '',
-    snackCantidad: Math.max(sel.snackCantidad ?? 25, 25),
-    cajitasCantidad: sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT,
-    cajitasClasica: sel.cajitasClasica ?? (sel.cajitasCantidad ?? CAJITAS_INCLUIDAS_DEFAULT),
+    snackCantidad: sel.snackCantidad ?? 0,
+    cajitasCantidad: sel.cajitasCantidad ?? 0,
+    cajitasClasica: sel.cajitasClasica ?? sel.cajitasCantidad ?? 0,
     cajitasSaludable: sel.cajitasSaludable ?? 0,
     piqueoIds,
     piqueosCantidades,
     adicionalIds: sel.cateringIds ?? [],
     adicionalCantidades: { ...(sel.cateringCantidades ?? {}) },
+    horarios: {},
     salitaLoungeCantidad: Math.max(sel.salitaLoungeCantidad ?? 0, 0),
     derechoIngresoShowExterno: Boolean(sel.derechoIngresoShowExterno),
     derechoIngresoDecoracionExterno: Boolean(sel.derechoIngresoDecoracionExterno),
@@ -198,29 +232,40 @@ export function seleccionDesdeItemsCotizacion(
   const piqueosCantidades: Record<string, number> = {};
   const adicionalIds: string[] = [];
   const adicionalCantidades: Record<string, number> = {};
+  const horarios: Record<string, HorarioServicio> = {};
   let snackId = '';
   let snackCantidad = 0;
   let cajitasCantidad = 0;
   let cajitasClasica = 0;
   let cajitasSaludable = 0;
   let salitaLoungeCantidad = 0;
+  let precioSalitaLounge: number | undefined;
   let derechoIngresoShowExterno = false;
   let derechoIngresoDecoracionExterno = false;
   let derechoIngresoCarritoSnackExterno = false;
   let derechoDecoracionPersonalizada = false;
+  let precioDerechoIngresoShowExterno: number | undefined;
+  let precioDerechoIngresoDecoracionExterno: number | undefined;
+  let precioDerechoIngresoCarritoSnackExterno: number | undefined;
+  let precioDerechoDecoracionPersonalizada: number | undefined;
 
   for (const item of items) {
     if (!item.productoId) {
       if (coincideNombreItem(item.nombre, NOMBRE_ITEM_SALITA_LOUNGE)) {
         salitaLoungeCantidad += item.cantidad;
+        precioSalitaLounge = item.precioUnitario;
       } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_SHOW_EXTERNO)) {
         derechoIngresoShowExterno = true;
+        precioDerechoIngresoShowExterno = item.precioUnitario;
       } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_DECORACION_EXTERNO)) {
         derechoIngresoDecoracionExterno = true;
+        precioDerechoIngresoDecoracionExterno = item.precioUnitario;
       } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_INGRESO_CARRITO_SNACK_EXTERNO)) {
         derechoIngresoCarritoSnackExterno = true;
+        precioDerechoIngresoCarritoSnackExterno = item.precioUnitario;
       } else if (coincideNombreItem(item.nombre, NOMBRE_ITEM_DERECHO_DECORACION_PERSONALIZADA)) {
         derechoDecoracionPersonalizada = true;
+        precioDerechoDecoracionPersonalizada = item.precioUnitario;
       }
       continue;
     }
@@ -249,11 +294,15 @@ export function seleccionDesdeItemsCotizacion(
     }
     if (p.categoria === 'show') {
       if (!showIds.includes(item.productoId)) showIds.push(item.productoId);
+      const horario = parseHorarioDesdeNotas(item.notas);
+      if (horario) horarios[item.productoId] = horario;
       continue;
     }
     if (p.categoria === 'extra') {
       if (!extraIds.includes(item.productoId)) extraIds.push(item.productoId);
       extraCantidades[item.productoId] = (extraCantidades[item.productoId] ?? 0) + item.cantidad;
+      const horario = parseHorarioDesdeNotas(item.notas);
+      if (horario) horarios[item.productoId] = horario;
       continue;
     }
     if (
@@ -270,19 +319,25 @@ export function seleccionDesdeItemsCotizacion(
     extraIds,
     extraCantidades,
     snackId,
-    snackCantidad: Math.max(snackCantidad, 25),
-    cajitasCantidad: cajitasCantidad || CAJITAS_INCLUIDAS_DEFAULT,
-    cajitasClasica: cajitasCantidad > 0 ? cajitasClasica : CAJITAS_INCLUIDAS_DEFAULT,
+    snackCantidad,
+    cajitasCantidad,
+    cajitasClasica,
     cajitasSaludable,
     piqueoIds,
     piqueosCantidades,
     adicionalIds,
     adicionalCantidades,
+    horarios,
     salitaLoungeCantidad,
+    precioSalitaLounge,
     derechoIngresoShowExterno,
     derechoIngresoDecoracionExterno,
     derechoIngresoCarritoSnackExterno,
     derechoDecoracionPersonalizada,
+    precioDerechoIngresoShowExterno,
+    precioDerechoIngresoDecoracionExterno,
+    precioDerechoIngresoCarritoSnackExterno,
+    precioDerechoDecoracionPersonalizada,
   };
 }
 

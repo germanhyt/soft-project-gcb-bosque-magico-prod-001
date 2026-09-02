@@ -16,6 +16,7 @@ import {
 } from '../../lib/tareas-api';
 import { mostrarErrorApi } from '../../lib/swal-feedback';
 import { Button } from '../ui/Button';
+import { StackSkeleton } from '../ui/Skeleton';
 
 type Props = {
   eventoId: string;
@@ -169,7 +170,7 @@ export function EventoTareasSection({ eventoId, etapaEvento }: Props) {
         </p>
       )}
 
-      {isLoading && <p className="text-body-sm text-outline">Cargando tareas…</p>}
+      {isLoading && <StackSkeleton rows={4} />}
 
       {!isLoading && tareas.length === 0 && etapaEvento !== 'por_confirmar' && (
         <p className="text-body-sm text-on-surface-variant">Sin tareas registradas.</p>

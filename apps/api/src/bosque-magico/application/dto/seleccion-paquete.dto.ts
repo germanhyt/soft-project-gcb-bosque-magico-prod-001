@@ -1,11 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsArray,
   IsBoolean,
   IsInt,
+  IsNumber,
   IsOptional,
   IsUUID,
+  Matches,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -17,6 +19,31 @@ export class ItemCantidadSeleccionDto {
   @IsInt()
   @Min(1)
   cantidad!: number;
+}
+
+export class HorarioProductoSeleccionDto {
+  @IsUUID()
+  productoId!: string;
+
+  @ApiPropertyOptional({ example: '16:00' })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' && value.trim() === '' ? undefined : value,
+  )
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'El horario de inicio debe ser HH:mm',
+  })
+  inicio?: string;
+
+  @ApiPropertyOptional({ example: '17:00' })
+  @IsOptional()
+  @Transform(({ value }: { value: unknown }) =>
+    typeof value === 'string' && value.trim() === '' ? undefined : value,
+  )
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, {
+    message: 'El horario de fin debe ser HH:mm',
+  })
+  fin?: string;
 }
 
 export class SeleccionPaqueteDto {
@@ -39,17 +66,17 @@ export class SeleccionPaqueteDto {
 
   @ApiPropertyOptional({
     example: 25,
-    description: 'Unidades solicitadas para carrito snack Premium',
+    description: 'Unidades solicitadas para carrito snack Premium (0 = usar incluidas)',
   })
   @IsOptional()
   @IsInt()
-  @Min(25)
+  @Min(0)
   snackCantidad?: number;
 
   @ApiPropertyOptional({ example: 10 })
   @IsOptional()
   @IsInt()
-  @Min(10)
+  @Min(0)
   cajitasCantidad?: number;
 
   @ApiPropertyOptional({
@@ -84,6 +111,13 @@ export class SeleccionPaqueteDto {
   @Type(() => ItemCantidadSeleccionDto)
   adicionales?: ItemCantidadSeleccionDto[];
 
+  @ApiPropertyOptional({ type: [HorarioProductoSeleccionDto] })
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => HorarioProductoSeleccionDto)
+  horarios?: HorarioProductoSeleccionDto[];
+
   @ApiPropertyOptional({
     example: 0,
     description: 'Unidades de salita lounge (8 pax)',
@@ -116,4 +150,39 @@ export class SeleccionPaqueteDto {
   @IsOptional()
   @IsBoolean()
   derechoDecoracionPersonalizada?: boolean;
+
+  @ApiPropertyOptional({ description: 'Override de precio salita lounge (S/)' })
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  precioSalitaLounge?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  precioDerechoIngresoShowExterno?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  precioDerechoIngresoDecoracionExterno?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  precioDerechoIngresoCarritoSnackExterno?: number;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
+  precioDerechoDecoracionPersonalizada?: number;
 }

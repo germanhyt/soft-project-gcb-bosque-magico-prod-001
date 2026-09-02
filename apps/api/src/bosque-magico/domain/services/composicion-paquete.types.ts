@@ -30,6 +30,12 @@ export type ItemCantidadInput = {
   cantidad: number;
 };
 
+export type HorarioProductoInput = {
+  productoId: string;
+  inicio?: string;
+  fin?: string;
+};
+
 export type SeleccionPaqueteInput = {
   showIds?: string[];
   extraIds?: string[];
@@ -40,13 +46,28 @@ export type SeleccionPaqueteInput = {
   cajitasSaludable?: number;
   piqueos?: ItemCantidadInput[];
   adicionales?: ItemCantidadInput[];
+  horarios?: HorarioProductoInput[];
   /** Unidades de salita lounge (8 pax) cobrables. */
   salitaLoungeCantidad?: number;
+  precioSalitaLounge?: number;
   derechoIngresoShowExterno?: boolean;
   derechoIngresoDecoracionExterno?: boolean;
   derechoIngresoCarritoSnackExterno?: boolean;
   derechoDecoracionPersonalizada?: boolean;
+  precioDerechoIngresoShowExterno?: number;
+  precioDerechoIngresoDecoracionExterno?: number;
+  precioDerechoIngresoCarritoSnackExterno?: number;
+  precioDerechoDecoracionPersonalizada?: number;
 };
+
+export function precioOverride(
+  override: number | undefined,
+  fallback: number,
+): number {
+  return typeof override === 'number' && !Number.isNaN(override) && override >= 0
+    ? override
+    : fallback;
+}
 
 export type ItemPaqueteResuelto = {
   productoId?: string;

@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { EventoBadge } from '../components/eventos/EventoBadge';
 import { Icon } from '../components/ui/Icon';
 import { KpiCard } from '../components/ui/KpiCard';
+import { MediaRowSkeleton, Skeleton, TableSkeletonRows } from '../components/ui/Skeleton';
 import { CANAL_LABEL, ETAPA_LABEL } from '../constants/solicitudes';
 import { ETAPA_BADGE } from '../constants/design';
 import { fetchResumenSolicitudes, fetchSolicitudes } from '../lib/api';
@@ -31,12 +32,12 @@ export function DashboardPage() {
     queryFn: fetchResumenSolicitudes,
   });
 
-  const { data: recientes } = useQuery({
+  const { data: recientes, isLoading: loadingRecientes } = useQuery({
     queryKey: ['solicitudes-recientes-dashboard'],
     queryFn: () => fetchSolicitudes(undefined, { page: 1, pageSize: 5 }),
   });
 
-  const { data: eventos } = useQuery({
+  const { data: eventos, isLoading: loadingEventos } = useQuery({
     queryKey: ['eventos-resumen'],
     queryFn: fetchEventosResumen,
   });
@@ -70,7 +71,13 @@ export function DashboardPage() {
             key={etapa}
             to={`/solicitudes?etapa=${etapa}`}
             title={ETAPA_LABEL[etapa]}
-            value={isLoading ? '…' : (counts.get(etapa) ?? 0)}
+            value={
+              isLoading ? (
+                <Skeleton className="mb-1 inline-block h-8 w-12 rounded-full align-middle" />
+              ) : (
+                (counts.get(etapa) ?? 0)
+              )
+            }
             hint={etapa === 'nueva' ? 'leads nuevos' : undefined}
             icon={icon}
             watermarkIcon={watermark}
@@ -91,8 +98,10 @@ export function DashboardPage() {
               <Icon name="arrow_forward" size={16} filled={false} />
             </Link>
           </div>
-          <div className="flex-1 overflow-y-auto p-2">
-            {eventos?.proximos && eventos.proximos.length > 0 ? (
+          <div className="flex-1 overflow-y-auto p-2" aria-busy={loadingEventos}>
+            {loadingEventos ? (
+              <MediaRowSkeleton />
+            ) : eventos?.proximos && eventos.proximos.length > 0 ? (
               eventos.proximos.map((ev) => {
                 const { mes, dia } = formatMesDia(ev.fechaEvento);
                 return (
@@ -146,8 +155,10 @@ export function DashboardPage() {
                   <th className="p-4 font-semibold">Estado</th>
                 </tr>
               </thead>
-              <tbody className="text-body-sm text-on-surface">
-                {solicitudesRecientes.length === 0 ? (
+              <tbody className="text-body-sm text-on-surface" aria-busy={loadingRecientes}>
+                {loadingRecientes ? (
+                  <TableSkeletonRows columns={3} rows={4} lastColumn="chip" />
+                ) : solicitudesRecientes.length === 0 ? (
                   <tr>
                     <td colSpan={3} className="p-6 text-center text-outline">
                       Sin solicitudes aún.
@@ -193,7 +204,11 @@ export function DashboardPage() {
         <Icon name="event" className="text-tertiary" />
         <div>
           <p className="text-body-sm text-on-surface-variant">Eventos activos (por confirmar + confirmados)</p>
-          <p className="text-display-lg text-primary">{proximosConfirmar}</p>
+          {loadingEventos ? (
+            <Skeleton className="mt-2 h-8 w-12 rounded-full" />
+          ) : (
+            <p className="text-display-lg text-primary">{proximosConfirmar}</p>
+          )}
         </div>
       </Link>
     </div>

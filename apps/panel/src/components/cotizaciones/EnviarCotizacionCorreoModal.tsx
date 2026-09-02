@@ -13,6 +13,7 @@ import { mostrarErrorApi } from '../../lib/swal-feedback';
 import { Button } from '../ui/Button';
 import { Icon } from '../ui/Icon';
 import { Modal } from '../ui/Modal';
+import { FormSkeleton } from '../ui/Skeleton';
 
 type ClienteContacto = { celular: string; correo?: string | null; nombreCompleto?: string };
 
@@ -114,8 +115,9 @@ export function EnviarCotizacionCorreoModal({
           </div>
         )}
         {isLoading && !codigo ? (
-          <p className="text-body-sm text-outline">Cargando plantilla…</p>
-        ) : null}
+          <FormSkeleton fields={2} columns={1} withTextarea />
+        ) : (
+          <>
         <label className="block">
           <span className={LABEL_CLASS}>Asunto</span>
           <input
@@ -147,6 +149,8 @@ export function EnviarCotizacionCorreoModal({
             ) : null}
           </div>
         ) : null}
+          </>
+        )}
       </div>
       <div className="mt-6 flex flex-wrap items-center justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onClose} disabled={enviarMut.isPending}>

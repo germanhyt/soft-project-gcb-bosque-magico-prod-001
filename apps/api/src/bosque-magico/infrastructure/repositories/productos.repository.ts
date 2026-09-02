@@ -50,6 +50,7 @@ export class ProductosRepository {
     cantidadMinima?: number;
     subtipo?: import('@prisma/client').SubtipoProducto;
     unidadesPack?: number;
+    unidad?: string;
     descripcion?: string;
     origen?: import('@prisma/client').OrigenProducto;
     costoInterno?: number;
@@ -65,6 +66,7 @@ export class ProductosRepository {
         cantidadMinima: data.cantidadMinima ?? 1,
         subtipo: data.subtipo,
         unidadesPack: data.unidadesPack,
+        ...(data.unidad ? { unidad: data.unidad } : {}),
         descripcion: data.descripcion,
         origen: data.origen,
         costoInterno:

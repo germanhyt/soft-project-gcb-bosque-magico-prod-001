@@ -31,6 +31,7 @@ type ContratoPublico = {
   numeroDocumento: string;
   horarioInicio: string;
   horarioFin: string;
+  etapa: string;
   snapshotJson: ContratoSnapshotJson;
   linkPublico: string;
   adjuntos?: ContratoAdjuntoPublico[];
@@ -114,6 +115,7 @@ export function ContratoPdfPublicaPage() {
           autoPrint,
           firmaClienteUrl,
           firmaEmpresaUrl,
+          esBorrador: data.etapa === 'borrador',
         }),
       );
     })();

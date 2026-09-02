@@ -53,7 +53,7 @@ type FormValues = {
   cumpleaneroEdad: string;
   fechaTentativa: string;
   turno: '' | 'turno_1' | 'turno_2' | 'turno_3';
-  cantidadNinos: number;
+  cantidadNinos: number | '';
   tematica: string;
   observaciones: string;
 };
@@ -66,7 +66,7 @@ const initialValues: FormValues = {
   cumpleaneroEdad: '',
   fechaTentativa: '',
   turno: '',
-  cantidadNinos: 25,
+  cantidadNinos: '',
   tematica: '',
   observaciones: '',
 };
@@ -74,8 +74,9 @@ const initialValues: FormValues = {
 function buildSchema(tarifas: TarifasConfig, minDiasAnticipacion: number) {
   const fechaMin = fechaMinimaEvento(minDiasAnticipacion);
   return Yup.object({
-    nombre: Yup.string().trim().min(2, 'Mínimo 2 caracteres').max(150).required('Requerido'),
-    celular: Yup.string().trim().min(9, 'Celular inválido').max(40).required('Requerido'),
+    nombre: Yup.string().trim().min(2, 'Mínimo 2 caracteres').max(150).required('Indica tu nombre'),
+    celular: Yup.string().trim().min(9, 'Celular inválido').max(40).required('Indica tu celular'),
+    cumpleaneroNombre: Yup.string().trim().min(1, 'Indica el nombre del cumpleañero').required('Indica el nombre del cumpleañero'),
     correo: Yup.string()
       .trim()
       .max(150)
@@ -93,6 +94,7 @@ function buildSchema(tarifas: TarifasConfig, minDiasAnticipacion: number) {
       }),
     turno: Yup.string().oneOf(['', 'turno_1', 'turno_2', 'turno_3']).optional(),
     cantidadNinos: Yup.number()
+      .transform((v, orig) => (orig === '' || orig == null ? undefined : v))
       .min(tarifas.minimoNinos, `Mínimo ${tarifas.minimoNinos} niños`)
       .max(
         tarifas.maximoPermitido,
@@ -141,7 +143,7 @@ function toPayload(
     if (values.cumpleaneroEdad) payload.cumpleanero.edad = Number(values.cumpleaneroEdad);
   }
   payload.evento = {
-    cantidadNinos: values.cantidadNinos,
+    cantidadNinos: Number(values.cantidadNinos),
     paquete: selection.paquete,
   };
   if (values.fechaTentativa) payload.evento.fechaTentativa = values.fechaTentativa;
@@ -385,7 +387,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
               items: preview.data.montos.items,
             }
           : {
-              ...calcularEstimado(tarifas, values.fechaTentativa, values.cantidadNinos, feriados, {
+              ...calcularEstimado(tarifas, values.fechaTentativa, Number(values.cantidadNinos) || 0, feriados, {
                 montoBasePaquete: resolverMontoBasePaquete(
                   selection.paquete,
                   data?.productos.paquetes,
@@ -474,7 +476,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
 
   const estimadoFallback = useMemo(
     () =>
-      calcularEstimado(tarifas, formik.values.fechaTentativa, formik.values.cantidadNinos, feriados, {
+      calcularEstimado(tarifas, formik.values.fechaTentativa, Number(formik.values.cantidadNinos) || 0, feriados, {
         montoBasePaquete: selection.paquete ? montoBasePaquete : undefined,
       }),
     [
@@ -604,6 +606,16 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
 
         <div className="grid gap-10 lg:grid-cols-5 lg:gap-12">
           <form onSubmit={formik.handleSubmit} className="space-y-6 lg:col-span-3">
+            {formik.submitCount > 0 && Object.keys(formik.errors).length > 0 && (
+              <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+                Completa los campos marcados para enviar la solicitud.
+                <ul className="mt-2 list-disc pl-5">
+                  {Object.values(formik.errors).map((err) => (
+                    <li key={String(err)}>{String(err)}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
             <MotionReveal>
             <fieldset className={FIELDSET_CLASS}>
               <legend className="px-1 font-display text-headline-md text-primary">Datos de contacto</legend>
@@ -613,6 +625,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                   <input
                     name="nombre"
                     className={fieldClass(formik.errors.nombre)}
+                    placeholder="Ej. María López"
                     value={formik.values.nombre}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -645,6 +658,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                     name="correo"
                     type="email"
                     className={fieldClass(formik.errors.correo)}
+                    placeholder="Ej. familia@email.com"
                     value={formik.values.correo}
                     onChange={formik.handleChange}
                     onBlur={(e) => {
@@ -652,6 +666,9 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                       void revisarIdentidad(formik.values.celular, formik.values.correo);
                     }}
                   />
+                  {(formik.touched.correo || formik.submitCount > 0) && formik.errors.correo && (
+                    <span className="mt-1 block text-xs text-red-600">{formik.errors.correo}</span>
+                  )}
                 </label>
               </div>
               {identidadHint && (
@@ -667,13 +684,21 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
               <legend className="px-1 font-display text-headline-md text-primary">Cumpleañero y evento</legend>
               <div className="mt-4 grid gap-4 sm:grid-cols-2">
                 <label className="block">
-                  <span className="text-sm font-medium">Nombre del cumpleañero</span>
+                  <span className="text-sm font-medium">Nombre del cumpleañero *</span>
                   <input
                     name="cumpleaneroNombre"
-                    className={fieldClass()}
+                    className={fieldClass(formik.errors.cumpleaneroNombre)}
+                    placeholder="Ej. Valentina"
                     value={formik.values.cumpleaneroNombre}
                     onChange={formik.handleChange}
+                    onBlur={formik.handleBlur}
                   />
+                  {(formik.touched.cumpleaneroNombre || formik.submitCount > 0) &&
+                    formik.errors.cumpleaneroNombre && (
+                    <span className="mt-1 block text-xs text-red-600">
+                      {formik.errors.cumpleaneroNombre}
+                    </span>
+                  )}
                 </label>
                 <label className="block">
                   <span className="text-sm font-medium">Edad</span>
@@ -683,6 +708,7 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                     min={1}
                     max={15}
                     className={fieldClass(formik.errors.cumpleaneroEdad)}
+                    placeholder="Ej. 5"
                     value={formik.values.cumpleaneroEdad}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -734,8 +760,9 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                     name="cantidadNinos"
                     type="number"
                     min={tarifas?.minimoNinos ?? 10}
-                    max={50}
+                    max={tarifas?.maximoPermitido ?? 35}
                     className={fieldClass(formik.errors.cantidadNinos)}
+                    placeholder={`Ej. ${tarifas?.minimoNinos ?? 10}`}
                     value={formik.values.cantidadNinos}
                     onChange={formik.handleChange}
                     onBlur={formik.handleBlur}
@@ -761,8 +788,11 @@ export function QuoteForm({ selection, onSelectionChange, onFechaChange }: Props
                         ? `${selection.showIds.length} show${selection.showIds.length > 1 ? 's' : ''}`
                         : 'Sin show'}
                     </span>
-                    <span className={chip(selection.cajitasCantidad >= 10)}>
-                      Cajitas: {selection.cajitasCantidad} ({selection.cajitasClasica} C / {selection.cajitasSaludable} S)
+                    <span className={chip(selection.cajitasCantidad > 0)}>
+                      Cajitas:{' '}
+                      {selection.cajitasCantidad > 0
+                        ? `${selection.cajitasCantidad} (${selection.cajitasClasica} C / ${selection.cajitasSaludable} S)`
+                        : 'incluidas del paquete'}
                     </span>
                     <span className={chip(selection.piqueoIds.length > 0)}>
                       Piqueos: {selection.piqueoIds.length || '—'}

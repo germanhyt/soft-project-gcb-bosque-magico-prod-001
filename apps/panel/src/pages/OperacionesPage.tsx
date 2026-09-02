@@ -19,6 +19,7 @@ import { fetchPedidosOperaciones } from '../lib/tareas-api';
 import { formatFecha, formatFechaHora } from '../lib/format';
 import { mostrarFeedbackNotificacionProveedor } from '../lib/notificacion-pedido-proveedor-feedback';
 import { PageHeader } from '../components/ui/PageHeader';
+import { TableSkeletonRows } from '../components/ui/Skeleton';
 import { DataTableCard } from '../components/ui/DataTableCard';
 import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
@@ -201,14 +202,8 @@ export function OperacionesPage() {
               <th className="px-4 py-3" />
             </tr>
           </thead>
-          <tbody>
-            {isLoading && (
-              <tr>
-                <td colSpan={8} className="px-4 py-6 text-outline">
-                  Cargando…
-                </td>
-              </tr>
-            )}
+          <tbody aria-busy={isLoading}>
+            {isLoading && <TableSkeletonRows columns={8} />}
             {!isLoading &&
               pedidosPaginados.map((p) => {
                 const puedeOperar = puedeOperarPedidosEvento(p.evento.etapa);

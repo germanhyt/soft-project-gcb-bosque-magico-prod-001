@@ -17,6 +17,7 @@ export type ProductoFormPayload = {
   cantidadMinima: number;
   subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
   unidadesPack?: number;
+  unidad?: string;
   descripcion?: string;
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
@@ -49,6 +50,7 @@ function emptyForm(defaults?: { categoria?: string; subtipo?: string }) {
     categoria,
     subtipo,
     unidadesPack: categoria === 'catering' && subtipo === 'piqueo' ? '25' : '',
+    unidad: categoria === 'extra' ? 'hora' : 'servicio',
     precioLunesViernes: '',
     precioFinSemana: '',
     cantidadMinima: categoria === 'catering' && subtipo === 'general' ? '18' : '1',
@@ -67,6 +69,7 @@ function formFromProducto(p: Producto) {
     categoria: p.categoria,
     subtipo: p.subtipo ?? 'general',
     unidadesPack: p.unidadesPack != null ? String(p.unidadesPack) : '',
+    unidad: p.unidad ?? (p.categoria === 'extra' ? 'hora' : 'servicio'),
     precioLunesViernes: String(p.precioLunesViernes),
     precioFinSemana: String(p.precioFinSemana),
     cantidadMinima: String(p.cantidadMinima ?? 1),
@@ -168,6 +171,7 @@ export function ProductoFormModal({
             ? (form.subtipo as ProductoFormPayload['subtipo'])
             : undefined,
         unidadesPack,
+        unidad: form.categoria === 'extra' ? form.unidad.trim() || 'hora' : form.unidad.trim() || undefined,
         descripcion: form.descripcion.trim() || undefined,
         origen: form.origen as 'propio' | 'proveedor',
         costoInterno,
@@ -237,6 +241,7 @@ export function ProductoFormModal({
                 categoria,
                 subtipo: categoria === 'catering' ? form.subtipo : 'general',
                 unidadesPack: categoria === 'catering' && form.subtipo === 'piqueo' ? form.unidadesPack : '',
+                unidad: categoria === 'extra' ? form.unidad || 'hora' : form.unidad,
                 cantidadMinima:
                   categoria === 'catering' && form.subtipo === 'piqueo'
                     ? '1'
@@ -273,6 +278,20 @@ export function ProductoFormModal({
               <option value="piqueo">Piqueo (precio por pack)</option>
               <option value="cajita">Cajita Bosque</option>
               <option value="snack">Snack incluido Premium</option>
+            </select>
+          </label>
+        )}
+        {form.categoria === 'extra' && (
+          <label className="block">
+            <span className={LABEL_CLASS}>Unidad de cobro</span>
+            <select
+              className={INPUT_CLASS}
+              value={form.unidad}
+              onChange={(e) => setForm({ ...form, unidad: e.target.value })}
+            >
+              <option value="hora">Por hora</option>
+              <option value="bloque 3h">Bloque 3 h</option>
+              <option value="servicio">Por servicio</option>
             </select>
           </label>
         )}

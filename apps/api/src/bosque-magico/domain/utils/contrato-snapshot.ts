@@ -32,6 +32,7 @@ type EventoConRelaciones = {
       cantidad: number;
       precioUnitario: unknown;
       subtotal: unknown;
+      origenItem?: string;
     }>;
   };
 };
@@ -76,6 +77,7 @@ export function buildContratoSnapshot(evento: EventoConRelaciones) {
         cantidad: i.cantidad,
         precioUnitario: fromDecimal(i.precioUnitario as never),
         subtotal: fromDecimal(i.subtotal as never),
+        origenItem: i.origenItem,
       })),
     },
   };

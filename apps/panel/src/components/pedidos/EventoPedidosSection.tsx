@@ -17,6 +17,7 @@ import {
 import { fetchProveedores } from '../../lib/proveedores-api';
 import type { EtapaPedido, Pedido } from '../../lib/pedidos';
 import { formatFecha } from '../../lib/format';
+import { StackSkeleton } from '../ui/Skeleton';
 import { buildPedidoProveedorEventoResumen } from '../../lib/pedido-proveedor-evento';
 import { mostrarFeedbackNotificacionProveedor } from '../../lib/notificacion-pedido-proveedor-feedback';
 import {
@@ -286,7 +287,7 @@ export function EventoPedidosSection({
         </p>
       )}
 
-      {isLoading && <p className="text-body-sm text-outline">Cargando pedidos…</p>}
+      {isLoading && <StackSkeleton rows={4} />}
 
       {!isLoading && pedidos.length === 0 && etapaEvento !== 'por_confirmar' && (
         <p className="text-body-sm text-on-surface-variant">Sin pedidos registrados.</p>

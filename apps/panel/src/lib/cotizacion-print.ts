@@ -29,6 +29,7 @@ function toPrintData(cot: Cotizacion): CotizacionPrintData {
       origenItem: i.origenItem,
       subtipo: i.subtipo,
       unidadesPack: i.unidadesPack,
+      notas: i.notas,
     })),
   };
 }

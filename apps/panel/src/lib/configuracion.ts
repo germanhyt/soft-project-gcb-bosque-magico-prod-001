@@ -76,6 +76,7 @@ export async function crearProducto(payload: {
   cantidadMinima?: number;
   subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
   unidadesPack?: number;
+  unidad?: string;
   descripcion?: string;
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
@@ -95,6 +96,7 @@ export async function actualizarProducto(
     cantidadMinima: number;
     subtipo?: 'general' | 'cajita' | 'piqueo' | 'snack';
     unidadesPack?: number | null;
+    unidad?: string;
     descripcion: string;
     etapa: 'activo' | 'inactivo';
     origen: 'propio' | 'proveedor';

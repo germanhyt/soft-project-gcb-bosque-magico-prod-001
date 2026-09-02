@@ -5,8 +5,8 @@ import {
   CONTRATO_TERMINOS_CLAUSULAS,
   CONTRATO_TERMINOS_VERSION,
 } from './contrato-terminos';
+import { filasTablaCotizacionPrint } from './cotizacion-print';
 import {
-  agruparItemsPorTipo,
   itemsCajitas,
   itemsCateringTematico,
   itemsExtras,
@@ -109,6 +109,8 @@ export type ContratoPrintOptions = {
   viewLink?: string;
   firmaClienteUrl?: string;
   firmaEmpresaUrl?: string;
+  /** Marca visual cuando el contrato está en borrador (no válido para firmar). */
+  esBorrador?: boolean;
 };
 
 const TURNO_LABEL: Record<string, string> = {
@@ -144,14 +146,6 @@ function money(n: number) {
 
 function cb(checked: boolean) {
   return `<span class="cb${checked ? ' on' : ''}">${checked ? '✓' : ''}</span>`;
-}
-
-function filaItem(nombre: string, cantidad: number, subtotal: number) {
-  return `<tr>
-    <td>${escapeHtml(nombreEnContrato(nombre))}</td>
-    <td class="num">${cantidad}</td>
-    <td class="num">${money(subtotal)}</td>
-  </tr>`;
 }
 
 export function buildContratoContext(payload: ContratoPrintPayload) {
@@ -251,43 +245,51 @@ export function contratoToPrintPayload(
 }
 
 function buildServiciosContratadosHtml(ctx: ReturnType<typeof buildContratoContext>) {
-  const { items, montoBase, montoNinosExtra, cantidadNinos } = ctx;
-  const filas: string[] = [];
+  const { items, montoBase, montoNinosExtra, paquete } = ctx;
+  const filas = filasTablaCotizacionPrint({
+    codigo: '',
+    etapa: 'enviada',
+    fechaEvento: ctx.fechaEvento,
+    turno: ctx.turno,
+    cantidadNinos: ctx.cantidadNinos,
+    paquete,
+    montoBase,
+    montoNinosExtra,
+    montoItems: ctx.montoItems,
+    montoTotal: ctx.montoTotal,
+    cliente: { nombreCompleto: '', celular: '' },
+    cumpleanero: { nombre: '' },
+    items: items.map((i) => ({
+      nombre: nombreEnContrato(i.nombre),
+      cantidad: i.cantidad,
+      precioUnitario: i.precioUnitario,
+      subtotal: i.subtotal,
+      origenItem:
+        i.origenItem ??
+        (i.precioUnitario <= 0 ? 'incluido_paquete' : 'adicional'),
+    })),
+  });
 
-  filas.push(
-    `<tr class="base">
-      <td>Reserva espacio privado (3 horas) · ${cantidadNinos} niños</td>
-      <td class="num">1</td>
-      <td class="num">${money(montoBase)}</td>
-    </tr>`,
-  );
-
-  if (montoNinosExtra > 0) {
-    filas.push(
-      `<tr>
-        <td>Niños adicionales (sobre cupo base)</td>
-        <td class="num">—</td>
-        <td class="num">${money(montoNinosExtra)}</td>
-      </tr>`,
-    );
-  }
-
-  for (const grupo of agruparItemsPorTipo(items)) {
-    for (const item of grupo.items) {
-      filas.push(filaItem(item.nombre, item.cantidad, item.subtotal));
-    }
-  }
+  const body = filas
+    .map((f) => {
+      if (f.clase === 'seccion') {
+        return `<tr class="seccion"><td colspan="5">${escapeHtml(f.nombre)}</td></tr>`;
+      }
+      return `<tr class="${f.clase}"><td>${escapeHtml(f.nombre)}</td><td>${escapeHtml(f.descripcion)}</td><td class="num">${escapeHtml(f.cantidad)}</td><td class="num">${escapeHtml(f.unitario)}</td><td class="num">${escapeHtml(f.subtotal)}</td></tr>`;
+    })
+    .join('');
 
   return `
     <h2>Servicios contratados</h2>
-    <table class="items">
-      <thead><tr><th>Concepto</th><th>Cant.</th><th>Subtotal</th></tr></thead>
-      <tbody>${filas.join('')}</tbody>
+    <p class="hint-tabla">El paquete es el ítem principal; debajo van los servicios incluidos, luego excedentes y adicionales.</p>
+    <table class="items detalle">
+      <thead><tr><th>Ítem</th><th>Descripción</th><th>Cant.</th><th>P. unit.</th><th>Subtotal</th></tr></thead>
+      <tbody>${body}</tbody>
     </table>
     <div class="totals">
-      <div><span>Tarifa base (espacio)</span><span>${money(montoBase)}</span></div>
+      <div><span>Paquete / tarifa base</span><span>${money(montoBase)}</span></div>
       ${montoNinosExtra > 0 ? `<div><span>Niños adicionales</span><span>${money(montoNinosExtra)}</span></div>` : ''}
-      ${ctx.montoItems > 0 ? `<div><span>Shows, catering y extras</span><span>${money(ctx.montoItems)}</span></div>` : ''}
+      ${ctx.montoItems > 0 ? `<div><span>Adicionales y excedentes</span><span>${money(ctx.montoItems)}</span></div>` : ''}
       <div class="grand"><span>Total contratado</span><span>${money(ctx.montoTotal)}</span></div>
     </div>`;
 }
@@ -452,6 +454,7 @@ export function buildContratoPrintHtml(
     .sheet { }
     .sheet-break { page-break-before: always; }
     .header { text-align: center; border-bottom: 2px solid #2d5a3d; padding-bottom: 12px; margin-bottom: 16px; }
+    .banner-borrador { background: #fbf3d5; border: 1px solid #e0c35c; color: #6b5300; padding: 10px 14px; border-radius: 8px; margin: 0 0 20px; font-weight: 700; text-align: center; letter-spacing: 0.04em; text-transform: uppercase; font-size: 12px; }
     .header img { width: 128px; height: 128px; object-fit: contain; }
     h1 { margin: 8px 0 0; font-size: 18px; color: #2d5a3d; letter-spacing: 0.02em; }
     h2 { font-size: 13px; color: #2d5a3d; margin: 16px 0 8px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -464,12 +467,16 @@ export function buildContratoPrintHtml(
     .checks { margin: 8px 0; }
     ul.compact { margin: 6px 0; padding-left: 18px; }
     ul.compact li { margin-bottom: 3px; }
+    .hint-tabla { font-size: 10px; color: #6b7c6f; margin: -4px 0 8px; }
     table.items { width: 100%; border-collapse: collapse; margin: 8px 0 12px; font-size: 11px; }
     table.items th, table.items td { border: 1px solid #d8e3db; padding: 5px 8px; text-align: left; }
-    table.items th { background: #eef4ef; color: #2d5a3d; }
+    table.items th { background: #2d5a3d; color: #fff; }
     table.items td.num { text-align: right; white-space: nowrap; }
-    table.items tr.base td { background: #f8fbf9; }
-    .totals { margin: 12px 0 16px; margin-left: auto; width: 300px; font-size: 12px; }
+    table.items tr.seccion td { background: #e8f0ea; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: #2d5a3d; }
+    table.items tr.paquete td { background: #f3f8f4; font-weight: 700; }
+    table.items tr.subitem td { color: #3d5344; }
+    table.items tr.subitem td:first-child { padding-left: 18px; }
+    .totals { margin: 12px 0 16px; margin-left: auto; width: 300px; font-size: 12px; border: 1px solid #d5e3d8; border-radius: 8px; padding: 8px 12px; background: #f6faf7; }
     .totals div { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px solid #e8efe9; }
     .totals .grand { font-size: 15px; font-weight: 700; color: #2d5a3d; border-bottom: none; padding-top: 8px; }
     .terms ol { padding-left: 22px; margin: 8px 0 0; list-style: decimal; }
@@ -517,6 +524,7 @@ export function buildContratoPrintHtml(
       <img src="${escapeHtml(options.logoUrl)}" alt="Bosque Mágico" />
       <h1>CONTRATO FIESTAS INFANTILES</h1>
     </div>
+    ${options.esBorrador ? '<p class="banner-borrador">Borrador — no válido para firmar</p>' : ''}
 
     <h2>Datos del cliente</h2>
     <div class="grid">

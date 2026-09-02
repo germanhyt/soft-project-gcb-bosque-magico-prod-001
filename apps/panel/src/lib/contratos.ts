@@ -138,6 +138,11 @@ export async function marcarContratoFirmado(id: string) {
   return data;
 }
 
+export async function volverContratoABorrador(id: string) {
+  const { data } = await api.post<Contrato>(`/bosque-magico/contratos/${id}/volver-borrador`);
+  return data;
+}
+
 export async function fetchContrato(id: string) {
   const { data } = await api.get<Contrato>(`/bosque-magico/contratos/${id}`);
   return data;

@@ -16,6 +16,7 @@ import { FilterSelect } from '../ui/FilterSelect';
 import { TableFiltersPanel } from '../ui/TableFiltersPanel';
 import { ProveedorRowActions } from './ProveedorRowActions';
 import { TABLE_HEAD_CLASS, TABLE_ROW_CLASS, CARD_CLASS } from '../../constants/design';
+import { TableSkeletonRows } from '../ui/Skeleton';
 import { formatFechaHora } from '../../lib/format';
 import { ProveedorFormModal } from './ProveedorFormModal';
 
@@ -179,13 +180,12 @@ export function ProveedoresTab({ puedeGestionar }: Props) {
                 {puedeGestionar && <th className="px-4 py-3 text-right">Acciones</th>}
               </tr>
             </thead>
-            <tbody>
+            <tbody aria-busy={isLoading}>
               {isLoading && (
-                <tr>
-                  <td colSpan={6} className="px-4 py-6 text-outline">
-                    Cargando…
-                  </td>
-                </tr>
+                <TableSkeletonRows
+                  columns={puedeGestionar ? 6 : 5}
+                  lastColumn={puedeGestionar ? 'actions' : 'chip'}
+                />
               )}
               {!isLoading &&
                 proveedoresPaginados.map((p) => (
