@@ -23,6 +23,8 @@ import { CrearCotizacionDto } from '../dto/crear-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
+import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
+import { payloadExtrasPermitidos } from '../../domain/utils/extras-permitidos-payload';
 
 @Injectable()
 export class CrearCotizacionUseCase {
@@ -37,6 +39,7 @@ export class CrearCotizacionUseCase {
     private readonly anticipacion: AnticipacionEventoService,
     private readonly capacidad: CapacidadEventoService,
     private readonly tomarSolicitud: TomarSolicitudUseCase,
+    private readonly productos: ProductosRepository,
   ) {}
 
   private itemsDesdeComposicion(
@@ -138,6 +141,13 @@ export class CrearCotizacionUseCase {
       });
 
     const items = this.itemsDesdeComposicion(composicion.items);
+    const catalogo = await this.productos.listarActivos();
+    const extras = payloadExtrasPermitidos({
+      lista: dto.extrasPermitidos,
+      comentario: dto.extrasPermitidosComentario,
+      catalogo,
+      usarDefaultSiOmite: true,
+    });
 
     const cotizacion = await this.cotizaciones.crearConItems({
       solicitudId: dto.solicitudId,
@@ -149,6 +159,8 @@ export class CrearCotizacionUseCase {
       tematica: dto.tematica,
       paquete: composicion.paqueteNombre,
       notas: dto.notas,
+      extrasPermitidos: extras.extrasPermitidos,
+      extrasPermitidosComentario: extras.extrasPermitidosComentario,
       montos: {
         montoBase: montos.montoBase,
         montoNinosExtra: montos.montoNinosExtra,

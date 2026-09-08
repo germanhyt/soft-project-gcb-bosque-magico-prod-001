@@ -81,6 +81,7 @@ export async function crearProducto(payload: {
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
   proveedorId?: string;
+  extraPermitido?: boolean;
 }) {
   const { data } = await api.post<Producto>('/bosque-magico/productos', payload);
   return data;
@@ -102,6 +103,7 @@ export async function actualizarProducto(
     origen: 'propio' | 'proveedor';
     costoInterno: number;
     proveedorId: string | null;
+    extraPermitido: boolean;
   }>,
 ) {
   const { data } = await api.patch<Producto>(`/bosque-magico/productos/${id}`, payload);

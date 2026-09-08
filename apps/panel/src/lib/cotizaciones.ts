@@ -35,6 +35,7 @@ export type Producto = {
   origen?: 'propio' | 'proveedor';
   costoInterno?: number | null;
   proveedorId?: string | null;
+  extraPermitido?: boolean;
 };
 
 export type OrigenItemCotizacion =
@@ -137,6 +138,8 @@ export type Cotizacion = {
   linkPublico: string;
   linkPdfPublico?: string;
   notas?: string | null;
+  extrasPermitidos?: string[] | null;
+  extrasPermitidosComentario?: string | null;
   creadoEn?: string;
   cliente: { nombreCompleto: string; celular: string; correo?: string | null };
   cumpleanero: { nombre: string; edad?: number | null };
@@ -152,6 +155,8 @@ export type ActualizarCotizacionPayload = {
   tematica?: string;
   paquete?: string;
   notas?: string;
+  extrasPermitidos?: string[];
+  extrasPermitidosComentario?: string;
   seleccion?: SeleccionPaquetePayload;
   items?: {
     productoId?: string;
@@ -173,6 +178,8 @@ export type CrearCotizacionPayload = {
   tematica?: string;
   paquete: string;
   notas?: string;
+  extrasPermitidos?: string[];
+  extrasPermitidosComentario?: string;
   seleccion?: SeleccionPaquetePayload;
   items?: {
     productoId?: string;

@@ -48,6 +48,8 @@ export function buildContratoContext(payload: ContratoPrintPayload) {
     },
     cumpleanero: cot.cumpleanero,
     items: (cot.items ?? []) as ItemCotizacion[],
+    extrasPermitidos: cot.extrasPermitidos,
+    extrasPermitidosComentario: cot.extrasPermitidosComentario,
     form,
     fechaEmision: payload.fechaEmision,
   };

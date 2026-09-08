@@ -4,6 +4,7 @@ import { useFormik } from 'formik';
 import Swal from 'sweetalert2';
 import * as Yup from 'yup';
 import { CotizacionPaqueteEditor } from './CotizacionPaqueteEditor';
+import { ExtrasPermitidosEditor } from './ExtrasPermitidosEditor';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { SolicitudPreferenciasLanding } from '../solicitudes/SolicitudPreferenciasLanding';
 import { Button } from '../ui/Button';
@@ -29,7 +30,7 @@ import {
 import {
   productosParaCotizacion,
 } from '../../lib/producto-cotizacion';
-import { NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO } from '@bosque/shared';
+import { NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO, nombresExtrasPermitidosDesdeCatalogo } from '@bosque/shared';
 import { useCapacidadEvento } from '../../hooks/useCapacidadEvento';
 import {
   hintCapacidadEvento,
@@ -194,6 +195,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
 
   const catalogo = useMemo(() => productosParaCotizacion(productos), [productos]);
   const [seleccion, setSeleccion] = useState<SeleccionPaqueteState>(INITIAL_SELECCION_PAQUETE);
+  const [extrasPermitidos, setExtrasPermitidos] = useState<string[]>([]);
+  const [extrasPermitidosComentario, setExtrasPermitidosComentario] = useState('');
   const [mostrarFormularioManual, setMostrarFormularioManual] = useState(false);
 
   const solicitudActiva =
@@ -214,7 +217,19 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
     } else {
       setSeleccion({ ...INITIAL_SELECCION_PAQUETE });
     }
-  }, [open, activeEsEdicion, cot?.id, cot?.items, solicitudActiva?.id, productos]);
+
+    if (activeEsEdicion && cot) {
+      setExtrasPermitidos(
+        cot.extrasPermitidos != null
+          ? cot.extrasPermitidos
+          : nombresExtrasPermitidosDesdeCatalogo(productos),
+      );
+      setExtrasPermitidosComentario(cot.extrasPermitidosComentario ?? '');
+    } else {
+      setExtrasPermitidos(nombresExtrasPermitidosDesdeCatalogo(productos));
+      setExtrasPermitidosComentario('');
+    }
+  }, [open, activeEsEdicion, cot?.id, cot?.items, cot?.extrasPermitidos, cot?.extrasPermitidosComentario, solicitudActiva?.id, productos]);
 
   const paqueteDefault = useMemo(() => {
     if (activeEsEdicion) return cot?.paquete ?? '';
@@ -262,6 +277,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           tematica: (values as { tematica?: string }).tematica?.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: (values as { notas?: string }).notas?.trim() || undefined,
+          extrasPermitidos,
+          extrasPermitidosComentario: extrasPermitidosComentario.trim() || undefined,
           seleccion: seleccionPayload,
         });
       } else {
@@ -294,6 +311,8 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           tematica: v.tematica.trim() || undefined,
           paquete: values.paquete.trim(),
           notas: v.notas.trim() || undefined,
+          extrasPermitidos,
+          extrasPermitidosComentario: extrasPermitidosComentario.trim() || undefined,
           seleccion: seleccionPayload,
         });
       }
@@ -687,6 +706,21 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 seleccion={seleccion}
                 onChange={setSeleccion}
                 catalogo={catalogo}
+              />
+            </div>
+          </fieldset>
+
+          <fieldset className="rounded-xl border border-surface-variant bg-surface-container-low/50 p-4">
+            <legend className="text-body-md font-semibold text-primary">
+              Extras permitidos (contrato)
+            </legend>
+            <div className="mt-3">
+              <ExtrasPermitidosEditor
+                value={extrasPermitidos}
+                comentario={extrasPermitidosComentario}
+                catalogo={productos}
+                onChange={setExtrasPermitidos}
+                onComentarioChange={setExtrasPermitidosComentario}
               />
             </div>
           </fieldset>

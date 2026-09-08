@@ -45,6 +45,13 @@ export class ActualizarProductoUseCase {
       ...(dto.proveedorId !== undefined
         ? { proveedorId: dto.proveedorId }
         : {}),
+      ...(dto.extraPermitido !== undefined || dto.categoria !== undefined
+        ? {
+            extraPermitido:
+              (dto.categoria ?? antes.categoria) === 'extra' &&
+              (dto.extraPermitido ?? antes.extraPermitido),
+          }
+        : {}),
     });
 
     await this.auditoria.registrar({

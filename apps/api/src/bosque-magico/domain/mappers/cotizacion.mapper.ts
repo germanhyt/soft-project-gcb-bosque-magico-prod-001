@@ -1,5 +1,6 @@
 import type { EtapaCotizacion } from '@prisma/client';
 import { fromDecimal } from '../utils/decimal';
+import { parseExtrasPermitidosJson } from '../utils/extras-permitidos';
 
 export type CotizacionConItems = {
   id: string;
@@ -22,6 +23,9 @@ export type CotizacionConItems = {
     origenItem?: string;
     creditoAplicado?: unknown;
   }>;
+  notas?: string | null;
+  extrasPermitidos?: unknown;
+  extrasPermitidosComentario?: string | null;
   [key: string]: unknown;
 };
 
@@ -30,6 +34,8 @@ export type CotizacionResponse = CotizacionConItems & {
   montoNinosExtra: number;
   montoItems: number;
   montoTotal: number;
+  extrasPermitidos: string[] | null;
+  extrasPermitidosComentario: string | null;
   linkPublico: string;
   linkPdfPublico: string;
   items?: Array<{
@@ -89,6 +95,11 @@ export function mapCotizacionResponse(
     montoNinosExtra: fromDecimal(cot.montoNinosExtra as never),
     montoItems: fromDecimal(cot.montoItems as never),
     montoTotal: fromDecimal(cot.montoTotal as never),
+    extrasPermitidos: parseExtrasPermitidosJson(cot.extrasPermitidos),
+    extrasPermitidosComentario:
+      typeof cot.extrasPermitidosComentario === 'string'
+        ? cot.extrasPermitidosComentario
+        : null,
     linkPublico: `/cotizacion/${cot.tokenPublico}`,
     linkPdfPublico: `/cotizacion/${cot.tokenPublico}/pdf`,
     items,

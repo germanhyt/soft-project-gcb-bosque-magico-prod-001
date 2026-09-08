@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { apiErrorMessage } from '../../lib/api-error';
+import { esProductoExtraPermitido } from '@bosque/shared';
 import type { Producto } from '../../lib/cotizaciones';
 import { fetchProveedores } from '../../lib/proveedores-api';
 import { INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
@@ -22,6 +23,7 @@ export type ProductoFormPayload = {
   origen?: 'propio' | 'proveedor';
   costoInterno?: number;
   proveedorId?: string;
+  extraPermitido?: boolean;
 };
 
 type Props = {
@@ -30,7 +32,7 @@ type Props = {
   onSubmit: (payload: ProductoFormPayload) => Promise<void>;
   producto?: Producto | null;
   /** Valores iniciales al crear (p. ej. filtro Piqueos del catálogo). */
-  defaults?: { categoria?: string; subtipo?: string };
+  defaults?: { categoria?: string; subtipo?: string; extraPermitido?: boolean };
   /** Bloquea el selector de categoría (alta rápida de show desde cotización). */
   categoriaFija?: boolean;
   nested?: boolean;
@@ -42,22 +44,24 @@ type Props = {
   onEliminarVideo?: () => Promise<void>;
 };
 
-function emptyForm(defaults?: { categoria?: string; subtipo?: string }) {
+function emptyForm(defaults?: { categoria?: string; subtipo?: string; extraPermitido?: boolean }) {
   const categoria = defaults?.categoria ?? 'show';
   const subtipo = defaults?.subtipo ?? 'general';
+  const extraPermitido = categoria === 'extra' && (defaults?.extraPermitido ?? false);
   return {
     nombre: '',
     categoria,
     subtipo,
     unidadesPack: categoria === 'catering' && subtipo === 'piqueo' ? '25' : '',
-    unidad: categoria === 'extra' ? 'hora' : 'servicio',
-    precioLunesViernes: '',
-    precioFinSemana: '',
+    unidad: extraPermitido ? 'servicio' : categoria === 'extra' ? 'hora' : 'servicio',
+    precioLunesViernes: extraPermitido ? '0' : '',
+    precioFinSemana: extraPermitido ? '0' : '',
     cantidadMinima: categoria === 'catering' && subtipo === 'general' ? '18' : '1',
     descripcion: '',
     origen: 'propio',
     costoInterno: '',
     proveedorId: '',
+    extraPermitido,
   };
 }
 
@@ -77,6 +81,7 @@ function formFromProducto(p: Producto) {
     origen: p.origen ?? 'propio',
     costoInterno: p.costoInterno != null ? String(p.costoInterno) : '',
     proveedorId: p.proveedorId ?? '',
+    extraPermitido: esProductoExtraPermitido(p),
   };
 }
 
@@ -111,7 +116,7 @@ export function ProductoFormModal({
     setForm(producto ? formFromProducto(producto) : emptyForm(defaults));
     setError('');
     setPending(false);
-  }, [open, producto, defaults?.categoria, defaults?.subtipo]);
+  }, [open, producto, defaults?.categoria, defaults?.subtipo, defaults?.extraPermitido]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -120,8 +125,8 @@ export function ProductoFormModal({
       setError('El nombre es obligatorio');
       return;
     }
-    const precioLunesViernes = Number(form.precioLunesViernes);
-    const precioFinSemana = Number(form.precioFinSemana);
+    const precioLunesViernes = form.extraPermitido ? 0 : Number(form.precioLunesViernes);
+    const precioFinSemana = form.extraPermitido ? 0 : Number(form.precioFinSemana);
     const cantidadMinima = Number(form.cantidadMinima) || 1;
     const costoInterno = form.costoInterno ? Number(form.costoInterno) : undefined;
     const unidadesPack =
@@ -176,6 +181,7 @@ export function ProductoFormModal({
         origen: form.origen as 'propio' | 'proveedor',
         costoInterno,
         proveedorId: form.proveedorId || undefined,
+        extraPermitido: form.categoria === 'extra' && form.extraPermitido,
       });
       onClose();
     } catch (err) {
@@ -242,6 +248,7 @@ export function ProductoFormModal({
                 subtipo: categoria === 'catering' ? form.subtipo : 'general',
                 unidadesPack: categoria === 'catering' && form.subtipo === 'piqueo' ? form.unidadesPack : '',
                 unidad: categoria === 'extra' ? form.unidad || 'hora' : form.unidad,
+                extraPermitido: categoria === 'extra' ? form.extraPermitido : false,
                 cantidadMinima:
                   categoria === 'catering' && form.subtipo === 'piqueo'
                     ? '1'
@@ -282,6 +289,31 @@ export function ProductoFormModal({
           </label>
         )}
         {form.categoria === 'extra' && (
+          <label className="flex items-start gap-2 rounded-lg border border-outline-variant/40 bg-surface-container-low/40 px-3 py-2">
+            <input
+              type="checkbox"
+              className="mt-1"
+              checked={form.extraPermitido}
+              onChange={(e) =>
+                setForm({
+                  ...form,
+                  extraPermitido: e.target.checked,
+                  unidad: e.target.checked ? 'servicio' : form.unidad || 'hora',
+                  precioLunesViernes: e.target.checked ? '0' : form.precioLunesViernes,
+                  precioFinSemana: e.target.checked ? '0' : form.precioFinSemana,
+                })
+              }
+            />
+            <span>
+              <span className={LABEL_CLASS}>Extra permitido en contrato</span>
+              <span className="mt-0.5 block text-xs text-on-surface-variant">
+                Autoriza su ingreso en el contrato, sin cargo adicional. No se cobra en la
+                cotización; aparece como opción al armar extras permitidos.
+              </span>
+            </span>
+          </label>
+        )}
+        {form.categoria === 'extra' && !form.extraPermitido && (
           <label className="block">
             <span className={LABEL_CLASS}>Unidad de cobro</span>
             <select
@@ -294,6 +326,12 @@ export function ProductoFormModal({
               <option value="servicio">Por servicio</option>
             </select>
           </label>
+        )}
+        {form.categoria === 'extra' && form.extraPermitido && (
+          <p className="sm:col-span-2 rounded-lg border border-primary/20 bg-primary-fixed/20 px-3 py-2 text-xs text-primary">
+            Sin cobro. Este artículo se ofrece en la cotización manual como extra permitido del
+            contrato.
+          </p>
         )}
         {form.categoria === 'catering' && form.subtipo === 'piqueo' && (
           <label className="block">
@@ -308,6 +346,8 @@ export function ProductoFormModal({
             />
           </label>
         )}
+        {!form.extraPermitido && (
+          <>
         <label className="block">
           <span className={LABEL_CLASS}>
             {form.categoria === 'catering' && form.subtipo === 'piqueo'
@@ -350,6 +390,8 @@ export function ProductoFormModal({
             onChange={(e) => setForm({ ...form, precioFinSemana: e.target.value })}
           />
         </label>
+          </>
+        )}
         <label className="block">
           <span className={LABEL_CLASS}>Origen</span>
           <select

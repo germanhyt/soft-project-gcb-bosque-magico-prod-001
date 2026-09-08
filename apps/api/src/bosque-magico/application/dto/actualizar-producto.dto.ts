@@ -6,6 +6,7 @@ import {
   SubtipoProducto,
 } from '@prisma/client';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -64,6 +65,11 @@ export class ActualizarProductoDto {
   @IsString()
   @MaxLength(40)
   unidad?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsBoolean()
+  extraPermitido?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()

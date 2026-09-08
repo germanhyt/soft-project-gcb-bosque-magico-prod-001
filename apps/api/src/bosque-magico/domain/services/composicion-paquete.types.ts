@@ -15,6 +15,7 @@ export type ProductoCotizacionRef = {
   precioLunesViernes: number;
   precioFinSemana: number;
   cantidadMinima: number;
+  extraPermitido?: boolean;
 };
 
 export type ComposicionRegla = {

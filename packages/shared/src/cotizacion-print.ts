@@ -1,4 +1,4 @@
-import { parseHorarioDesdeNotas } from './horario-servicio';
+import { parseHorarioDesdeNotas } from './horario-servicio.js';
 
 export type CotizacionPrintEtapa = 'borrador' | 'enviada' | 'aceptada' | 'cerrada';
 

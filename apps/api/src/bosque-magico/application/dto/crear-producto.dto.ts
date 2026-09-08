@@ -5,6 +5,7 @@ import {
   SubtipoProducto,
 } from '@prisma/client';
 import {
+  IsBoolean,
   IsEnum,
   IsInt,
   IsNumber,
@@ -79,6 +80,14 @@ export class CrearProductoDto {
   @IsString()
   @MaxLength(40)
   unidad?: string;
+
+  @ApiPropertyOptional({
+    description:
+      'Si es true, el extra se sugiere en extras permitidos del contrato (sin cobro). No aparece como extra cobrable.',
+  })
+  @IsOptional()
+  @IsBoolean()
+  extraPermitido?: boolean;
 
   @ApiPropertyOptional()
   @IsOptional()

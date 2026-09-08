@@ -17,6 +17,7 @@ import {
   type SeleccionPaqueteInput,
 } from './composicion-paquete.types';
 import { anexarHorarioANotas } from '../utils/horario-servicio';
+import { esProductoExtraPermitido } from '../utils/extras-permitidos';
 
 const CAJITAS_INCLUIDAS_DEFAULT = 10;
 const CAJITAS_PRECIO_EXCEDENTE_DEFAULT = 20.9;
@@ -107,6 +108,7 @@ function resolverSlots(
     const producto = productos.get(id);
     if (!producto) continue;
     if (producto.categoria !== categoriaEsperada) continue;
+    if (esProductoExtraPermitido(producto)) continue;
     if (i < cupoIncluido) {
       items.push(itemIncluido(producto, 1, esFinSemana, 'Incluido en paquete'));
     } else {

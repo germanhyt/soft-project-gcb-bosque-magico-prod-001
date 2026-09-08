@@ -8,6 +8,7 @@ import {
   IsOptional,
   IsString,
   Max,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
@@ -62,6 +63,19 @@ export class ActualizarCotizacionDto {
   @IsOptional()
   @IsString()
   notas?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  extrasPermitidos?: string[];
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  extrasPermitidosComentario?: string;
 
   @ApiPropertyOptional({ type: [ItemCotizacionDto] })
   @IsOptional()

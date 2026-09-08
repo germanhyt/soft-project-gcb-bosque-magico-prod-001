@@ -11,6 +11,8 @@ const ETIQUETAS: Record<string, string> = {
   horasAdicionales: 'las horas adicionales',
   paquete: 'el paquete',
   fechaEvento: 'la fecha del evento',
+  extrasPermitidos: 'el listado de extras permitidos',
+  extrasPermitidosComentario: 'la observación de extras permitidos',
 };
 
 function etiqueta(property: string): string {

@@ -118,6 +118,24 @@ export class CrearCotizacionDto {
   @IsString()
   notas?: string;
 
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Extras permitidos que se imprimen en el contrato (no en la cotización)',
+  })
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  @MaxLength(80, { each: true })
+  extrasPermitidos?: string[];
+
+  @ApiPropertyOptional({
+    description: 'Comentario opcional del vendedor para extras permitidos (contrato)',
+  })
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  extrasPermitidosComentario?: string;
+
   /** Ítems manuales adicionales (legacy); preferir seleccion.adicionales */
   @ApiPropertyOptional({ type: [ItemCotizacionDto] })
   @IsOptional()

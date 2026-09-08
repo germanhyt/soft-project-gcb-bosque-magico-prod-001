@@ -52,6 +52,7 @@ export class CrearProductoUseCase {
       origen: dto.origen,
       costoInterno: dto.costoInterno,
       proveedorId: dto.proveedorId,
+      extraPermitido: dto.categoria === 'extra' && dto.extraPermitido === true,
     });
 
     await this.auditoria.registrar({

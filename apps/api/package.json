@@ -97,6 +97,9 @@
       "**/*.(t|j)s"
     ],
     "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "testEnvironment": "node",
+    "moduleNameMapper": {
+      "^@bosque/shared$": "<rootDir>/test-utils/bosque-shared.mock.ts"
+    }
   }
 }

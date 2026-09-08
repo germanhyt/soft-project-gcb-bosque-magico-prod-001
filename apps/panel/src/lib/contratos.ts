@@ -56,6 +56,8 @@ export type ContratoSnapshot = {
       precioUnitario: number;
       subtotal: number;
     }>;
+    extrasPermitidos?: string[] | null;
+    extrasPermitidosComentario?: string | null;
   };
 };
 

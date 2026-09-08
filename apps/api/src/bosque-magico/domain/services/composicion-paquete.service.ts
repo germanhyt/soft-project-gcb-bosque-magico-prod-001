@@ -51,6 +51,7 @@ export class ComposicionPaqueteService {
       precioLunesViernes: fromDecimal(producto.precioLunesViernes),
       precioFinSemana: fromDecimal(producto.precioFinSemana),
       cantidadMinima: producto.cantidadMinima,
+      extraPermitido: producto.extraPermitido,
     };
   }
 

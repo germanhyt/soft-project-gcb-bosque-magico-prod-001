@@ -155,6 +155,8 @@ export class CotizacionesRepository {
     tematica?: string;
     paquete?: string;
     notas?: string;
+    extrasPermitidos?: Prisma.InputJsonValue;
+    extrasPermitidosComentario?: string | null;
     montos: MontosCotizacion;
     items: ItemCotizacionInput[];
   }) {
@@ -175,6 +177,8 @@ export class CotizacionesRepository {
         tematica: rest.tematica,
         paquete: rest.paquete,
         notas: rest.notas,
+        extrasPermitidos: rest.extrasPermitidos ?? undefined,
+        extrasPermitidosComentario: rest.extrasPermitidosComentario,
         montoBase: toDecimal(montos.montoBase),
         montoNinosExtra: toDecimal(montos.montoNinosExtra),
         montoItems: toDecimal(montos.montoItems),

@@ -1,3 +1,4 @@
+import { esProductoExtraPermitido } from '@bosque/shared';
 import type { Producto, TipoItem } from './cotizaciones';
 
 export function tipoItemDesdeProducto(categoria: string): TipoItem {
@@ -35,7 +36,10 @@ export function productosParaCotizacion(productos: Producto[]) {
     piqueos: catering.filter((p) => p.subtipo === 'piqueo'),
     cajitas: catering.filter((p) => p.subtipo === 'cajita'),
     snacks: catering.filter((p) => p.subtipo === 'snack'),
-    extras: activos.filter((p) => p.categoria === 'extra'),
+    extras: activos.filter((p) => p.categoria === 'extra' && !esProductoExtraPermitido(p)),
+    extrasPermitidos: activos.filter(
+      (p) => p.categoria === 'extra' && esProductoExtraPermitido(p),
+    ),
   };
 }
 

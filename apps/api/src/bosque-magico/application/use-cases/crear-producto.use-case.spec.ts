@@ -86,4 +86,29 @@ describe('CrearProductoUseCase', () => {
       useCase.ejecutar({ ...dtoBase, codigo: 'SHOW-MIMO' }),
     ).rejects.toBeInstanceOf(BadRequestException);
   });
+
+  it('marca extraPermitido solo en categoría extra', async () => {
+    productos.obtenerPorCodigo.mockResolvedValue(null);
+
+    await useCase.ejecutar({
+      ...dtoBase,
+      categoria: CategoriaProducto.extra,
+      codigo: 'EXT-TORTA',
+      extraPermitido: true,
+    });
+
+    expect(productos.crear).toHaveBeenCalledWith(
+      expect.objectContaining({ extraPermitido: true, codigo: 'EXT-TORTA' }),
+    );
+  });
+
+  it('ignora extraPermitido en un show', async () => {
+    secuencias.siguiente.mockResolvedValue('SHOW-001');
+
+    await useCase.ejecutar({ ...dtoBase, extraPermitido: true });
+
+    expect(productos.crear).toHaveBeenCalledWith(
+      expect.objectContaining({ extraPermitido: false }),
+    );
+  });
 });

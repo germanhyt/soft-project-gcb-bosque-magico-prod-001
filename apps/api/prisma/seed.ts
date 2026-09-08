@@ -367,6 +367,7 @@ type ProductoSeed = {
   cantidadMinima?: number;
   unidad?: string;
   etapa?: 'activo' | 'inactivo';
+  extraPermitido?: boolean;
 };
 
 const productosBase: ProductoSeed[] = [
@@ -391,6 +392,8 @@ const productosBase: ProductoSeed[] = [
   { codigo: 'EXT-MINIHORALOCA', nombre: 'Mini Hora Loca', categoria: 'extra', lv: 120, fds: 150, unidad: 'hora' },
   { codigo: 'EXT-ANFITRIONA', nombre: 'Anfitriona', categoria: 'extra', lv: 90, fds: 120, unidad: 'hora', etapa: 'inactivo' },
   { codigo: 'EXT-ASISTENTE', nombre: 'Asistente de evento', categoria: 'extra', lv: 150, fds: 150, unidad: 'bloque 3h' },
+  { codigo: 'EXT-PINATA', nombre: 'Piñata', categoria: 'extra', lv: 0, fds: 0, unidad: 'servicio', extraPermitido: true },
+  { codigo: 'EXT-TORTA', nombre: 'Torta temática', categoria: 'extra', lv: 0, fds: 0, unidad: 'servicio', extraPermitido: true },
   { codigo: 'CAT-POPCORN', nombre: 'Popcorn (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   { codigo: 'CAT-ALGODON', nombre: 'Algodón de azúcar (carrito snack)', categoria: 'catering', lv: 350, fds: 350, subtipo: 'snack', cantidadMinima: 25, unidad: 'carrito' },
   ...CATERING_GENERAL.map((c) => ({
@@ -489,6 +492,7 @@ async function upsertProductos(syncCatalogo: boolean) {
           etapa: p.etapa ?? 'activo',
           origen: 'propio',
           descripcion: `Producto catálogo ${p.nombre}`,
+          extraPermitido: p.extraPermitido ?? false,
         },
       });
       ids.set(p.codigo, row.id);
@@ -511,6 +515,7 @@ async function upsertProductos(syncCatalogo: boolean) {
         unidad: p.unidad ?? 'servicio',
         etapa: p.etapa ?? 'activo',
         origen: 'propio',
+        extraPermitido: p.extraPermitido ?? false,
       },
     });
   }

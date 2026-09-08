@@ -12,8 +12,14 @@ export const CONTRATO_TERMINOS_CLAUSULAS = [
   'Garantía por el evento: El cliente se compromete a entregar una garantía de S/ 500.00 (quinientos soles) al inicio del evento. Este monto será devuelto en un plazo máximo de 2 días hábiles posteriores al evento, previa verificación de que no se hayan generado daños en las instalaciones, mobiliario o cualquier otro bien del establecimiento.',
 ] as const;
 
-/** Permitidos sin cobro automático (el cliente puede traerlos). */
+/** Códigos de catálogo semilla (Piñata y Torta temática). */
+export const CODIGOS_EXTRA_PERMITIDO_DEFAULT = ['EXT-PINATA', 'EXT-TORTA'] as const;
+
+/** Autorizados de forma excepcional, sin cargo adicional. */
 export const CONTRATO_EXTRAS_PERMITIDOS = ['Piñata', 'Torta temática'] as const;
+
+export const CONTRATO_EXTRAS_PERMITIDOS_INTRO =
+  'Bosque Mágico autoriza, de manera excepcional, el ingreso de los siguientes artículos para uso exclusivo del evento, sin que ello genere un cargo adicional.';
 
 /**
  * Extras cobrables referenciales del contrato físico.

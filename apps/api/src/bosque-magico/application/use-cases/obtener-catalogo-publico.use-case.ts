@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { CategoriaProducto, SubtipoProducto } from '@prisma/client';
+import { esProductoExtraPermitido } from '../../domain/utils/extras-permitidos';
 import { ObtenerConfiguracionPublicaUseCase } from './obtener-configuracion-publica.use-case';
 import { ListarProductosUseCase } from './listar-productos.use-case';
 
@@ -43,7 +44,7 @@ export class ObtenerCatalogoPublicoUseCase {
         piqueos,
         cajitas,
         snacks,
-        extras: categoria(CategoriaProducto.extra),
+        extras: categoria(CategoriaProducto.extra).filter((p) => !esProductoExtraPermitido(p)),
         espacios: categoria(CategoriaProducto.espacio),
       },
     };

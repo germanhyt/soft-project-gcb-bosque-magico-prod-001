@@ -55,6 +55,7 @@ export class ProductosRepository {
     origen?: import('@prisma/client').OrigenProducto;
     costoInterno?: number;
     proveedorId?: string;
+    extraPermitido?: boolean;
   }) {
     return this.prisma.bosqueMagicoProducto.create({
       data: {
@@ -72,6 +73,7 @@ export class ProductosRepository {
         costoInterno:
           data.costoInterno != null ? toDecimal(data.costoInterno) : undefined,
         proveedorId: data.proveedorId,
+        extraPermitido: data.extraPermitido ?? false,
       },
     });
   }

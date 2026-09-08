@@ -26,7 +26,7 @@
     "qa:fases": "node scripts/qa-fases-recientes.mjs",
     "qa:pedidos": "node scripts/qa-pedidos.mjs",
     "qa:operaciones": "node scripts/qa-operaciones-demo.mjs",
-    "test:unit": "npm run test -w @bosque/api",
+    "test:unit": "npm run test -w @bosque/api && npm run test -w @bosque/shared && npm run test -w @bosque/panel",
     "test:integracion": "node scripts/test-flujos-paquetes.mjs",
     "test:casos-uso": "node scripts/test-casos-uso-reglas.mjs",
     "test:e2e": "node scripts/test-flujos-demo-paquetes.mjs",

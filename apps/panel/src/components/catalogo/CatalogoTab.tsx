@@ -13,6 +13,7 @@ import {
   subirVideoProducto,
 } from '../../lib/configuracion';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../../lib/pagination';
+import { esProductoExtraPermitido } from '@bosque/shared';
 import type { Producto } from '../../lib/cotizaciones';
 import { CatalogoProductoRowActions } from './CatalogoProductoRowActions';
 import { ProductoFormModal } from './ProductoFormModal';
@@ -40,6 +41,7 @@ type CategoriaFiltro =
   | 'cajita'
   | 'snack'
   | 'extra'
+  | 'permitido'
   | 'espacio';
 type EstadoCatalogoFiltro = '' | 'activo' | 'inactivo';
 
@@ -52,11 +54,16 @@ const CATEGORIA_LABEL: Record<CategoriaFiltro, string> = {
   cajita: 'Cajitas',
   snack: 'Snacks',
   extra: 'Extras',
+  permitido: 'Permitidos (contrato)',
   espacio: 'Espacios',
 };
 
-function coincideCategoriaFiltro(p: { categoria: string; subtipo?: string | null }, filtro: CategoriaFiltro) {
+function coincideCategoriaFiltro(
+  p: { categoria: string; subtipo?: string | null; extraPermitido?: boolean; codigo?: string },
+  filtro: CategoriaFiltro,
+) {
   if (filtro === 'todas') return true;
+  if (filtro === 'permitido') return esProductoExtraPermitido(p);
   if (filtro === 'piqueo') return p.categoria === 'catering' && p.subtipo === 'piqueo';
   if (filtro === 'cajita') return p.categoria === 'catering' && p.subtipo === 'cajita';
   if (filtro === 'snack') return p.categoria === 'catering' && p.subtipo === 'snack';
@@ -66,10 +73,15 @@ function coincideCategoriaFiltro(p: { categoria: string; subtipo?: string | null
   return p.categoria === filtro;
 }
 
-function defaultsProductoDesdeFiltro(filtro: CategoriaFiltro): { categoria: string; subtipo: string } {
+function defaultsProductoDesdeFiltro(filtro: CategoriaFiltro): {
+  categoria: string;
+  subtipo: string;
+  extraPermitido?: boolean;
+} {
   if (filtro === 'piqueo') return { categoria: 'catering', subtipo: 'piqueo' };
   if (filtro === 'cajita') return { categoria: 'catering', subtipo: 'cajita' };
   if (filtro === 'snack') return { categoria: 'catering', subtipo: 'snack' };
+  if (filtro === 'permitido') return { categoria: 'extra', subtipo: 'general', extraPermitido: true };
   if (filtro === 'todas') return { categoria: 'show', subtipo: 'general' };
   return { categoria: filtro, subtipo: 'general' };
 }
@@ -388,6 +400,7 @@ export function CatalogoTab({ puedeGestionar }: Props) {
                 costoInterno: payload.costoInterno,
                 proveedorId:
                   payload.origen === 'proveedor' ? (payload.proveedorId ?? null) : null,
+                extraPermitido: payload.extraPermitido ?? false,
               },
             });
           } else {
@@ -439,6 +452,9 @@ export function CatalogoTab({ puedeGestionar }: Props) {
                   <td className="px-4 py-3">
                     <p className="font-medium">{p.nombre}</p>
                     <p className="font-mono text-xs text-outline">{p.codigo}</p>
+                    {esProductoExtraPermitido(p) ? (
+                      <p className="mt-1 text-xs font-semibold text-primary">Permitido en contrato</p>
+                    ) : null}
                   </td>
                   <td className="px-4 py-3">
                     <ProductImageDropzone
@@ -483,7 +499,9 @@ export function CatalogoTab({ puedeGestionar }: Props) {
                     )}
                   </td>
                   <td className="px-4 py-3">
-                    S/ {p.precioLunesViernes} · S/ {p.precioFinSemana}
+                    {esProductoExtraPermitido(p)
+                      ? 'Sin cobro'
+                      : `S/ ${p.precioLunesViernes} · S/ ${p.precioFinSemana}`}
                   </td>
                   <td className="px-4 py-3">
                     <span

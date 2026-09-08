@@ -1,4 +1,5 @@
 import { fromDecimal } from './decimal';
+import { parseExtrasPermitidosJson } from './extras-permitidos';
 
 type EventoConRelaciones = {
   id: string;
@@ -25,6 +26,8 @@ type EventoConRelaciones = {
     montoNinosExtra: unknown;
     montoItems: unknown;
     montoTotal: unknown;
+    extrasPermitidos?: unknown;
+    extrasPermitidosComentario?: string | null;
     items: Array<{
       id: string;
       tipo: string;
@@ -79,6 +82,8 @@ export function buildContratoSnapshot(evento: EventoConRelaciones) {
         subtotal: fromDecimal(i.subtotal as never),
         origenItem: i.origenItem,
       })),
+      extrasPermitidos: parseExtrasPermitidosJson(cot.extrasPermitidos),
+      extrasPermitidosComentario: cot.extrasPermitidosComentario ?? null,
     },
   };
 }

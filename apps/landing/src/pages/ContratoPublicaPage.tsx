@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link, useParams } from 'react-router-dom';
-import type { ContratoSnapshotJson } from '@bosque/shared';
+import {
+  CONTRATO_EXTRAS_PERMITIDOS_INTRO,
+  extrasPermitidosParaImpresion,
+  type ContratoSnapshotJson,
+} from '@bosque/shared';
 import { Seo } from '../components/Seo';
 import { ServiciosListado } from '../components/cotizador/ServiciosListado';
 import { BTN_PRIMARY, CARD_CLASS } from '../constants/design';
@@ -67,6 +71,7 @@ export function ContratoPublicaPage() {
   }
 
   const snap = data.snapshotJson;
+  const extrasPermitidos = extrasPermitidosParaImpresion(snap.cotizacion.extrasPermitidos);
 
   return (
     <>
@@ -137,6 +142,23 @@ export function ContratoPublicaPage() {
                 })),
               }}
             />
+          </section>
+
+          <section className="mb-6 space-y-2 text-body-sm">
+            <h2 className="text-title-sm text-primary">Extras permitidos</h2>
+            <p className="text-on-surface-variant">{CONTRATO_EXTRAS_PERMITIDOS_INTRO}</p>
+            {extrasPermitidos.length > 0 ? (
+              <ul className="list-disc pl-5">
+                {extrasPermitidos.map((nombre) => (
+                  <li key={nombre}>{nombre}</li>
+                ))}
+              </ul>
+            ) : (
+              <p>Ninguno acordado</p>
+            )}
+            {snap.cotizacion.extrasPermitidosComentario ? (
+              <p className="text-on-surface-variant">{snap.cotizacion.extrasPermitidosComentario}</p>
+            ) : null}
           </section>
 
           <section className="mb-6 rounded-xl bg-surface-container-low p-4 text-body-sm">

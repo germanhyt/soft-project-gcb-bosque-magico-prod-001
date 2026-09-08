@@ -400,7 +400,10 @@ export function CotizacionDetalle({
       footer={footer}
     >
       {isError && !cot ? (
-        <p className="text-error">Cotización no encontrada o error de API.</p>
+        <p className="text-error">
+          No se pudo cargar la cotización. Si acabas de reiniciar, espera a que la API esté en
+          http://localhost:3000/api y vuelve a abrir el detalle.
+        </p>
       ) : cot ? (
         <div className="space-y-6">
           <div className="flex flex-wrap items-center gap-3">
@@ -569,6 +572,28 @@ export function CotizacionDetalle({
               />
             </div>
           )}
+
+          {cot.extrasPermitidos != null || cot.extrasPermitidosComentario ? (
+            <div className={`space-y-2 p-4 ${CARD_CLASS}`}>
+              <h3 className="font-bold text-primary">Extras permitidos (contrato)</h3>
+              <p className="text-xs text-on-surface-variant">
+                Solo el contrato. Bosque Mágico autoriza su ingreso para el evento, sin cargo
+                adicional. No se imprimen en la cotización.
+              </p>
+              {cot.extrasPermitidos && cot.extrasPermitidos.length > 0 ? (
+                <ul className="list-disc pl-5 text-sm">
+                  {cot.extrasPermitidos.map((nombre) => (
+                    <li key={nombre}>{nombre}</li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-outline">Ninguno acordado</p>
+              )}
+              {cot.extrasPermitidosComentario ? (
+                <p className="text-sm text-on-surface-variant">{cot.extrasPermitidosComentario}</p>
+              ) : null}
+            </div>
+          ) : null}
 
           <p className="break-all text-xs text-outline">{link}</p>
 

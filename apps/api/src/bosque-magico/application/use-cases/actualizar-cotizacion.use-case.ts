@@ -28,6 +28,7 @@ import { ActualizarCotizacionDto } from '../dto/actualizar-cotizacion.dto';
 import { ItemCotizacionDto } from '../dto/item-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
+import { payloadExtrasPermitidos } from '../../domain/utils/extras-permitidos-payload';
 
 @Injectable()
 export class ActualizarCotizacionUseCase {
@@ -265,6 +266,10 @@ export class ActualizarCotizacionUseCase {
         tematica: dto.tematica ?? antes.tematica,
         paquete,
         notas: dto.notas ?? antes.notas,
+        ...payloadExtrasPermitidos({
+          lista: dto.extrasPermitidos,
+          comentario: dto.extrasPermitidosComentario,
+        }),
       },
     );
 

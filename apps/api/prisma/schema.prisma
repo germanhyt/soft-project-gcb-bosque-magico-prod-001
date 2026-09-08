@@ -530,6 +530,8 @@ model BosqueMagicoProducto {
 
   unidad             String            @default("servicio")
 
+  extraPermitido     Boolean           @default(false) @map("extra_permitido")
+
   cantidadMinima     Int               @default(1) @map("cantidad_minima")
 
   descripcion        String?           @db.Text
@@ -687,6 +689,10 @@ model BosqueMagicoCotizacion {
   cerradaEn       DateTime?               @map("cerrada_en")
 
   notas           String?                 @db.Text
+
+  extrasPermitidos           Json?     @map("extras_permitidos")
+
+  extrasPermitidosComentario String?   @map("extras_permitidos_comentario") @db.Text
 
   creadoEn        DateTime                @default(now()) @map("creado_en")
 

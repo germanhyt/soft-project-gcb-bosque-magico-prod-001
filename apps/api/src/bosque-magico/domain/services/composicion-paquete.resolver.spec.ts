@@ -76,6 +76,25 @@ describe('resolverComposicionPaquete', () => {
       }),
     ],
     [
+      'pinata',
+      mk({
+        id: 'pinata',
+        codigo: 'EXT-PINATA',
+        nombre: 'Piñata',
+        categoria: CategoriaProducto.extra,
+      }),
+    ],
+    [
+      'torta',
+      mk({
+        id: 'torta',
+        codigo: 'EXT-OTRO',
+        nombre: 'Torta temática',
+        categoria: CategoriaProducto.extra,
+        extraPermitido: true,
+      }),
+    ],
+    [
       'piq1',
       mk({
         id: 'piq1',
@@ -372,5 +391,22 @@ describe('resolverComposicionPaquete', () => {
     const extra = r.items.find((i) => i.productoId === 'extra1');
     expect(show?.notas).toContain('Horario: 16:00–16:45');
     expect(extra?.notas).toContain('Horario: 17:00–18:00');
+  });
+
+  it('omite extras permitidos de los slots cobrables (flag o código semilla)', () => {
+    const r = resolverComposicionPaquete({
+      paquete: paquetePremium,
+      reglas: reglasPremium,
+      productos,
+      seleccion: {
+        extraIds: ['pinata', 'torta', 'extra1'],
+      },
+      esFinSemana: false,
+    });
+
+    const ids = r.items.map((i) => i.productoId);
+    expect(ids).toContain('extra1');
+    expect(ids).not.toContain('pinata');
+    expect(ids).not.toContain('torta');
   });
 });

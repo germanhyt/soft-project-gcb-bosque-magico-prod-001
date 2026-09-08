@@ -1,11 +1,12 @@
 import {
   CONTRATO_ESPACIO_INCLUYE,
   CONTRATO_EXTRAS_COBRABLES_REFERENCIA,
-  CONTRATO_EXTRAS_PERMITIDOS,
+  CONTRATO_EXTRAS_PERMITIDOS_INTRO,
   CONTRATO_TERMINOS_CLAUSULAS,
   CONTRATO_TERMINOS_VERSION,
-} from './contrato-terminos';
-import { filasTablaCotizacionPrint } from './cotizacion-print';
+} from './contrato-terminos.js';
+import { extrasPermitidosParaImpresion } from './extras-permitidos.js';
+import { filasTablaCotizacionPrint } from './cotizacion-print.js';
 import {
   itemsCajitas,
   itemsCateringTematico,
@@ -15,7 +16,7 @@ import {
   normTexto,
   paqueteTipo,
   type ContratoPrintItem,
-} from './contrato-print-items';
+} from './contrato-print-items.js';
 
 export type TipoComprobante = 'boleta' | 'factura';
 
@@ -51,6 +52,8 @@ export type ContratoPrintCotizacion = {
   };
   cumpleanero: { nombre: string; edad?: number | null };
   items?: ContratoPrintItem[];
+  extrasPermitidos?: string[] | null;
+  extrasPermitidosComentario?: string | null;
 };
 
 export type ContratoPrintEvento = {
@@ -98,6 +101,8 @@ export type ContratoSnapshotJson = {
     montoItems: number;
     montoTotal: number;
     items: ContratoPrintItem[];
+    extrasPermitidos?: string[] | null;
+    extrasPermitidosComentario?: string | null;
   };
 };
 
@@ -171,6 +176,8 @@ export function buildContratoContext(payload: ContratoPrintPayload) {
     },
     cumpleanero: cot.cumpleanero,
     items: (cot.items ?? []) as ContratoPrintItem[],
+    extrasPermitidos: cot.extrasPermitidos,
+    extrasPermitidosComentario: cot.extrasPermitidosComentario,
     form,
     fechaEmision: payload.fechaEmision,
   };
@@ -219,6 +226,8 @@ export function contratoToPrintPayload(
         edad: snap.cumpleanero.edad,
       },
       items: snap.cotizacion.items,
+      extrasPermitidos: snap.cotizacion.extrasPermitidos,
+      extrasPermitidosComentario: snap.cotizacion.extrasPermitidosComentario,
     },
     evento: evento ?? {
       fechaEvento: snap.evento.fechaEvento,
@@ -404,7 +413,13 @@ export function buildContratoPrintHtml(
     (c) => `<li>${escapeHtml(c)}</li>`,
   ).join('');
 
-  const extrasPermitidos = CONTRATO_EXTRAS_PERMITIDOS.map((e) => `<li>${escapeHtml(e)}</li>`).join('');
+  const extrasPermitidosLista = extrasPermitidosParaImpresion(ctx.extrasPermitidos);
+  const extrasPermitidos = extrasPermitidosLista.length
+    ? extrasPermitidosLista.map((e) => `<li>${escapeHtml(e)}</li>`).join('')
+    : '<li>Ninguno acordado</li>';
+  const extrasComentario = ctx.extrasPermitidosComentario?.trim()
+    ? `<p class="muted">${escapeHtml(ctx.extrasPermitidosComentario.trim())}</p>`
+    : '';
   const extrasCobrables = CONTRATO_EXTRAS_COBRABLES_REFERENCIA.map(
     (e) => `<li>${escapeHtml(e)}</li>`,
   ).join('');
@@ -575,8 +590,9 @@ export function buildContratoPrintHtml(
     <ul class="compact">${extrasCobrables}</ul>
 
     <h2>Extras permitidos</h2>
-    <p class="muted">Permitidos sin cobro automático por Bosque Mágico (el cliente puede traerlos).</p>
+    <p class="muted">${escapeHtml(CONTRATO_EXTRAS_PERMITIDOS_INTRO)}</p>
     <ul class="compact">${extrasPermitidos}</ul>
+    ${extrasComentario}
 
     <h2>Términos y condiciones</h2>
     <div class="terms"><ol>${clausulas}</ol></div>
