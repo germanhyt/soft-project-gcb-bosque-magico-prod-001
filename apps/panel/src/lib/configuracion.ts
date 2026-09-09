@@ -28,12 +28,26 @@ export type ConfigPanelResponse = {
   postventa: ConfigItem[];
   pedidosProveedor: ConfigItem[];
   recordatorios: ConfigItem[];
+  flujo?: ConfigItem[];
   otras: ConfigItem[];
   todas: ConfigItem[];
   meta?: {
     smtp: SmtpEstadoPanel;
   };
 };
+
+export const CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA =
+  'flujo.cotizacion_volver_borrador_aceptada';
+
+/** Ausente o distinto de false = habilitado (default ON). */
+export function configVolverBorradorAceptadaHabilitado(
+  config?: Pick<ConfigPanelResponse, 'flujo' | 'todas'> | null,
+): boolean {
+  const item =
+    config?.flujo?.find((i) => i.clave === CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA) ??
+    config?.todas?.find((i) => i.clave === CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA);
+  return item?.valor !== false;
+}
 
 export async function fetchConfiguracionPanel() {
   const { data } = await api.get<ConfigPanelResponse>('/bosque-magico/configuracion');

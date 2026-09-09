@@ -37,4 +37,21 @@ export class SolicitudCotizacionSyncService {
       motivoCierre: MotivoCierreSolicitud.ganada,
     });
   }
+
+  /** Reabre el lead cerrado como ganada al deshacer la aceptación de su cotización. */
+  async alDeshacerAceptacion(solicitudId?: string | null) {
+    if (!solicitudId) return;
+    const sol = await this.solicitudes.obtenerPorId(solicitudId);
+    if (!sol) return;
+    if (
+      sol.etapa !== EtapaSolicitud.cerrada ||
+      sol.motivoCierre !== MotivoCierreSolicitud.ganada
+    ) {
+      return;
+    }
+    await this.solicitudes.actualizar(solicitudId, {
+      etapa: EtapaSolicitud.cotizada,
+      motivoCierre: null,
+    });
+  }
 }

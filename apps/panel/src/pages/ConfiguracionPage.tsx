@@ -9,6 +9,7 @@ import {
   type ConfigItem,
   type SelectionMode,
   type TurnoConfigValor,
+  CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA,
 } from '../lib/configuracion';
 import { horarioDesdeRango, parseTurnoConfig, turnoParaGuardar } from '../lib/turno-config';
 import { parseFeriadosConfig } from '../lib/tarifa-calendario';
@@ -210,6 +211,7 @@ const PEDIDOS_PROVEEDOR_ORDEN = [
 
 const CONFIG_NAV = [
   { id: 'config-precios', label: 'Precios y reglas' },
+  { id: 'config-flujo', label: 'Flujo comercial' },
   { id: 'config-agenda', label: 'Turnos y feriados' },
   { id: 'config-landing', label: 'Cotizador landing' },
   { id: 'config-smtp', label: 'Correo SMTP' },
@@ -325,6 +327,7 @@ export function ConfiguracionPage() {
     Record<string, string>
   >({});
   const [feriadosDraft, setFeriadosDraft] = useState<string[] | null>(null);
+  const [flujoAceptadaBorrador, setFlujoAceptadaBorrador] = useState<string | null>(null);
   const qc = useQueryClient();
 
   const { data: config, isLoading: loadingConfig } = useQuery({
@@ -378,6 +381,13 @@ export function ConfiguracionPage() {
     [config?.recordatorios],
   );
 
+  const flujoInicial =
+    config?.flujo?.find((i) => i.clave === CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA)
+      ?.valor === false
+      ? 'false'
+      : 'true';
+  const flujoActual = flujoAceptadaBorrador ?? flujoInicial;
+
   const feriadosIniciales = useMemo(() => {
     const item = config?.calendario?.find((c) => c.clave === 'calendario.feriados');
     return parseFeriadosConfig(item?.valor);
@@ -412,7 +422,8 @@ export function ConfiguracionPage() {
     JSON.stringify(pedidosProveedorIniciales) ||
     JSON.stringify(recordatoriosActuales) !==
     JSON.stringify(recordatoriosIniciales) ||
-    JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales);
+    JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales) ||
+    flujoActual !== flujoInicial;
 
   const smtpOrdenados = useMemo(() => {
     const items = config?.smtp ?? [];
@@ -536,6 +547,14 @@ export function ConfiguracionPage() {
         ...(JSON.stringify(feriadosActuales) !== JSON.stringify(feriadosIniciales)
           ? [{ clave: 'calendario.feriados', valor: feriadosActuales }]
           : []),
+        ...(flujoActual !== flujoInicial
+          ? [
+              {
+                clave: CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA,
+                valor: flujoActual === 'true',
+              },
+            ]
+          : []),
       ];
       return guardarConfiguracion(actualizaciones);
     },
@@ -548,6 +567,7 @@ export function ConfiguracionPage() {
       setPedidosProveedorValores({});
       setRecordatoriosValores({});
       setFeriadosDraft(null);
+      setFlujoAceptadaBorrador(null);
       await qc.invalidateQueries({ queryKey: ['config-panel'] });
       await qc.invalidateQueries({ queryKey: ['configuracion-publica'] });
       await qc.invalidateQueries({ queryKey: ['catalogo-publico'] });
@@ -670,6 +690,28 @@ export function ConfiguracionPage() {
                   );
                 })}
               </div>
+            </section>
+
+            <section id="config-flujo" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Flujo comercial</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Si está activo, el equipo puede volver a borrador una cotización ya aceptada mientras el
+                evento siga por confirmar y no haya contrato enviado o firmado. Se cancela el evento en
+                agenda y se reabre el lead.
+              </p>
+              <label className="mt-6 block max-w-md">
+                <span className="text-body-sm font-medium text-on-surface">
+                  Permitir volver a borrador una cotización aceptada
+                </span>
+                <select
+                  className={`mt-1.5 w-full ${INPUT_CLASS}`}
+                  value={flujoActual}
+                  onChange={(e) => setFlujoAceptadaBorrador(e.target.value)}
+                >
+                  <option value="true">Sí (recomendado)</option>
+                  <option value="false">No</option>
+                </select>
+              </label>
             </section>
 
             <section id="config-landing" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>

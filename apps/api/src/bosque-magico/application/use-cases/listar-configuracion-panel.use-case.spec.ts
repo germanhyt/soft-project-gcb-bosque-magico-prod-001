@@ -66,6 +66,19 @@ describe('ListarConfiguracionPanelUseCase', () => {
     expect(claves).toContain('ninos.maximo_permitido');
   });
 
+  it('asegura la clave de flujo volver a borrador aceptada', async () => {
+    configuracion.listarTodas.mockResolvedValue([] as never);
+
+    await useCase.ejecutar();
+
+    expect(configuracion.crearSiNoExiste).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clave: 'flujo.cotizacion_volver_borrador_aceptada',
+        valor: true,
+      }),
+    );
+  });
+
   it('no incluye smtp.port en numericas (va en sección smtp)', async () => {
     configuracion.listarTodas.mockResolvedValue([
       {

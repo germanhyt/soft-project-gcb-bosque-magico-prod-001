@@ -322,6 +322,13 @@ const configuraciones = [
     esPublico: false,
   },
   {
+    clave: 'flujo.cotizacion_volver_borrador_aceptada',
+    valor: true,
+    descripcion:
+      'Permitir volver a borrador una cotización aceptada (cancela el evento en agenda si aún está por confirmar).',
+    esPublico: false,
+  },
+  {
     clave: 'recordatorios.habilitado',
     valor: true,
     descripcion:

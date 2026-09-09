@@ -86,6 +86,11 @@ export class CotizacionesRepository {
         cliente: true,
         cumpleanero: true,
         solicitud: { select: { id: true, nombreContacto: true, etapa: true } },
+        eventos: {
+          select: { id: true, etapa: true },
+          take: 1,
+          orderBy: { creadoEn: 'desc' },
+        },
       },
       skip: params?.skip,
       take: params?.take ?? 20,
@@ -318,7 +323,11 @@ export class CotizacionesRepository {
         where: { id: cotizacionId },
       });
       const existente = await tx.bosqueMagicoEvento.findFirst({
-        where: { cotizacionId },
+        where: {
+          cotizacionId,
+          etapa: { in: [EtapaEvento.por_confirmar, EtapaEvento.confirmado] },
+        },
+        orderBy: { creadoEn: 'desc' },
       });
       if (existente) return existente;
 

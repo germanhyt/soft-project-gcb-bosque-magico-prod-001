@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
 import { CLAVES_NUMERICAS_EDITABLES } from '../../domain/constants/configuracion-claves';
+import { CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA } from '../../domain/constants/flujo-config';
 
 export type SmtpEstadoMeta = {
   habilitado: boolean;
@@ -23,6 +24,12 @@ export class ListarConfiguracionPanelUseCase {
 
   async ejecutar() {
     await Promise.all([
+      this.configuracion.crearSiNoExiste({
+        clave: CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA,
+        valor: true,
+        descripcion:
+          'Permitir volver a borrador una cotización aceptada (deshace el evento en agenda si aún está por confirmar).',
+      }),
       this.configuracion.crearSiNoExiste({
         clave: 'pedidos_proveedor.cancelacion_asunto',
         valor: 'Evento cancelado — {{servicio}} ({{fecha}})',
@@ -57,6 +64,7 @@ export class ListarConfiguracionPanelUseCase {
     const recordatorios = items.filter((i) =>
       i.clave.startsWith('recordatorios.'),
     );
+    const flujo = items.filter((i) => i.clave.startsWith('flujo.'));
     const otras = items.filter(
       (i) =>
         typeof i.valor !== 'number' &&
@@ -66,7 +74,8 @@ export class ListarConfiguracionPanelUseCase {
         !i.clave.startsWith('smtp.') &&
         !i.clave.startsWith('postventa.') &&
         !i.clave.startsWith('pedidos_proveedor.') &&
-        !i.clave.startsWith('recordatorios.'),
+        !i.clave.startsWith('recordatorios.') &&
+        !i.clave.startsWith('flujo.'),
     );
     return {
       numericas,
@@ -77,6 +86,7 @@ export class ListarConfiguracionPanelUseCase {
       postventa,
       pedidosProveedor,
       recordatorios,
+      flujo,
       otras,
       todas: items,
       meta: {

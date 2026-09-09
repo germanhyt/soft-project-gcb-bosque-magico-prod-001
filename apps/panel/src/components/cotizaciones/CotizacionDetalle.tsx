@@ -13,7 +13,11 @@ import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { etiquetaTurno } from '@bosque/shared';
-import { fetchProductosCatalogo } from '../../lib/configuracion';
+import {
+  fetchConfiguracionPanel,
+  fetchProductosCatalogo,
+  configVolverBorradorAceptadaHabilitado,
+} from '../../lib/configuracion';
 import {
   fetchCotizacion,
   linkPdfPublicoCompleto,
@@ -37,6 +41,7 @@ import {
   puedeEnviarCotizacion,
   puedeGenerarContrato,
   puedeVolverABorradorCotizacion,
+  motivoBloqueoVolverABorradorCotizacion,
 } from '../../lib/flujo-estados';
 import { formatFecha } from '../../lib/format';
 import { apiErrorMessage } from '../../lib/api-error';
@@ -144,11 +149,17 @@ export function CotizacionDetalle({
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
         qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
+        qc.invalidateQueries({ queryKey: ['solicitudes'] }),
+        qc.invalidateQueries({ queryKey: ['solicitudes-resumen'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['eventos-resumen'] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] }),
       ]);
       await Swal.fire({
         icon: 'success',
         title: 'Volvió a borrador',
-        text: 'El cliente ya no puede aceptar. Edita y vuelve a enviar cuando esté lista.',
+        text: 'El cliente ya no puede aceptar. Si había un evento por confirmar, se canceló. Edita y vuelve a enviar cuando esté lista.',
       });
     },
     onError: async (err) => {
@@ -253,6 +264,13 @@ export function CotizacionDetalle({
     enabled: open && !!eventoId,
   });
 
+  const { data: configPanel } = useQuery({
+    queryKey: ['config-panel'],
+    queryFn: fetchConfiguracionPanel,
+    enabled: open,
+    staleTime: 1000 * 60 * 5,
+  });
+
   const copiarLink = async () => {
     if (!cot) return;
     const link = linkPublicoCompleto(cot.tokenPublico);
@@ -266,6 +284,17 @@ export function CotizacionDetalle({
   const evento = cot?.eventos?.[0];
   const solicitud = cot?.solicitud;
   const solicitudId = cot?.solicitudId ?? solicitud?.id ?? null;
+  const volverOpts = {
+    permitirAceptada: configVolverBorradorAceptadaHabilitado(configPanel),
+    eventoEtapa: evento?.etapa,
+    contratoEtapa: contratoEvento?.etapa ?? null,
+  };
+  const puedeVolver = cot
+    ? puedeVolverABorradorCotizacion(cot.etapa, volverOpts)
+    : false;
+  const motivoVolver = cot
+    ? motivoBloqueoVolverABorradorCotizacion(cot.etapa, volverOpts)
+    : null;
   const puedeCerrarSolicitud = puedeCerrarSolicitudDesdeCotizacion(
     cot?.etapa ?? 'cerrada',
     solicitudId,
@@ -384,18 +413,22 @@ export function CotizacionDetalle({
             </Button>
           </DetalleActionGroup>
         )}
-        {puedeVolverABorradorCotizacion(cot.etapa) && (
+        {(puedeVolver || motivoVolver) && (
           <DetalleActionGroup label="Corregir propuesta">
             <Button
               variant="ghost"
               className="col-span-2"
-              disabled={volverMut.isPending}
+              disabled={volverMut.isPending || !puedeVolver}
+              title={motivoVolver ?? undefined}
               onClick={() => {
                 void (async () => {
+                  const aceptada = cot.etapa === 'aceptada';
                   const ok = await Swal.fire({
                     icon: 'question',
                     title: '¿Volver a borrador?',
-                    text: 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
+                    text: aceptada
+                      ? 'Se deshace la aceptación: el evento por confirmar se cancela, se reabre el lead y el cliente no podrá aceptar hasta que reenvíes.'
+                      : 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, volver a borrador',
                     cancelButtonText: 'Cancelar',
@@ -406,6 +439,9 @@ export function CotizacionDetalle({
             >
               {volverMut.isPending ? 'Cambiando…' : 'Volver a borrador'}
             </Button>
+            {motivoVolver ? (
+              <DetalleActionHint>{motivoVolver}</DetalleActionHint>
+            ) : null}
           </DetalleActionGroup>
         )}
         {puedeCerrarSolicitud ? (

@@ -1,8 +1,13 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { apiErrorMessage } from '../../lib/api-error';
+import {
+  configVolverBorradorAceptadaHabilitado,
+  fetchConfiguracionPanel,
+} from '../../lib/configuracion';
+import { puedeVolverABorradorCotizacion } from '../../lib/flujo-estados';
 import {
   linkPdfPublicoCompleto,
   linkPublicoCompleto,
@@ -31,6 +36,15 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const puedeEnviar =
     cotizacion.etapa === 'borrador' || cotizacion.etapa === 'enviada';
   const qc = useQueryClient();
+  const { data: configPanel } = useQuery({
+    queryKey: ['config-panel'],
+    queryFn: fetchConfiguracionPanel,
+    staleTime: 1000 * 60 * 5,
+  });
+  const puedeVolver = puedeVolverABorradorCotizacion(cotizacion.etapa, {
+    permitirAceptada: configVolverBorradorAceptadaHabilitado(configPanel),
+    eventoEtapa: cotizacion.eventos?.[0]?.etapa,
+  });
   const [correoModalOpen, setCorreoModalOpen] = useState(false);
   const enviarWaMut = useMutation({
     mutationFn: () => enviarWhatsAppRapido(cotizacion.id, cotizacion.cliente, qc),
@@ -42,12 +56,17 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
   const volverMut = useMutation({
     mutationFn: () => volverCotizacionABorrador(cotizacion.id),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['cotizaciones'] });
-      await qc.invalidateQueries({ queryKey: ['cotizacion', cotizacion.id] });
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
+        qc.invalidateQueries({ queryKey: ['cotizacion', cotizacion.id] }),
+        qc.invalidateQueries({ queryKey: ['solicitudes'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['eventos-resumen'] }),
+      ]);
       await Swal.fire({
         icon: 'success',
         title: 'Volvió a borrador',
-        text: 'El cliente ya no puede aceptar hasta que reenvíes.',
+        text: 'El cliente ya no puede aceptar. Si había un evento por confirmar, se canceló.',
       });
     },
     onError: async (err) => {
@@ -127,6 +146,11 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
                 })();
               }}
             />
+          </>
+        )}
+        {puedeVolver && (
+          <>
+            {cotizacion.etapa !== 'enviada' ? <RowActionDivider /> : null}
             <RowIconButton
               icon="undo"
               title="Volver a borrador"
@@ -134,10 +158,13 @@ export function CotizacionRowActions({ cotizacion, onVer, onEditar }: Props) {
               disabled={volverMut.isPending}
               onClick={() => {
                 void (async () => {
+                  const aceptada = cotizacion.etapa === 'aceptada';
                   const ok = await Swal.fire({
                     icon: 'question',
                     title: '¿Volver a borrador?',
-                    text: 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
+                    text: aceptada
+                      ? 'Se deshace la aceptación: el evento por confirmar se cancela, se reabre el lead y el cliente no podrá aceptar hasta que reenvíes.'
+                      : 'El cliente dejará de poder aceptar. El mismo enlace se actualizará cuando reenvíes.',
                     showCancelButton: true,
                     confirmButtonText: 'Sí, volver a borrador',
                     cancelButtonText: 'Cancelar',

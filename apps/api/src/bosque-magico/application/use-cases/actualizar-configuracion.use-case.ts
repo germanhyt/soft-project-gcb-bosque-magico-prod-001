@@ -59,6 +59,10 @@ const CLAVES_RECORDATORIOS_TEXTO = new Set([
 
 const CLAVES_RECORDATORIOS_BOOLEAN = new Set(['recordatorios.habilitado']);
 
+const CLAVES_FLUJO_BOOLEAN = new Set([
+  'flujo.cotizacion_volver_borrador_aceptada',
+]);
+
 const CLAVES_FERIADOS = new Set(['calendario.feriados']);
 
 function parseSelectionMode(valor: unknown): 'single' | 'multiple' {
@@ -177,6 +181,8 @@ export class ActualizarConfiguracionUseCase {
       } else if (CLAVES_RECORDATORIOS_TEXTO.has(item.clave)) {
         valorGuardar = parseTexto(item.valor, item.clave);
       } else if (CLAVES_RECORDATORIOS_BOOLEAN.has(item.clave)) {
+        valorGuardar = parseBoolean(item.valor, item.clave);
+      } else if (CLAVES_FLUJO_BOOLEAN.has(item.clave)) {
         valorGuardar = parseBoolean(item.valor, item.clave);
       } else if (CLAVES_FERIADOS.has(item.clave)) {
         valorGuardar = parseFeriadosValor(item.valor);

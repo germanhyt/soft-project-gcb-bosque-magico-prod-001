@@ -20,14 +20,23 @@ export const TRANSICIONES_SOLICITUD = {
  * Máquina de estados — Cotización
  *
  * borrador → enviada (WhatsApp/correo) → aceptada (cliente o equipo) → evento en agenda
+ * enviada → borrador (corregir)
+ * aceptada → borrador si config flujo.cotizacion_volver_borrador_aceptada (default ON)
+ *   y el evento sigue por confirmar, sin contrato enviado/firmado
  * borrador | enviada → cerrada (al cerrar solicitud o manual)
  */
 export const TRANSICIONES_COTIZACION = {
   borrador: ['enviada', 'cerrada'] as const,
   enviada: ['aceptada', 'cerrada', 'borrador'] as const,
-  aceptada: [] as const,
+  aceptada: ['borrador'] as const,
   cerrada: [] as const,
 } satisfies Record<EtapaCotizacion, readonly EtapaCotizacion[]>;
+
+export type VolverABorradorCotizacionOpts = {
+  permitirAceptada?: boolean;
+  eventoEtapa?: string | null;
+  contratoEtapa?: string | null;
+};
 
 /**
  * Máquina de estados — Contrato
@@ -64,8 +73,41 @@ export function puedeEditarCotizacionBorrador(etapa: EtapaCotizacion): boolean {
   return etapa === 'borrador';
 }
 
-export function puedeVolverABorradorCotizacion(etapa: EtapaCotizacion): boolean {
-  return etapa === 'enviada';
+export function puedeVolverABorradorCotizacion(
+  etapa: EtapaCotizacion,
+  opts?: VolverABorradorCotizacionOpts,
+): boolean {
+  if (etapa === 'enviada') return true;
+  if (etapa !== 'aceptada') return false;
+  if (opts?.permitirAceptada === false) return false;
+  if (opts?.eventoEtapa === 'confirmado' || opts?.eventoEtapa === 'realizado') {
+    return false;
+  }
+  if (opts?.contratoEtapa === 'enviado' || opts?.contratoEtapa === 'firmado') {
+    return false;
+  }
+  return true;
+}
+
+/** Texto cuando la cotización está aceptada pero el flujo ya avanzó. */
+export function motivoBloqueoVolverABorradorCotizacion(
+  etapa: EtapaCotizacion,
+  opts?: VolverABorradorCotizacionOpts,
+): string | null {
+  if (etapa !== 'aceptada') return null;
+  if (opts?.permitirAceptada === false) {
+    return 'Volver a borrador tras aceptar está deshabilitado en Configuración.';
+  }
+  if (opts?.eventoEtapa === 'confirmado') {
+    return 'No se puede volver a borrador: el evento ya está confirmado.';
+  }
+  if (opts?.eventoEtapa === 'realizado') {
+    return 'No se puede volver a borrador: el evento ya está realizado.';
+  }
+  if (opts?.contratoEtapa === 'enviado' || opts?.contratoEtapa === 'firmado') {
+    return 'No se puede volver a borrador: el contrato ya fue enviado o firmado.';
+  }
+  return null;
 }
 
 /** Cerrar el lead desde una cotización abierta (no aceptada ni ya cerrada). */
