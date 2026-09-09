@@ -128,6 +128,8 @@ export function ContratoFormModal({
     }
 
     const turno = evento?.turno ?? cot.turno;
+    const cotHorarioInicio = cot.horarioInicio?.trim();
+    const cotHorarioFin = cot.horarioFin?.trim();
     const turnoCfg = parseTurnoConfig(
       `turnos.${turno}`,
       config.todas.find((c) => c.clave === `turnos.${turno}`)?.valor,
@@ -136,14 +138,14 @@ export function ContratoFormModal({
     const total = evento?.montoTotal ?? cot.montoTotal;
     const cliente = cot.cliente as CotizacionClienteExtendido;
     const rango = horarioDesdeRango(turnoCfg.horaInicio, turnoCfg.horaFin);
-    const [horaInicio, horaFin] = rango.split(' - ');
+    const [horaInicioCfg, horaFinCfg] = rango.split(' - ');
 
     setForm({
       numeroDocumento: cliente.numeroDocumento ?? '',
       tipoComprobante: cliente.tipoDocumento === 'ruc' ? 'factura' : 'boleta',
       documentoTributario: cliente.numeroDocumento ?? '',
-      horarioInicio: horaInicio ?? rango,
-      horarioFin: horaFin ?? '',
+      horarioInicio: cotHorarioInicio || horaInicioCfg || rango,
+      horarioFin: cotHorarioFin || horaFinCfg || '',
       adelanto1Monto: String(Math.min(adelantoRef, total)),
       adelanto1Fecha: todayIso(),
       adelanto2Monto: '',

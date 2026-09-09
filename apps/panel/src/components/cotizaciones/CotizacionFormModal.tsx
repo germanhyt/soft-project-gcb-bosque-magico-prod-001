@@ -18,7 +18,6 @@ import {
   inputConError,
   type FormikLite,
 } from '../ui/FormValidation';
-import { TURNOS } from '../../constants/solicitudes';
 import { apiErrorMessage } from '../../lib/api-error';
 import { generarCotizacionBorradorSolicitud, fetchSolicitud } from '../../lib/api';
 import {
@@ -30,7 +29,8 @@ import {
 import {
   productosParaCotizacion,
 } from '../../lib/producto-cotizacion';
-import { NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO, nombresExtrasPermitidosDesdeCatalogo } from '@bosque/shared';
+import { NOMBRE_ITEM_HORA_ADICIONAL_ESPACIO, nombresExtrasPermitidosDesdeCatalogo, rangoTurnoPersonalizado, TURNO_PERSONALIZADO } from '@bosque/shared';
+import { TurnoCampos } from '../eventos/TurnoCampos';
 import { useCapacidadEvento } from '../../hooks/useCapacidadEvento';
 import {
   hintCapacidadEvento,
@@ -80,6 +80,11 @@ function schemaCrear(capacidad: CapacidadEvento) {
       .required('Indica el nombre del cumpleañero'),
     fechaEvento: Yup.string().required('Indica la fecha del evento'),
     turno: Yup.string().required('Indica el turno'),
+    horarioInicio: Yup.string().when('turno', {
+      is: TURNO_PERSONALIZADO,
+      then: (s) => s.required('Indica la hora de inicio (el turno dura 3 h)'),
+      otherwise: (s) => s.optional(),
+    }),
     cantidadNinos: Yup.number()
       .transform((value, original) => (original === '' || original == null ? undefined : value))
       .typeError('Indica un número válido de niños')
@@ -99,6 +104,11 @@ function schemaEditar(capacidad: CapacidadEvento) {
   return Yup.object({
     fechaEvento: Yup.string().required('Indica la fecha del evento'),
     turno: Yup.string().required('Indica el turno'),
+    horarioInicio: Yup.string().when('turno', {
+      is: TURNO_PERSONALIZADO,
+      then: (s) => s.required('Indica la hora de inicio (el turno dura 3 h)'),
+      otherwise: (s) => s.optional(),
+    }),
     cantidadNinos: Yup.number()
       .transform((value, original) => (original === '' || original == null ? undefined : value))
       .typeError('Indica un número válido de niños')
@@ -244,6 +254,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
       ? {
           fechaEvento: cot?.fechaEvento?.slice(0, 10) ?? '',
           turno: cot?.turno ?? 'turno_1',
+          horarioInicio: cot?.horarioInicio ?? '',
           cantidadNinos: cot?.cantidadNinos ?? 25,
           horasAdicionales: extraerHorasAdicionales(cot?.items),
           tematica: cot?.tematica ?? '',
@@ -258,6 +269,7 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           cumpleaneroEdad: landing?.cumpleaneroEdad ?? '',
           fechaEvento: solicitudActiva?.fechaTentativa?.slice(0, 10) ?? '',
           turno: solicitudActiva?.turnoInteres ?? 'turno_1',
+          horarioInicio: solicitudActiva?.horarioInicio ?? '',
           cantidadNinos: solicitudActiva?.cantidadNinosEstimada ?? '',
           horasAdicionales: '' as const,
           tematica: landing?.tematica ?? '',
@@ -272,6 +284,14 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
         actualizarMut.mutate({
           fechaEvento: values.fechaEvento,
           turno: values.turno,
+          horarioInicio:
+            values.turno === TURNO_PERSONALIZADO
+              ? (values as { horarioInicio?: string }).horarioInicio
+              : undefined,
+          horarioFin:
+            values.turno === TURNO_PERSONALIZADO
+              ? rangoTurnoPersonalizado((values as { horarioInicio?: string }).horarioInicio)?.fin
+              : undefined,
           cantidadNinos: Number(values.cantidadNinos),
           horasAdicionales: Number((values as { horasAdicionales?: number }).horasAdicionales) || 0,
           tematica: (values as { tematica?: string }).tematica?.trim() || undefined,
@@ -306,6 +326,14 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
           },
           fechaEvento: values.fechaEvento,
           turno: values.turno,
+          horarioInicio:
+            values.turno === TURNO_PERSONALIZADO
+              ? (values as { horarioInicio?: string }).horarioInicio
+              : undefined,
+          horarioFin:
+            values.turno === TURNO_PERSONALIZADO
+              ? rangoTurnoPersonalizado((values as { horarioInicio?: string }).horarioInicio)?.fin
+              : undefined,
           cantidadNinos: Number(values.cantidadNinos),
           horasAdicionales: Number(v.horasAdicionales) || 0,
           tematica: v.tematica.trim() || undefined,
@@ -581,23 +609,21 @@ export function CotizacionFormModal({ open, onClose, target, onSaved }: Props) {
                 />
                 <FieldHint formik={formikLite} name="fechaEvento" />
               </label>
-              <label className="block">
-                <span className={LABEL_CLASS}>Turno *</span>
-                <select
-                  name="turno"
-                  className={inputConError(formikLite, 'turno')}
-                  value={formik.values.turno}
-                  onChange={formik.handleChange}
-                  onBlur={formik.handleBlur}
-                >
-                  {TURNOS.map((t) => (
-                    <option key={t.value} value={t.value}>
-                      {t.label}
-                    </option>
-                  ))}
-                </select>
+              <div className="sm:col-span-2">
+                <TurnoCampos
+                  required
+                  turno={formik.values.turno}
+                  horarioInicio={(formik.values as { horarioInicio?: string }).horarioInicio ?? ''}
+                  onTurno={(turno) => void formik.setFieldValue('turno', turno)}
+                  onHorarioInicio={(inicio) => void formik.setFieldValue('horarioInicio', inicio)}
+                  onBlur={() => {
+                    void formik.setFieldTouched('turno', true);
+                    void formik.setFieldTouched('horarioInicio', true);
+                  }}
+                />
                 <FieldHint formik={formikLite} name="turno" />
-              </label>
+                <FieldHint formik={formikLite} name="horarioInicio" />
+              </div>
                 <label className="block">
                   <span className={LABEL_CLASS}>Cantidad de niños *</span>
                   <input

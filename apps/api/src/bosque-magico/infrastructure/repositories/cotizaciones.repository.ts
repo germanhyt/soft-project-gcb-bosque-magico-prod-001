@@ -130,6 +130,22 @@ export class CotizacionesRepository {
     });
   }
 
+  listarEventosActivosEnFecha(fecha: Date, zona = 'Bosque Mágico') {
+    return this.prisma.bosqueMagicoEvento.findMany({
+      where: {
+        fechaEvento: fecha,
+        zona,
+        etapa: { in: [EtapaEvento.por_confirmar, EtapaEvento.confirmado] },
+      },
+      select: {
+        id: true,
+        turno: true,
+        horarioInicio: true,
+        horarioFin: true,
+      },
+    });
+  }
+
   existeEventoActivoEnSlot(
     fecha: Date,
     turno: TurnoInteres,
@@ -151,6 +167,8 @@ export class CotizacionesRepository {
     cumpleaneroId: string;
     fechaEvento: Date;
     turno: TurnoInteres;
+    horarioInicio?: string | null;
+    horarioFin?: string | null;
     cantidadNinos: number;
     tematica?: string;
     paquete?: string;
@@ -173,6 +191,8 @@ export class CotizacionesRepository {
         cumpleaneroId: rest.cumpleaneroId,
         fechaEvento: rest.fechaEvento,
         turno: rest.turno,
+        horarioInicio: rest.horarioInicio,
+        horarioFin: rest.horarioFin,
         cantidadNinos: rest.cantidadNinos,
         tematica: rest.tematica,
         paquete: rest.paquete,
@@ -309,6 +329,8 @@ export class CotizacionesRepository {
           cumpleaneroId: cot.cumpleaneroId,
           fechaEvento: cot.fechaEvento,
           turno: cot.turno,
+          horarioInicio: cot.horarioInicio,
+          horarioFin: cot.horarioFin,
           tematica: cot.tematica,
           cantidadNinos: cot.cantidadNinos,
           montoTotal: cot.montoTotal,

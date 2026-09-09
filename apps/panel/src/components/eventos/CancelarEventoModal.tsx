@@ -27,6 +27,10 @@ export function CancelarEventoModal({ open, onClose, onConfirm, pending, error }
   return (
     <Modal open={open} onClose={handleClose} title="Cancelar evento" nested>
       <form onSubmit={handleSubmit} className="space-y-4">
+        <p className="text-body-sm text-on-surface-variant">
+          Se anulará el contrato si existe y se cancelarán los pedidos abiertos. Los proveedores que
+          ya fueron solicitados o confirmaron recibirán un correo si SMTP está activo.
+        </p>
         <label className="block">
           <span className={LABEL_CLASS}>Motivo (opcional)</span>
           <input

@@ -22,6 +22,22 @@ export class ListarConfiguracionPanelUseCase {
   constructor(private readonly configuracion: ConfiguracionRepository) {}
 
   async ejecutar() {
+    await Promise.all([
+      this.configuracion.crearSiNoExiste({
+        clave: 'pedidos_proveedor.cancelacion_asunto',
+        valor: 'Evento cancelado — {{servicio}} ({{fecha}})',
+        descripcion:
+          'Asunto del correo de cancelación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{motivo}}',
+      }),
+      this.configuracion.crearSiNoExiste({
+        clave: 'pedidos_proveedor.cancelacion_cuerpo',
+        valor:
+          'Hola {{proveedor}},\n\nEl evento de Bosque Mágico para {{cliente}} el {{fecha}} ({{turno}}) fue cancelado.\n\nServicio: {{servicio}}\n{{motivo}}\n\nNo es necesario que asistas. Gracias.\nEquipo Bosque Mágico',
+        descripcion:
+          'Cuerpo del correo de cancelación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{motivo}}',
+      }),
+    ]);
+
     const items = await this.configuracion.listarTodas();
     const numericas = items.filter(
       (i) =>

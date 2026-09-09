@@ -41,3 +41,36 @@ export async function mostrarFeedbackNotificacionProveedor(
     showConfirmButton: false,
   });
 }
+
+export async function mostrarResumenNotificacionesProveedor(
+  items: NotificacionProveedorResultado[] | undefined,
+  opciones: { tituloExito: string; textoExito?: string },
+) {
+  if (!items?.length) return;
+
+  const enviados = items.filter((i) => i.enviado).length;
+  if (enviados > 0) {
+    await Swal.fire({
+      icon: 'success',
+      title: opciones.tituloExito,
+      text:
+        opciones.textoExito ??
+        `Se envió correo a ${enviados} proveedor${enviados === 1 ? '' : 'es'}.`,
+      timer: 2600,
+      showConfirmButton: false,
+    });
+    return;
+  }
+
+  const motivo = items.find((i) => i.motivo)?.motivo;
+  const text = motivo ? MOTIVO_TEXTO[motivo] : '';
+  if (!text || motivo === 'no_aplica') return;
+
+  await Swal.fire({
+    icon: 'info',
+    title: 'Sin correo automático a proveedores',
+    text,
+    timer: 3600,
+    showConfirmButton: false,
+  });
+}

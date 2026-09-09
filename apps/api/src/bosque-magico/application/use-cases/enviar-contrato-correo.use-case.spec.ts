@@ -72,6 +72,36 @@ describe('EnviarContratoCorreoUseCase', () => {
     expect(marcarEnviado.ejecutar).toHaveBeenCalledWith('c1');
   });
 
+  it('reenvía contrato firmado sin cambiar de estado', async () => {
+    contratos.obtenerPorId.mockResolvedValue({
+      ...contrato,
+      etapa: EtapaContrato.firmado,
+    });
+    smtp.estaActivo.mockResolvedValue(true);
+
+    const res = await useCase.ejecutar('c1', {});
+
+    expect(res.enviadoPorSmtp).toBe(true);
+    expect(res.etapa).toBe(EtapaContrato.firmado);
+    expect(smtp.enviarCorreo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destino: 'ana@test.com',
+        asunto: 'Contrato firmado CON-001 - Bosque Mágico',
+      }),
+    );
+    expect(marcarEnviado.ejecutar).not.toHaveBeenCalled();
+  });
+
+  it('rechaza si el contrato está anulado', async () => {
+    contratos.obtenerPorId.mockResolvedValue({
+      ...contrato,
+      etapa: EtapaContrato.anulado,
+    });
+
+    await expect(useCase.ejecutar('c1', {})).rejects.toThrow(BadRequestException);
+    expect(smtp.enviarCorreo).not.toHaveBeenCalled();
+  });
+
   it('rechaza si no hay correo', async () => {
     contratos.obtenerPorId.mockResolvedValue({
       ...contrato,

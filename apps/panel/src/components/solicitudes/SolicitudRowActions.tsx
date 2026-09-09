@@ -15,6 +15,7 @@ import {
 } from '../../lib/api';
 import {
   cotizacionActivaDeSolicitud,
+  esSolicitudDesdeLanding,
   puedeCrearCotizacionManual,
   puedeGenerarBorradorDesdePayload,
 } from '../../lib/solicitud-cotizacion';
@@ -179,7 +180,7 @@ export function SolicitudRowActions({
                 onClick={() => generarBorradorMut.mutate()}
               />
             )}
-            {/* {mostrarCrearCotizacion && (
+            {mostrarCrearCotizacion && (
               <RowIconButton
                 icon="add_circle"
                 title={
@@ -187,24 +188,20 @@ export function SolicitudRowActions({
                 }
                 aria-label="Crear cotización"
                 onClick={() =>
-                  onAbrirCotizacionForm
-                    ? onAbrirCotizacionForm({ mode: 'create', solicitudId: solicitud.id })
-                    : navigate(`/cotizaciones?form=nueva&solicitudId=${solicitud.id}`)
+                  onAbrirCotizacionForm?.({ mode: 'create', solicitudId: solicitud.id })
                 }
               />
-            )} */}
-            {/* {mostrarEditarCotizacion && (
+            )}
+            {mostrarEditarCotizacion && (
               <RowIconButton
                 icon="edit"
                 title="Editar cotización en borrador"
                 aria-label="Editar cotización en borrador"
                 onClick={() =>
-                  onAbrirCotizacionForm
-                    ? onAbrirCotizacionForm({ mode: 'edit', cotizacionId: cotizacionActiva!.id })
-                    : navigate(`/cotizaciones?editar=${cotizacionActiva!.id}`)
+                  onAbrirCotizacionForm?.({ mode: 'edit', cotizacionId: cotizacionActiva!.id })
                 }
               />
-            )} */}
+            )}
           </>
         )}
 

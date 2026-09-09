@@ -4,6 +4,7 @@ export const TURNOS = [
   { value: 'turno_1', label: 'Turno 1 - 9:00 a.m. - 12:00 m.' },
   { value: 'turno_2', label: 'Turno 2 - 2:00 p.m. - 5:00 p.m.' },
   { value: 'turno_3', label: 'Turno 3 - 7:00 p.m. - 10:00 p.m.' },
+  { value: 'turno_personalizado', label: 'Turno personalizado (3 h)' },
 ] as const;
 
 export const ETAPA_LABEL: Record<EtapaSolicitud, string> = {
@@ -26,6 +27,7 @@ export const TURNO_LABEL: Record<string, string> = {
   turno_1: 'Turno 1',
   turno_2: 'Turno 2',
   turno_3: 'Turno 3',
+  turno_personalizado: 'Turno personalizado',
 };
 
 export const MOTIVO_CIERRE_LABEL: Record<MotivoCierre, string> = {

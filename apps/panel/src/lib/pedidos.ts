@@ -37,6 +37,8 @@ export type Pedido = {
     id: string;
     fechaEvento: string;
     turno: string;
+    horarioInicio?: string | null;
+    horarioFin?: string | null;
     etapa?: string;
     cantidadNinos?: number;
     tematica?: string | null;

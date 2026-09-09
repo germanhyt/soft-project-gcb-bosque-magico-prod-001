@@ -74,13 +74,63 @@ describe('NotificacionProveedorService', () => {
       cliente: { nombreCompleto: 'Ana Pérez' },
     });
 
-    const result = await service.notificarAlSolicitar('ped-1');
+    const result = await service.notificarAlSolicitar('ped-1', {
+      estadoContrato: 'El contrato ya está firmado; el evento se realizará.',
+    });
 
     expect(result.enviado).toBe(true);
     expect(smtp.enviarCorreo).toHaveBeenCalledWith({
       destino: 'mimo@test.com',
       asunto: 'Pedido Show Magia — 15 de julio de 2026',
       texto: 'Hola Mimo Pro, servicio Show Magia para Ana Pérez.',
+    });
+  });
+
+  it('envía cancelación aunque la notificación de solicitud esté deshabilitada', async () => {
+    configuracion.listarTodas.mockResolvedValue([
+      { clave: 'pedidos_proveedor.notificar_correo', valor: false },
+      {
+        clave: 'pedidos_proveedor.cancelacion_asunto',
+        valor: 'Cancelado {{servicio}}',
+      },
+      {
+        clave: 'pedidos_proveedor.cancelacion_cuerpo',
+        valor: 'Hola {{proveedor}}, {{motivo}} servicio {{servicio}}.',
+      },
+    ]);
+    configuracion.obtenerPorClave.mockResolvedValue({
+      clave: 'turnos.turno_1',
+      valor: { etiqueta: 'Mañana', horario: '9:00 a.m. - 12:00 p.m.' },
+    });
+    smtp.estaActivo.mockResolvedValue(true);
+    pedidos.obtenerPorId.mockResolvedValue({
+      id: 'ped-1',
+      eventoId: 'evt-1',
+      tipo: 'proveedor',
+      nombre: 'Show Magia',
+      cantidad: 1,
+      costo: { toString: () => '300' },
+      notas: null,
+      tokenPublico: 'abc123',
+      proveedor: { nombre: 'Mimo Pro', correo: 'mimo@test.com' },
+    });
+    eventos.obtenerPorId.mockResolvedValue({
+      id: 'evt-1',
+      fechaEvento: new Date('2026-07-15T12:00:00.000Z'),
+      turno: 'turno_1',
+      cantidadNinos: 12,
+      tematica: null,
+      cumpleanero: { edad: 7 },
+      cliente: { nombreCompleto: 'Ana Pérez' },
+    });
+
+    const result = await service.notificarCancelacion('ped-1', 'cliente reprogramó');
+
+    expect(result.enviado).toBe(true);
+    expect(smtp.enviarCorreo).toHaveBeenCalledWith({
+      destino: 'mimo@test.com',
+      asunto: 'Cancelado Show Magia',
+      texto: 'Hola Mimo Pro, Motivo: cliente reprogramó servicio Show Magia.',
     });
   });
 });

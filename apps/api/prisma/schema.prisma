@@ -72,6 +72,8 @@ enum TurnoInteres {
 
   turno_3
 
+  turno_personalizado
+
 }
 
 
@@ -396,6 +398,10 @@ model BosqueMagicoSolicitud {
 
   turnoInteres          TurnoInteres?          @map("turno_interes")
 
+  horarioInicio         String?                @map("horario_inicio")
+
+  horarioFin            String?                @map("horario_fin")
+
   cantidadNinosEstimada Int?                   @map("cantidad_ninos_estimada")
 
   etapa                 EtapaSolicitud         @default(nueva)
@@ -662,6 +668,10 @@ model BosqueMagicoCotizacion {
 
   turno           TurnoInteres
 
+  horarioInicio   String?                 @map("horario_inicio")
+
+  horarioFin      String?                 @map("horario_fin")
+
   cantidadNinos   Int                     @map("cantidad_ninos")
 
   tematica        String?
@@ -779,6 +789,10 @@ model BosqueMagicoEvento {
   fechaEvento  DateTime      @map("fecha_evento") @db.Date
 
   turno        TurnoInteres
+
+  horarioInicio String?      @map("horario_inicio")
+
+  horarioFin    String?      @map("horario_fin")
 
   zona         String        @default("Bosque Mágico")
 

@@ -11,6 +11,7 @@ import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 import { PrecondicionesEventoService } from '../../domain/services/precondiciones-evento.service';
+import { hayConflictoTurno } from '../../domain/utils/turno-horario';
 
 @Injectable()
 export class ConfirmarEventoUseCase {
@@ -34,13 +35,26 @@ export class ConfirmarEventoUseCase {
 
     await this.precondiciones.validarParaConfirmar(id);
 
-    const conflicto = await this.eventos.existeConflictoActivo(
+    const ocupados = await this.eventos.listarActivosEnFecha(
       antes.fechaEvento,
-      antes.turno,
       antes.zona,
       id,
     );
-    if (conflicto) {
+    const horario = antes as { horarioInicio?: string | null; horarioFin?: string | null };
+    if (
+      hayConflictoTurno(
+        {
+          turno: antes.turno,
+          inicio: horario.horarioInicio,
+          fin: horario.horarioFin,
+        },
+        ocupados.map((e) => ({
+          turno: e.turno,
+          inicio: e.horarioInicio,
+          fin: e.horarioFin,
+        })),
+      )
+    ) {
       throw new BadRequestException(
         'Ya existe otro evento activo en esa fecha y turno',
       );

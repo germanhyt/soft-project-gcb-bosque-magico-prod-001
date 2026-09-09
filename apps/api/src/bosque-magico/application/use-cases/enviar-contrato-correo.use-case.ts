@@ -6,6 +6,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { EtapaContrato } from '@prisma/client';
 import { SmtpService } from '../../domain/services/smtp.service';
+import { mapContratoResponse } from '../../domain/mappers/contrato.mapper';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
 import { EnviarContratoCorreoDto } from '../dto/enviar-contrato-correo.dto';
 import { MarcarContratoEnviadoUseCase } from './marcar-contrato-estado.use-case';
@@ -44,11 +45,8 @@ export class EnviarContratoCorreoUseCase {
     if (contrato.etapa === EtapaContrato.anulado) {
       throw new BadRequestException('El contrato está anulado');
     }
-    if (contrato.etapa === EtapaContrato.firmado) {
-      throw new BadRequestException(
-        'El contrato ya está firmado; no se reenvía por este flujo',
-      );
-    }
+
+    const yaFirmado = contrato.etapa === EtapaContrato.firmado;
 
     const destino = (dto.correoDestino?.trim() || correoDesdeSnapshot(contrato.snapshotJson)).trim();
     if (!destino) {
@@ -62,11 +60,16 @@ export class EnviarContratoCorreoUseCase {
     const nombre = nombreDesdeSnapshot(contrato.snapshotJson);
 
     const correoAsunto =
-      dto.correoAsunto?.trim() || `Contrato ${contrato.numero} - Bosque Mágico`;
+      dto.correoAsunto?.trim() ||
+      (yaFirmado
+        ? `Contrato firmado ${contrato.numero} - Bosque Mágico`
+        : `Contrato ${contrato.numero} - Bosque Mágico`);
     const correoCuerpo =
       dto.correoCuerpo?.trim() ||
       `Hola ${nombre},\n\n` +
-        `Te compartimos el contrato ${contrato.numero} de Bosque Mágico.\n\n` +
+        (yaFirmado
+          ? `Te compartimos el contrato firmado ${contrato.numero} de Bosque Mágico.\n\n`
+          : `Te compartimos el contrato ${contrato.numero} de Bosque Mágico.\n\n`) +
         `Ver resumen en línea:\n${link}\n\n` +
         `Descargar PDF:\n${linkPdf}\n\n` +
         `Saludos cordiales,\nEquipo Bosque Mágico`;
@@ -81,7 +84,9 @@ export class EnviarContratoCorreoUseCase {
       enviadoPorSmtp = true;
     }
 
-    const marcado = await this.marcarEnviado.ejecutar(id);
+    const marcado = yaFirmado
+      ? mapContratoResponse(contrato)
+      : await this.marcarEnviado.ejecutar(id);
 
     return {
       ...marcado,

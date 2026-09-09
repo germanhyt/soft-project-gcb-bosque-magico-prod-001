@@ -127,6 +127,8 @@ export type Cotizacion = {
   tokenPublico: string;
   fechaEvento: string;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinos: number;
   tematica?: string | null;
   paquete?: string | null;
@@ -150,6 +152,8 @@ export type Cotizacion = {
 export type ActualizarCotizacionPayload = {
   fechaEvento?: string;
   turno?: string;
+  horarioInicio?: string;
+  horarioFin?: string;
   cantidadNinos?: number;
   horasAdicionales?: number;
   tematica?: string;
@@ -173,6 +177,8 @@ export type CrearCotizacionPayload = {
   cumpleanero: { nombre: string; edad?: number; tematicaFavorita?: string };
   fechaEvento: string;
   turno: string;
+  horarioInicio?: string;
+  horarioFin?: string;
   cantidadNinos: number;
   horasAdicionales?: number;
   tematica?: string;

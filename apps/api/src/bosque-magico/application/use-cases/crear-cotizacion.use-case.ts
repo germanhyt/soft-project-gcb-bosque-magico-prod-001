@@ -25,6 +25,11 @@ import { CapacidadEventoService } from '../../domain/services/capacidad-evento.s
 import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
 import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
 import { payloadExtrasPermitidos } from '../../domain/utils/extras-permitidos-payload';
+import {
+  esTurnoPersonalizado,
+  persistirHorarioDeTurno,
+  rangoTurnoPersonalizado,
+} from '../../domain/utils/turno-horario';
 
 @Injectable()
 export class CrearCotizacionUseCase {
@@ -109,6 +114,17 @@ export class CrearCotizacionUseCase {
     await this.anticipacion.validar(dto.fechaEvento);
     await this.capacidad.validar(dto.cantidadNinos);
 
+    if (esTurnoPersonalizado(dto.turno) && !rangoTurnoPersonalizado(dto.horarioInicio)) {
+      throw new BadRequestException(
+        'El turno personalizado requiere hora de inicio; el rango es de 3 horas.',
+      );
+    }
+    const horario = persistirHorarioDeTurno(
+      dto.turno,
+      dto.horarioInicio,
+      dto.horarioFin,
+    );
+
     const fechaEvento = new Date(dto.fechaEvento);
     let cliente = await this.clientes.buscarPorCelular(dto.cliente.celular);
     if (!cliente) {
@@ -155,6 +171,8 @@ export class CrearCotizacionUseCase {
       cumpleaneroId: cumpleanero.id,
       fechaEvento,
       turno: dto.turno,
+      horarioInicio: horario.horarioInicio,
+      horarioFin: horario.horarioFin,
       cantidadNinos: dto.cantidadNinos,
       tematica: dto.tematica,
       paquete: composicion.paqueteNombre,

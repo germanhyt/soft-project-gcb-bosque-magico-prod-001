@@ -42,7 +42,10 @@ export function EnviarContratoActions({
   const [asuntoCorreo, setAsuntoCorreo] = useState('');
   const [mensajeCorreo, setMensajeCorreo] = useState('');
   const puedeEnviar =
-    contrato.etapa === 'borrador' || contrato.etapa === 'enviado';
+    contrato.etapa === 'borrador' ||
+    contrato.etapa === 'enviado' ||
+    contrato.etapa === 'firmado';
+  const celularWa = (celular ?? '').trim();
   const correoDestino = correo?.trim() ?? contrato.snapshotJson?.cliente?.correo?.trim() ?? '';
 
   const { data: smtpActivo = false } = useQuery({
@@ -61,6 +64,7 @@ export function EnviarContratoActions({
   };
 
   const enviarWhatsApp = async () => {
+    if (!celularWa) return;
     setEnviandoWa(true);
     const waTab = window.open('about:blank', '_blank');
     try {
@@ -69,7 +73,7 @@ export function EnviarContratoActions({
         await invalidar();
       }
 
-      const waUrl = waMeUrlCotizacion(celular, mensajeWa.trim());
+      const waUrl = waMeUrlCotizacion(celularWa, mensajeWa.trim());
       const abierto = abrirWhatsApp(waUrl, waTab);
       if (!abierto) {
         await Swal.fire({
@@ -115,6 +119,7 @@ export function EnviarContratoActions({
   };
 
   if (!puedeEnviar) return null;
+  if (!celularWa && !correoDestino) return null;
 
   const pendiente = enviandoWa || enviandoCorreo;
   const etapa = contrato.etapa as EtapaContrato;
@@ -122,6 +127,7 @@ export function EnviarContratoActions({
   return (
     <>
       <div className={`col-span-2 grid grid-cols-1 gap-2 sm:grid-cols-2 ${className}`}>
+        {celularWa ? (
         <Button
           className="inline-flex gap-2"
           disabled={pendiente}
@@ -131,8 +137,13 @@ export function EnviarContratoActions({
           }}
         >
           <WhatsAppIcon size={20} className="text-on-primary" />
-          {etapa === 'borrador' ? 'Enviar por WhatsApp' : 'Reenviar por WhatsApp'}
+          {etapa === 'firmado'
+            ? 'Enviar firmado por WhatsApp'
+            : etapa === 'borrador'
+              ? 'Enviar por WhatsApp'
+              : 'Reenviar por WhatsApp'}
         </Button>
+        ) : null}
         {correoDestino && (
           <Button
             variant="secondary"
@@ -142,9 +153,15 @@ export function EnviarContratoActions({
               const link = contrato.linkPublico || contrato.tokenPublico;
               const linkPdf = contrato.linkPdfPublico || contrato.tokenPublico;
               const nombreCliente = contrato.snapshotJson?.cliente?.nombreCompleto ?? 'cliente';
-              setAsuntoCorreo(asuntoCorreoContrato(contrato.numero));
+              setAsuntoCorreo(asuntoCorreoContrato(contrato.numero, contrato.etapa));
               setMensajeCorreo(
-                mensajeCorreoContrato(nombreCliente, contrato.numero, link, linkPdf),
+                mensajeCorreoContrato(
+                  nombreCliente,
+                  contrato.numero,
+                  link,
+                  linkPdf,
+                  contrato.etapa,
+                ),
               );
               setCorreoModalOpen(true);
             }}
@@ -155,14 +172,22 @@ export function EnviarContratoActions({
             }
           >
             <Icon name="mail" size={20} />
-            {etapa === 'borrador' ? 'Enviar por correo' : 'Reenviar por correo'}
+            {etapa === 'firmado'
+              ? 'Enviar firmado por correo'
+              : etapa === 'borrador'
+                ? 'Enviar por correo'
+                : 'Reenviar por correo'}
           </Button>
         )}
       </div>
       <Modal
         open={waModalOpen}
         onClose={() => setWaModalOpen(false)}
-        title="Enviar contrato por WhatsApp"
+        title={
+          etapa === 'firmado'
+            ? 'Enviar contrato firmado por WhatsApp'
+            : 'Enviar contrato por WhatsApp'
+        }
         description="Revisa el mensaje antes de abrir WhatsApp."
         size="lg"
         nested
@@ -201,7 +226,11 @@ export function EnviarContratoActions({
       <Modal
         open={correoModalOpen}
         onClose={() => setCorreoModalOpen(false)}
-        title="Enviar contrato por correo"
+        title={
+          etapa === 'firmado'
+            ? 'Enviar contrato firmado por correo'
+            : 'Enviar contrato por correo'
+        }
         description={
           smtpActivo
             ? 'Revisa el asunto y el mensaje. Se enviará automáticamente vía SMTP.'

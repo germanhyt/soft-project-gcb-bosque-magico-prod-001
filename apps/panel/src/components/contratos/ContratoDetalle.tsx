@@ -11,12 +11,13 @@ import { DetalleActionGroup, DetalleActionHint, DetalleActionsFooter } from '../
 import { Button } from '../ui/Button';
 import {
   motivoBloqueoVolverABorradorContrato,
+  puedeCancelarEvento,
   puedeEnviarContrato,
   puedeMarcarContratoFirmado,
   puedeVolverABorradorContrato,
 } from '../../lib/flujo-estados';
 import { CARD_CLASS } from '../../constants/design';
-import { TURNO_LABEL } from '../../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { imprimirContratoDesdeRegistro } from '../../lib/contrato-print';
 import {
   fetchContrato,
@@ -27,6 +28,10 @@ import {
 } from '../../lib/contratos';
 import { formatFecha, formatFechaHora } from '../../lib/format';
 import { mostrarErrorApi, mostrarValidacion } from '../../lib/swal-feedback';
+import { cancelarEvento } from '../../lib/eventos';
+import { mostrarResumenNotificacionesProveedor } from '../../lib/notificacion-pedido-proveedor-feedback';
+import { CancelarEventoModal } from '../eventos/CancelarEventoModal';
+import { apiErrorMessage } from '../../lib/api-error';
 import { useState } from 'react';
 
 type Props = {
@@ -40,6 +45,8 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const qc = useQueryClient();
   const navigate = useNavigate();
   const [editarOpen, setEditarOpen] = useState(false);
+  const [cancelarOpen, setCancelarOpen] = useState(false);
+  const [cancelarError, setCancelarError] = useState('');
 
   const { data: contrato, isLoading, isError } = useQuery({
     queryKey: ['contrato', contratoId],
@@ -50,7 +57,7 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
 
   const firmarMut = useMutation({
     mutationFn: () => marcarContratoFirmado(contrato!.id),
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       const eventoId = contrato!.eventoId;
       await Promise.all([
         qc.invalidateQueries({ queryKey: ['contrato', contratoId] }),
@@ -59,18 +66,26 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
         qc.invalidateQueries({ queryKey: ['evento', eventoId] }),
         qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] }),
         qc.invalidateQueries({ queryKey: ['cotizacion', contrato!.cotizacionId] }),
+        qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] }),
+        qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] }),
       ]);
 
+      const auto = res.solicitarAutomatico;
       const result = await Swal.fire({
         icon: 'success',
         title: 'Contrato firmado',
         html: eventoId
-          ? '<p class="text-sm">El contrato quedó firmado. Puedes continuar en Agenda para confirmar el evento cuando operaciones estén listas.</p>'
+          ? auto && auto.pedidos > 0
+            ? `<p class="text-sm">El contrato quedó firmado. Se pasaron ${auto.pedidos} pedido(s) a Solicitado.</p>`
+            : '<p class="text-sm">El contrato quedó firmado. Puedes continuar en Agenda para confirmar el evento cuando operaciones estén listas.</p>'
           : '<p class="text-sm">El contrato quedó firmado.</p>',
         showCancelButton: !!eventoId,
         confirmButtonText: 'Continuar aquí',
         cancelButtonText: 'Ir a Agenda',
         reverseButtons: true,
+      });
+      await mostrarResumenNotificacionesProveedor(auto?.notificaciones, {
+        tituloExito: 'Proveedores notificados',
       });
 
       if (eventoId && result.dismiss === Swal.DismissReason.cancel) {
@@ -106,6 +121,48 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
     },
     onError: async (err: unknown) => {
       await mostrarErrorApi(err, 'No se pudo volver a borrador');
+    },
+  });
+
+  const cancelarMut = useMutation({
+    mutationFn: (motivo: string) => cancelarEvento(contrato!.eventoId, motivo),
+    onSuccess: async (res) => {
+      setCancelarOpen(false);
+      setCancelarError('');
+      const eventoId = contrato?.eventoId;
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['contrato', contratoId] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['eventos-resumen'] }),
+        qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] }),
+        ...(eventoId
+          ? [
+              qc.invalidateQueries({ queryKey: ['evento', eventoId] }),
+              qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] }),
+              qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] }),
+            ]
+          : []),
+      ]);
+      await Swal.fire({
+        icon: 'info',
+        title: 'Evento cancelado',
+        text: [
+          res.contratoAnulado ? 'Contrato anulado.' : null,
+          typeof res.pedidosCancelados === 'number'
+            ? `${res.pedidosCancelados} pedido(s) cancelados.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      });
+      await mostrarResumenNotificacionesProveedor(res.notificacionesProveedor, {
+        tituloExito: 'Proveedores avisados',
+        textoExito: 'Se envió correo de cancelación a los proveedores que ya estaban en el flujo.',
+      });
+    },
+    onError: (err: unknown) => {
+      setCancelarError(apiErrorMessage(err, 'No se pudo cancelar el evento'));
     },
   });
 
@@ -145,7 +202,7 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
   const footer =
     c && !isLoading ? (
       <DetalleActionsFooter>
-        {celular && puedeEnviarContrato(c.etapa) ? (
+        {(celular || correo) && puedeEnviarContrato(c.etapa) ? (
           <DetalleActionGroup label="Compartir con el cliente">
             <EnviarContratoActions contrato={c} celular={celular} correo={correo} />
             <Button variant="ghost" className="w-full" onClick={() => void copiarLink()}>
@@ -237,6 +294,24 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
             </Button>
           </DetalleActionGroup>
         ) : null}
+        {puedeCancelarEvento(c.evento?.etapa) ? (
+          <DetalleActionGroup label="Cancelar evento">
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              onClick={() => {
+                setCancelarError('');
+                setCancelarOpen(true);
+              }}
+            >
+              Cancelar evento
+            </Button>
+            <DetalleActionHint>
+              Anula este contrato, cancela pedidos abiertos y avisa a proveedores que ya fueron
+              solicitados o confirmaron.
+            </DetalleActionHint>
+          </DetalleActionGroup>
+        ) : null}
       </DetalleActionsFooter>
     ) : undefined;
 
@@ -305,7 +380,11 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
                 <dt className="text-label-caps text-outline">Evento</dt>
                 <dd className="font-medium">
                   {formatFecha(snap.evento.fechaEvento)} ·{' '}
-                  {TURNO_LABEL[snap.evento.turno] ?? snap.evento.turno}
+                  {etiquetaTurno(
+                    snap.evento.turno,
+                    snap.evento.horarioInicio,
+                    snap.evento.horarioFin,
+                  )}
                 </dd>
                 <dd className="text-body-sm text-on-surface-variant">
                   {c.horarioInicio} — {c.horarioFin}
@@ -386,6 +465,13 @@ export function ContratoDetalle({ contratoId, listItem, open, onClose }: Props) 
           }}
         />
       )}
+      <CancelarEventoModal
+        open={cancelarOpen}
+        onClose={() => setCancelarOpen(false)}
+        pending={cancelarMut.isPending}
+        error={cancelarError}
+        onConfirm={(motivo) => cancelarMut.mutate(motivo)}
+      />
     </>
   );
 }

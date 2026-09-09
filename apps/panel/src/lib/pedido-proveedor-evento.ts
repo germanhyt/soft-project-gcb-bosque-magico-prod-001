@@ -1,5 +1,5 @@
 import type { Pedido } from './pedidos';
-import { TURNO_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 
 export type PedidoProveedorEventoResumen = {
   id: string;
@@ -17,6 +17,8 @@ export function buildPedidoProveedorEventoResumen(
       id: string;
       fechaEvento: string;
       turno: string;
+      horarioInicio?: string | null;
+      horarioFin?: string | null;
       cantidadNinos?: number;
       tematica?: string | null;
       cumpleanero?: { edad?: number | null };
@@ -42,7 +44,9 @@ export function buildPedidoProveedorEventoResumen(
     fechaEvento: evento?.fechaEvento ?? fallback?.fechaEvento ?? '',
     turnoLabel:
       fallback?.turnoLabel ??
-      (turno ? (TURNO_LABEL[turno] ?? turno) : ''),
+      (turno
+        ? etiquetaTurno(turno, evento?.horarioInicio, evento?.horarioFin)
+        : ''),
     cumpleaneroEdad: evento?.cumpleanero?.edad ?? fallback?.cumpleaneroEdad,
     cantidadNinos: evento?.cantidadNinos ?? fallback?.cantidadNinos,
     tematica: evento?.tematica ?? fallback?.tematica,

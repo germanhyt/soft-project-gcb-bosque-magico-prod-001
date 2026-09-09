@@ -12,6 +12,13 @@ export function cotizacionFormFromSearchParams(
   return null;
 }
 
+export function pathCotizacionForm(target: CotizacionFormTarget): string {
+  if (target.mode === 'edit') return `/cotizaciones?editar=${encodeURIComponent(target.cotizacionId)}`;
+  const q = new URLSearchParams({ form: 'nueva' });
+  if (target.solicitudId) q.set('solicitudId', target.solicitudId);
+  return `/cotizaciones?${q.toString()}`;
+}
+
 export function clearCotizacionFormParams(params: URLSearchParams) {
   const next = new URLSearchParams(params);
   next.delete('editar');

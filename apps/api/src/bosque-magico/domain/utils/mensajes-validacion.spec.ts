@@ -16,4 +16,18 @@ describe('mensajesValidacion', () => {
       'No se pudo aplicar el listado de extras permitidos. Recarga la página e inténtalo de nuevo.',
     ]);
   });
+
+  it('acepta turno personalizado en el mensaje de enum', () => {
+    expect(
+      mensajesValidacion([
+        {
+          property: 'turnoInteres',
+          constraints: {
+            isEnum: 'turnoInteres must be one of the following values: turno_1, turno_2, turno_3',
+          },
+          children: [],
+        },
+      ]),
+    ).toEqual(['Elige un turno válido (1, 2, 3 o personalizado).']);
+  });
 });

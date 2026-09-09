@@ -11,6 +11,8 @@ import { api } from '../lib/api';
 type CotizacionPublica = {
   codigo: string;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   fechaEvento: string;
   cantidadNinos: number;
   paquete?: string | null;
@@ -122,6 +124,8 @@ export function CotizacionPublicaPage() {
                 etapa: data.etapa,
                 fechaEvento: data.fechaEvento,
                 turno: data.turno,
+                horarioInicio: data.horarioInicio,
+                horarioFin: data.horarioFin,
                 cantidadNinos: data.cantidadNinos,
                 paquete: data.paquete,
                 tematica: data.tematica,

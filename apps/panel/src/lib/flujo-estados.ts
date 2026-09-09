@@ -34,7 +34,8 @@ export const TRANSICIONES_COTIZACION = {
  *
  * borrador → enviado (WhatsApp/correo) → firmado
  * enviado → borrador (corregir; no si el evento ya está confirmado/realizado/cancelado)
- * firmado no revierte
+ * firmado no revierte; anulado solo por cancelar el evento
+ * firmado se puede reenviar al cliente (sin cambiar estado)
  */
 export const TRANSICIONES_CONTRATO = {
   borrador: ['enviado', 'firmado'] as const,
@@ -83,7 +84,7 @@ export function puedeGenerarContrato(etapa: EtapaCotizacion): boolean {
 }
 
 export function puedeEnviarContrato(etapa: EtapaContrato): boolean {
-  return etapa === 'borrador' || etapa === 'enviado';
+  return etapa === 'borrador' || etapa === 'enviado' || etapa === 'firmado';
 }
 
 export function puedeMarcarContratoFirmado(etapa: EtapaContrato): boolean {
@@ -118,4 +119,8 @@ export function motivoBloqueoVolverABorradorContrato(
     return 'No se puede volver a borrador: el evento está cancelado.';
   }
   return null;
+}
+
+export function puedeCancelarEvento(etapaEvento?: string | null): boolean {
+  return etapaEvento === 'por_confirmar' || etapaEvento === 'confirmado';
 }

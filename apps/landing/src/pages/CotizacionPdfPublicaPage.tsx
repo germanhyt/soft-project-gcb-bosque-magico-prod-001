@@ -11,6 +11,8 @@ type CotizacionPublica = {
   codigo: string;
   fechaEvento: string;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinos: number;
   paquete?: string | null;
   tematica?: string | null;
@@ -46,6 +48,8 @@ function toPrintData(data: CotizacionPublica): CotizacionPrintData {
     etapa: data.etapa,
     fechaEvento: data.fechaEvento,
     turno: data.turno,
+    horarioInicio: data.horarioInicio,
+    horarioFin: data.horarioFin,
     cantidadNinos: data.cantidadNinos,
     paquete: data.paquete,
     tematica: data.tematica,

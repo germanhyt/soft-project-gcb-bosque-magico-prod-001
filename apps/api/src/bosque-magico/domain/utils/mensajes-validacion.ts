@@ -11,6 +11,10 @@ const ETIQUETAS: Record<string, string> = {
   horasAdicionales: 'las horas adicionales',
   paquete: 'el paquete',
   fechaEvento: 'la fecha del evento',
+  turnoInteres: 'el turno',
+  turno: 'el turno',
+  horarioInicio: 'el horario de inicio',
+  horarioFin: 'el horario de fin',
   extrasPermitidos: 'el listado de extras permitidos',
   extrasPermitidosComentario: 'la observación de extras permitidos',
 };
@@ -31,6 +35,12 @@ function traducirConstraint(property: string, message: string): string {
     return `Completa ${campo}.`;
   }
   if (/must be a boolean/i.test(message)) {
+    return `Revisa ${campo}.`;
+  }
+  if (/must be one of the following values/i.test(message)) {
+    if (property === 'turnoInteres' || property === 'turno') {
+      return 'Elige un turno válido (1, 2, 3 o personalizado).';
+    }
     return `Revisa ${campo}.`;
   }
   return message;

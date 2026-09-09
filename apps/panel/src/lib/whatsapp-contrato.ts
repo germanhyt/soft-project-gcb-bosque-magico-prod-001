@@ -1,28 +1,27 @@
 import type { Contrato } from './contratos';
 import { linkPdfPublicoContratoCompleto, linkPublicoContratoCompleto } from './contratos';
 import { ETAPA_CONTRATO_LABEL } from '../constants/contratos';
-import { TURNO_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno, formatFechaCalendarioLarga } from '@bosque/shared';
 import { waMeUrlCotizacion } from './whatsapp-cotizacion';
-
-function formatFecha(iso: string) {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
-}
 
 export function mensajeWhatsAppContrato(contrato: Contrato) {
   const snap = contrato.snapshotJson;
-  const turno = TURNO_LABEL[snap.evento.turno] ?? snap.evento.turno;
-  const fecha = formatFecha(snap.evento.fechaEvento);
+  const turno = etiquetaTurno(
+    snap.evento.turno,
+    snap.evento.horarioInicio,
+    snap.evento.horarioFin,
+  );
+  const fecha = formatFechaCalendarioLarga(snap.evento.fechaEvento);
   const nombre = snap.cliente.nombreCompleto.split(' ')[0] ?? snap.cliente.nombreCompleto;
   const link = linkPublicoContratoCompleto(contrato.linkPublico || contrato.tokenPublico);
   const linkPdf = linkPdfPublicoContratoCompleto(contrato.linkPdfPublico || contrato.tokenPublico);
 
-  return `Hola ${nombre}, te compartimos el contrato de la fiesta en Bosque Mágico.
+  const intro =
+    contrato.etapa === 'firmado'
+      ? `Hola ${nombre}, te compartimos el contrato firmado de la fiesta en Bosque Mágico.`
+      : `Hola ${nombre}, te compartimos el contrato de la fiesta en Bosque Mágico.`;
+
+  return `${intro}
 
 Contrato: ${contrato.numero}
 Cotización: ${snap.codigoCotizacion}

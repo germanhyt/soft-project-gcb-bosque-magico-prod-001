@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { CanalSolicitud, EtapaSolicitud, Prisma } from '@prisma/client';
 import { CrearSolicitudManualDto } from '../dto/crear-solicitud-manual.dto';
 import { EventsService } from '../../../events/events.service';
@@ -6,6 +6,11 @@ import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria
 import { SolicitudesRepository } from '../../infrastructure/repositories/solicitudes.repository';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
+import {
+  esTurnoPersonalizado,
+  persistirHorarioDeTurno,
+  rangoTurnoPersonalizado,
+} from '../../domain/utils/turno-horario';
 
 @Injectable()
 export class CrearSolicitudManualUseCase {
@@ -22,6 +27,22 @@ export class CrearSolicitudManualUseCase {
       await this.anticipacion.validar(dto.fechaTentativa);
     }
     await this.capacidad.validar(dto.cantidadNinosEstimada);
+    if (
+      dto.turnoInteres &&
+      esTurnoPersonalizado(dto.turnoInteres) &&
+      !rangoTurnoPersonalizado(dto.horarioInicio)
+    ) {
+      throw new BadRequestException(
+        'El turno personalizado requiere hora de inicio; el rango es de 3 horas.',
+      );
+    }
+    const horario = dto.turnoInteres
+      ? persistirHorarioDeTurno(
+          dto.turnoInteres,
+          dto.horarioInicio,
+          dto.horarioFin,
+        )
+      : { horarioInicio: null, horarioFin: null };
     const etapa =
       dto.etapaInicial === EtapaSolicitud.en_atencion
         ? EtapaSolicitud.en_atencion
@@ -37,6 +58,8 @@ export class CrearSolicitudManualUseCase {
         ? new Date(dto.fechaTentativa)
         : undefined,
       turnoInteres: dto.turnoInteres,
+      horarioInicio: horario.horarioInicio,
+      horarioFin: horario.horarioFin,
       cantidadNinosEstimada: dto.cantidadNinosEstimada,
       notas: dto.notas,
       payloadOrigen: { origen: 'panel_manual' },

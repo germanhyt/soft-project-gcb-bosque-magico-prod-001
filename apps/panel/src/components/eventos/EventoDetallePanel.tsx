@@ -7,7 +7,7 @@ import { CancelarEventoModal } from './CancelarEventoModal';
 import { GenerarContratoAction } from '../contratos/GenerarContratoAction';
 import { EnviarContratoActions } from '../contratos/EnviarContratoActions';
 import { ContratoAdjuntosSection } from '../contratos/ContratoAdjuntosSection';
-import { TURNO_LABEL } from '../../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { ETAPA_EVENTO_LABEL } from '../../constants/eventos';
 import { ETAPA_CONTRATO_LABEL } from '../../constants/contratos';
 import { Button } from '../ui/Button';
@@ -31,6 +31,7 @@ import { formatFecha, formatFechaHora } from '../../lib/format';
 import { fetchTareasEvento } from '../../lib/tareas-api';
 import { mostrarErrorApi, mostrarValidacion } from '../../lib/swal-feedback';
 import { puedeVolverABorradorContrato } from '../../lib/flujo-estados';
+import { mostrarResumenNotificacionesProveedor } from '../../lib/notificacion-pedido-proveedor-feedback';
 
 type Props = {
   evento: Evento | null;
@@ -90,12 +91,27 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
 
   const cancelarMut = useMutation({
     mutationFn: (motivo: string) => cancelarEvento(eventoId!, motivo),
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       setCancelarOpen(false);
       setCancelarError('');
       invalidate();
       onClose();
-      await Swal.fire({ icon: 'info', title: 'Evento cancelado' });
+      await Swal.fire({
+        icon: 'info',
+        title: 'Evento cancelado',
+        text: [
+          res.contratoAnulado ? 'Contrato anulado.' : null,
+          typeof res.pedidosCancelados === 'number'
+            ? `${res.pedidosCancelados} pedido(s) cancelados.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      });
+      await mostrarResumenNotificacionesProveedor(res.notificacionesProveedor, {
+        tituloExito: 'Proveedores avisados',
+        textoExito: 'Se envió correo de cancelación a los proveedores que ya estaban en el flujo.',
+      });
     },
     onError: (err: unknown) => {
       const msg =
@@ -119,9 +135,24 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
 
   const firmarContratoMut = useMutation({
     mutationFn: () => marcarContratoFirmado(contrato!.id),
-    onSuccess: async () => {
+    onSuccess: async (res) => {
       await refetchContrato();
-      await Swal.fire({ icon: 'success', title: 'Contrato marcado como firmado', timer: 1500, showConfirmButton: false });
+      qc.invalidateQueries({ queryKey: ['pedidos-evento', eventoId] });
+      qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] });
+      const auto = res.solicitarAutomatico;
+      await Swal.fire({
+        icon: 'success',
+        title: 'Contrato marcado como firmado',
+        text:
+          auto && auto.pedidos > 0
+            ? `Se pasaron ${auto.pedidos} pedido(s) a Solicitado.`
+            : undefined,
+        timer: 2200,
+        showConfirmButton: false,
+      });
+      await mostrarResumenNotificacionesProveedor(auto?.notificaciones, {
+        tituloExito: 'Proveedores notificados',
+      });
     },
     onError: async (err: unknown) => {
       await mostrarErrorApi(err, 'No se pudo marcar el contrato como firmado');
@@ -330,7 +361,7 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
         title={ev?.cliente.nombreCompleto ?? 'Evento'}
         description={
           ev
-            ? `${formatFecha(ev.fechaEvento)} · ${TURNO_LABEL[ev.turno] ?? ev.turno}`
+            ? `${formatFecha(ev.fechaEvento)} · ${etiquetaTurno(ev.turno, ev.horarioInicio, ev.horarioFin)}`
             : undefined
         }
         footer={ev ? footer : undefined}
@@ -364,7 +395,7 @@ export function EventoDetallePanel({ evento, open, onClose, loading = false }: P
               fechaEvento={ev.fechaEvento}
               etapaEvento={ev.etapa}
               clienteNombre={ev.cliente.nombreCompleto}
-              turnoLabel={TURNO_LABEL[ev.turno] ?? ev.turno}
+              turnoLabel={etiquetaTurno(ev.turno, ev.horarioInicio, ev.horarioFin)}
               cumpleaneroEdad={ev.cumpleanero.edad}
               cantidadNinos={ev.cantidadNinos}
               tematica={ev.tematica}

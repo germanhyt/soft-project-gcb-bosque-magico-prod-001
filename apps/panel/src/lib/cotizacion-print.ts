@@ -7,6 +7,8 @@ function toPrintData(cot: Cotizacion): CotizacionPrintData {
     etapa: cot.etapa,
     fechaEvento: cot.fechaEvento,
     turno: cot.turno,
+    horarioInicio: cot.horarioInicio,
+    horarioFin: cot.horarioFin,
     cantidadNinos: cot.cantidadNinos,
     paquete: cot.paquete,
     tematica: cot.tematica,

@@ -3,10 +3,11 @@ import { useFormik } from 'formik';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import Swal from 'sweetalert2';
 import * as Yup from 'yup';
+import { rangoTurnoPersonalizado, TURNO_PERSONALIZADO } from '@bosque/shared';
 import { LABEL_CLASS } from '../../constants/design';
-import { TURNOS } from '../../constants/solicitudes';
 import { apiErrorMessage } from '../../lib/api-error';
 import { crearSolicitudManual } from '../../lib/api';
+import { TurnoCampos } from '../eventos/TurnoCampos';
 import { useCapacidadEvento } from '../../hooks/useCapacidadEvento';
 import {
   hintCapacidadEvento,
@@ -56,6 +57,11 @@ function schemaSolicitud(capacidad: CapacidadEvento) {
       .optional(),
     fechaTentativa: Yup.string().optional(),
     turnoInteres: Yup.string().optional(),
+    horarioInicio: Yup.string().when('turnoInteres', {
+      is: TURNO_PERSONALIZADO,
+      then: (s) => s.required('Indica la hora de inicio (el turno dura 3 h)'),
+      otherwise: (s) => s.optional(),
+    }),
     cantidadNinosEstimada: Yup.number()
       .transform((value, original) => (original === '' || original == null ? undefined : value))
       .typeError('Indica un número válido')
@@ -73,6 +79,7 @@ const INITIAL = {
   correo: '',
   fechaTentativa: '',
   turnoInteres: '',
+  horarioInicio: '',
   cantidadNinosEstimada: '' as string | number,
   notas: '',
   etapaInicial: 'nueva' as 'nueva' | 'en_atencion',
@@ -115,8 +122,14 @@ export function NuevaSolicitudModal({ open, onClose }: Props) {
         canal: 'manual',
         fechaTentativa: values.fechaTentativa || undefined,
         turnoInteres: values.turnoInteres
-          ? (values.turnoInteres as 'turno_1' | 'turno_2' | 'turno_3')
+          ? (values.turnoInteres as 'turno_1' | 'turno_2' | 'turno_3' | 'turno_personalizado')
           : undefined,
+        horarioInicio:
+          values.turnoInteres === TURNO_PERSONALIZADO ? values.horarioInicio || undefined : undefined,
+        horarioFin:
+          values.turnoInteres === TURNO_PERSONALIZADO
+            ? rangoTurnoPersonalizado(values.horarioInicio)?.fin
+            : undefined,
         cantidadNinosEstimada: values.cantidadNinosEstimada
           ? Number(values.cantidadNinosEstimada)
           : undefined,
@@ -217,24 +230,21 @@ export function NuevaSolicitudModal({ open, onClose }: Props) {
             <FieldHint formik={formikLite} name="cantidadNinosEstimada" />
           </label>
         </div>
-        <label className="block">
-          <span className={LABEL_CLASS}>Turno de interés</span>
-          <select
-            name="turnoInteres"
-            className={inputConError(formikLite, 'turnoInteres')}
-            value={formik.values.turnoInteres}
-            onChange={formik.handleChange}
-            onBlur={formik.handleBlur}
-          >
-            <option value="">Sin turno</option>
-            {TURNOS.map((t) => (
-              <option key={t.value} value={t.value}>
-                {t.label}
-              </option>
-            ))}
-          </select>
+        <div className="sm:col-span-2">
+          <TurnoCampos
+            allowEmpty
+            turno={formik.values.turnoInteres}
+            horarioInicio={formik.values.horarioInicio}
+            onTurno={(turno) => void formik.setFieldValue('turnoInteres', turno)}
+            onHorarioInicio={(inicio) => void formik.setFieldValue('horarioInicio', inicio)}
+            onBlur={() => {
+              void formik.setFieldTouched('turnoInteres', true);
+              void formik.setFieldTouched('horarioInicio', true);
+            }}
+          />
           <FieldHint formik={formikLite} name="turnoInteres" />
-        </label>
+          <FieldHint formik={formikLite} name="horarioInicio" />
+        </div>
         <label className="block">
           <span className={LABEL_CLASS}>Estado inicial</span>
           <select

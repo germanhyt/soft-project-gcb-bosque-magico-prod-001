@@ -3,10 +3,15 @@ import { ConfiguracionRepository } from '../../infrastructure/repositories/confi
 
 describe('ListarConfiguracionPanelUseCase', () => {
   let useCase: ListarConfiguracionPanelUseCase;
-  let configuracion: jest.Mocked<Pick<ConfiguracionRepository, 'listarTodas'>>;
+  let configuracion: jest.Mocked<
+    Pick<ConfiguracionRepository, 'listarTodas' | 'crearSiNoExiste'>
+  >;
 
   beforeEach(() => {
-    configuracion = { listarTodas: jest.fn() };
+    configuracion = {
+      listarTodas: jest.fn(),
+      crearSiNoExiste: jest.fn().mockResolvedValue({}),
+    };
     useCase = new ListarConfiguracionPanelUseCase(
       configuracion as unknown as ConfiguracionRepository,
     );

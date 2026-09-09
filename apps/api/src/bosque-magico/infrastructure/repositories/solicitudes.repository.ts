@@ -15,6 +15,8 @@ export type CrearSolicitudInput = {
   detalleOrigen?: string;
   fechaTentativa?: Date;
   turnoInteres?: TurnoInteres;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinosEstimada?: number;
   notas?: string;
   payloadOrigen?: Prisma.InputJsonValue;

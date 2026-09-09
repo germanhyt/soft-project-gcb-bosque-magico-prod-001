@@ -26,7 +26,7 @@ describe('AceptarCotizacionUseCase', () => {
       CotizacionesRepository,
       | 'obtenerPorId'
       | 'obtenerPorToken'
-      | 'existeEventoActivoEnSlot'
+      | 'listarEventosActivosEnFecha'
       | 'actualizarEtapa'
       | 'crearEventoDesdeCotizacion'
     >
@@ -47,7 +47,7 @@ describe('AceptarCotizacionUseCase', () => {
     cotizaciones = {
       obtenerPorId: jest.fn(),
       obtenerPorToken: jest.fn(),
-      existeEventoActivoEnSlot: jest.fn(),
+      listarEventosActivosEnFecha: jest.fn(),
       actualizarEtapa: jest.fn(),
       crearEventoDesdeCotizacion: jest.fn(),
     };
@@ -77,14 +77,14 @@ describe('AceptarCotizacionUseCase', () => {
     await expect(useCase.ejecutarPorId('cot-1')).rejects.toThrow(
       BadRequestException,
     );
-    expect(cotizaciones.existeEventoActivoEnSlot).not.toHaveBeenCalled();
+    expect(cotizaciones.listarEventosActivosEnFecha).not.toHaveBeenCalled();
   });
 
   it('rechaza doble reserva en el mismo slot', async () => {
     cotizaciones.obtenerPorId.mockResolvedValue(cotBase as never);
-    cotizaciones.existeEventoActivoEnSlot.mockResolvedValue({
-      id: 'evt-bloqueado',
-    } as never);
+    cotizaciones.listarEventosActivosEnFecha.mockResolvedValue([
+      { id: 'evt-bloqueado', turno: TurnoInteres.turno_1 },
+    ] as never);
 
     await expect(useCase.ejecutarPorId('cot-1')).rejects.toThrow(
       /ya no están disponibles/,
@@ -92,9 +92,25 @@ describe('AceptarCotizacionUseCase', () => {
     expect(cotizaciones.actualizarEtapa).not.toHaveBeenCalled();
   });
 
+  it('rechaza overlap de turno personalizado con un turno estándar ocupado', async () => {
+    cotizaciones.obtenerPorId.mockResolvedValue({
+      ...cotBase,
+      turno: TurnoInteres.turno_personalizado,
+      horarioInicio: '11:00',
+      horarioFin: '14:00',
+    } as never);
+    cotizaciones.listarEventosActivosEnFecha.mockResolvedValue([
+      { id: 'evt-t1', turno: TurnoInteres.turno_1 },
+    ] as never);
+
+    await expect(useCase.ejecutarPorId('cot-1')).rejects.toThrow(
+      /ya no están disponibles/,
+    );
+  });
+
   it('acepta cotización enviada y crea evento', async () => {
     cotizaciones.obtenerPorId.mockResolvedValue(cotBase as never);
-    cotizaciones.existeEventoActivoEnSlot.mockResolvedValue(null);
+    cotizaciones.listarEventosActivosEnFecha.mockResolvedValue([]);
     cotizaciones.actualizarEtapa.mockResolvedValue({
       ...cotBase,
       etapa: EtapaCotizacion.aceptada,
@@ -131,7 +147,7 @@ describe('AceptarCotizacionUseCase', () => {
 
     expect('yaAceptada' in res && res.yaAceptada).toBe(true);
     expect(res.eventoId).toBe('evt-existente');
-    expect(cotizaciones.existeEventoActivoEnSlot).not.toHaveBeenCalled();
+    expect(cotizaciones.listarEventosActivosEnFecha).not.toHaveBeenCalled();
     expect(cotizaciones.actualizarEtapa).not.toHaveBeenCalled();
     expect(auditoria.registrar).not.toHaveBeenCalled();
   });

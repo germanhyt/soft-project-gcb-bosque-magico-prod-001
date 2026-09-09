@@ -44,7 +44,7 @@ export type CanalSolicitud =
   | 'referido'
   | 'manual'
   | 'otro';
-export type TurnoInteres = 'turno_1' | 'turno_2' | 'turno_3';
+export type TurnoInteres = 'turno_1' | 'turno_2' | 'turno_3' | 'turno_personalizado';
 
 export type CotizacionResumenSolicitud = {
   id: string;
@@ -63,6 +63,8 @@ export type Solicitud = {
   detalleOrigen: string | null;
   fechaTentativa: string | null;
   turnoInteres: TurnoInteres | null;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinosEstimada: number | null;
   etapa: EtapaSolicitud;
   motivoCierre: MotivoCierre | null;
@@ -85,6 +87,8 @@ export type CrearSolicitudManualPayload = {
   canal?: CanalSolicitud;
   fechaTentativa?: string;
   turnoInteres?: TurnoInteres;
+  horarioInicio?: string;
+  horarioFin?: string;
   cantidadNinosEstimada?: number;
   notas?: string;
   etapaInicial?: 'nueva' | 'en_atencion';
@@ -154,6 +158,8 @@ export type ActualizarSolicitudPayload = {
   correo?: string;
   fechaTentativa?: string;
   turnoInteres?: TurnoInteres | null;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinosEstimada?: number;
   notas?: string;
   proximoSeguimientoEn?: string;

@@ -61,6 +61,23 @@ export class EventosRepository {
     });
   }
 
+  listarActivosEnFecha(fecha: Date, zona: string, excluirEventoId?: string) {
+    return this.prisma.bosqueMagicoEvento.findMany({
+      where: {
+        fechaEvento: fecha,
+        zona,
+        etapa: { in: [EtapaEvento.por_confirmar, EtapaEvento.confirmado] },
+        ...(excluirEventoId ? { id: { not: excluirEventoId } } : {}),
+      },
+      select: {
+        id: true,
+        turno: true,
+        horarioInicio: true,
+        horarioFin: true,
+      },
+    });
+  }
+
   existeConflictoActivo(
     fecha: Date,
     turno: TurnoInteres,

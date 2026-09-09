@@ -215,4 +215,12 @@ export class ContratosRepository {
       include: this.includeRelaciones,
     });
   }
+
+  marcarAnulado(id: string) {
+    return this.prisma.bosqueMagicoContrato.update({
+      where: { id },
+      data: { etapa: EtapaContrato.anulado },
+      include: this.includeRelaciones,
+    });
+  }
 }

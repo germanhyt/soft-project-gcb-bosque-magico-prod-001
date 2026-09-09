@@ -1,6 +1,6 @@
 import { EventoBadge } from '../eventos/EventoBadge';
 import { ETAPA_EVENTO_CARD } from '../../constants/design';
-import { TURNO_LABEL } from '../../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import type { Evento } from '../../lib/eventos';
 
 type Props = {
@@ -24,7 +24,7 @@ export function EventoListCard({ evento, selected, onClick, showMonto }: Props) 
         <EventoBadge etapa={evento.etapa} />
       </div>
       <p className="mt-1 text-body-sm text-on-surface-variant">
-        {TURNO_LABEL[evento.turno] ?? evento.turno} · {evento.cantidadNinos} niños
+        {etiquetaTurno(evento.turno, evento.horarioInicio, evento.horarioFin)} · {evento.cantidadNinos} niños
         {showMonto ? ` · S/ ${evento.montoTotal.toFixed(2)}` : ''}
       </p>
       {showMonto && (

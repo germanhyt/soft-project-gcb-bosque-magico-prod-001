@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
 import { useParams } from 'react-router-dom';
 import Swal from 'sweetalert2';
+import { formatFechaCalendarioLarga } from '@bosque/shared';
 import { Seo } from '../components/Seo';
 import { BTN_PRIMARY, CARD_CLASS, SWAL_CONFIRM_COLOR } from '../constants/design';
 import { api } from '../lib/api';
@@ -43,9 +44,7 @@ async function rechazarPublica(token: string, motivo?: string) {
 }
 
 function formatFecha(iso: string) {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+  return formatFechaCalendarioLarga(iso);
 }
 
 function formatSoles(n: number) {

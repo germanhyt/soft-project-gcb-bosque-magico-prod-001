@@ -7,6 +7,9 @@ import {
 } from './contrato-terminos.js';
 import { extrasPermitidosParaImpresion } from './extras-permitidos.js';
 import { filasTablaCotizacionPrint } from './cotizacion-print.js';
+import { formatFechaCalendarioCorta, formatFechaCalendarioLarga } from './fecha-formato.js';
+import { parseHorarioDesdeNotas, textoHorarioEnNotas } from './horario-servicio.js';
+import { etiquetaTurno } from './turno-horario.js';
 import {
   itemsCajitas,
   itemsCateringTematico,
@@ -78,6 +81,8 @@ export type ContratoSnapshotJson = {
     id: string;
     fechaEvento: string;
     turno: string;
+    horarioInicio?: string | null;
+    horarioFin?: string | null;
     zona: string;
     cantidadNinos: number;
     tematica: string | null;
@@ -118,11 +123,20 @@ export type ContratoPrintOptions = {
   esBorrador?: boolean;
 };
 
-const TURNO_LABEL: Record<string, string> = {
-  turno_1: 'Turno 1',
-  turno_2: 'Turno 2',
-  turno_3: 'Turno 3',
-};
+function horarioItem(notas?: string | null): string {
+  return textoHorarioEnNotas(parseHorarioDesdeNotas(notas));
+}
+
+function lineaItemConHorario(
+  nombre: string,
+  cantidad: number,
+  subtotal: number,
+  notas?: string | null,
+): string {
+  const horario = horarioItem(notas);
+  const extra = horario ? ` · ${horario}` : '';
+  return `<li>${escapeHtml(nombreEnContrato(nombre))} × ${cantidad}${extra} — ${money(subtotal)}</li>`;
+}
 
 function escapeHtml(value: string) {
   return value
@@ -134,15 +148,11 @@ function escapeHtml(value: string) {
 }
 
 function formatFecha(iso: string) {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+  return formatFechaCalendarioCorta(iso);
 }
 
 function formatFechaLarga(iso: string) {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+  return formatFechaCalendarioLarga(iso);
 }
 
 function money(n: number) {
@@ -276,6 +286,7 @@ function buildServiciosContratadosHtml(ctx: ReturnType<typeof buildContratoConte
       origenItem:
         i.origenItem ??
         (i.precioUnitario <= 0 ? 'incluido_paquete' : 'adicional'),
+      notas: i.notas,
     })),
   });
 
@@ -362,10 +373,7 @@ function buildExtrasContratadosHtml(items: ReturnType<typeof buildContratoContex
   if (shows.length > 0) {
     parts.push(
       `<h3 class="sub">Shows</h3><ul class="compact">${shows
-        .map(
-          (i) =>
-            `<li>${escapeHtml(nombreEnContrato(i.nombre))} × ${i.cantidad} — ${money(i.subtotal)}</li>`,
-        )
+        .map((i) => lineaItemConHorario(i.nombre, i.cantidad, i.subtotal, i.notas))
         .join('')}</ul>`,
     );
   }
@@ -373,10 +381,7 @@ function buildExtrasContratadosHtml(items: ReturnType<typeof buildContratoContex
   if (extras.length > 0) {
     parts.push(
       `<h3 class="sub">Servicios adicionales</h3><ul class="compact">${extras
-        .map(
-          (i) =>
-            `<li>${escapeHtml(nombreEnContrato(i.nombre))} × ${i.cantidad} — ${money(i.subtotal)}</li>`,
-        )
+        .map((i) => lineaItemConHorario(i.nombre, i.cantidad, i.subtotal, i.notas))
         .join('')}</ul>`,
     );
   }
@@ -406,7 +411,9 @@ export function buildContratoPrintHtml(
   const ctx = buildContratoContext(payload);
   const { form, items } = ctx;
   const pkg = paqueteTipo(ctx.paquete);
-  const turnoLabel = escapeHtml(TURNO_LABEL[ctx.turno] ?? ctx.turno);
+  const turnoLabel = escapeHtml(
+    etiquetaTurno(ctx.turno, ctx.form.horarioInicio, ctx.form.horarioFin),
+  );
   const horario = `${escapeHtml(form.horarioInicio)} — ${escapeHtml(form.horarioFin)}`;
 
   const clausulas = CONTRATO_TERMINOS_CLAUSULAS.map(

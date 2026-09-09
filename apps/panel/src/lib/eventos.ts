@@ -7,6 +7,8 @@ export type Evento = {
   cotizacionId: string;
   fechaEvento: string;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   zona: string;
   tematica: string | null;
   cantidadNinos: number;
@@ -26,6 +28,12 @@ export type AgendaResponse = {
   resumen: Record<EtapaEvento, number>;
   proximos: Evento[];
   total: number;
+};
+
+export type CancelarEventoResultado = Evento & {
+  contratoAnulado?: boolean;
+  pedidosCancelados?: number;
+  notificacionesProveedor?: Array<{ enviado: boolean; motivo?: string }>;
 };
 
 export async function fetchAgenda(desde?: string, hasta?: string) {
@@ -59,6 +67,9 @@ export async function realizarEvento(id: string) {
 }
 
 export async function cancelarEvento(id: string, motivo?: string) {
-  const { data } = await api.post<Evento>(`/bosque-magico/eventos/${id}/cancelar`, { motivo });
+  const { data } = await api.post<CancelarEventoResultado>(
+    `/bosque-magico/eventos/${id}/cancelar`,
+    { motivo },
+  );
   return data;
 }

@@ -11,6 +11,7 @@ import {
 import { EventsService } from '../../../events/events.service';
 import { SolicitudCotizacionSyncService } from '../../domain/services/solicitud-cotizacion-sync.service';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
+import { hayConflictoTurno } from '../../domain/utils/turno-horario';
 import { GenerarPedidosEventoUseCase } from './generar-pedidos-evento.use-case';
 import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
@@ -61,11 +62,27 @@ export class AceptarCotizacionUseCase {
 
     await this.anticipacion.validar(cot.fechaEvento);
 
-    const conflicto = await this.cotizaciones.existeEventoActivoEnSlot(
+    const ocupados = await this.cotizaciones.listarEventosActivosEnFecha(
       cot.fechaEvento,
-      cot.turno,
     );
-    if (conflicto) {
+    const cotHorario = cot as {
+      horarioInicio?: string | null;
+      horarioFin?: string | null;
+    };
+    if (
+      hayConflictoTurno(
+        {
+          turno: cot.turno,
+          inicio: cotHorario.horarioInicio,
+          fin: cotHorario.horarioFin,
+        },
+        ocupados.map((e) => ({
+          turno: e.turno,
+          inicio: e.horarioInicio,
+          fin: e.horarioFin,
+        })),
+      )
+    ) {
       throw new BadRequestException(
         'La fecha y turno ya no están disponibles. Contacta al equipo Bosque Mágico.',
       );

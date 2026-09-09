@@ -7,6 +7,7 @@ import {
   IsISO8601,
   IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -45,6 +46,18 @@ export class ActualizarSolicitudDto {
   @ValidateIf((_, value) => value !== null && value !== '')
   @IsEnum(TurnoInteres)
   turnoInteres?: TurnoInteres | null;
+
+  @ApiPropertyOptional({ example: '15:00' })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'El horario de inicio debe ser HH:mm' })
+  horarioInicio?: string | null;
+
+  @ApiPropertyOptional({ example: '18:00' })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== '')
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'El horario de fin debe ser HH:mm' })
+  horarioFin?: string | null;
 
   @ApiPropertyOptional({ example: 25 })
   @IsOptional()

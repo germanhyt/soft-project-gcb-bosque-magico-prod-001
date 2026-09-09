@@ -179,7 +179,9 @@ export function CatalogoSection({
                   onKeyDown={(e) => e.stopPropagation()}
                 >
                   <label className="block">
-                    <span className="text-xs text-on-surface-variant">Desde (opcional)</span>
+                    <span className="text-xs text-on-surface-variant">
+                      {p.categoria === 'show' ? 'Inicio show' : 'Desde (opcional)'}
+                    </span>
                     <input
                       type="time"
                       className={INPUT_CLASS}
@@ -193,7 +195,9 @@ export function CatalogoSection({
                     />
                   </label>
                   <label className="block">
-                    <span className="text-xs text-on-surface-variant">Hasta (opcional)</span>
+                    <span className="text-xs text-on-surface-variant">
+                      {p.categoria === 'show' ? 'Fin show' : 'Hasta (opcional)'}
+                    </span>
                     <input
                       type="time"
                       className={INPUT_CLASS}

@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import {
   CONTRATO_EXTRAS_PERMITIDOS_INTRO,
   extrasPermitidosParaImpresion,
+  formatFechaCalendarioLarga,
   type ContratoSnapshotJson,
 } from '@bosque/shared';
 import { Seo } from '../components/Seo';
@@ -33,9 +34,7 @@ async function fetchPublica(token: string) {
 }
 
 function formatFecha(iso: string) {
-  const d = new Date(`${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', { day: '2-digit', month: 'long', year: 'numeric' });
+  return formatFechaCalendarioLarga(iso);
 }
 
 function formatSoles(n: number) {

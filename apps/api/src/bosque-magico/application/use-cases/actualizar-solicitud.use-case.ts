@@ -14,6 +14,11 @@ import { SolicitudesRepository } from '../../infrastructure/repositories/solicit
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 import { TomarSolicitudUseCase } from './tomar-solicitud.use-case';
+import {
+  esTurnoPersonalizado,
+  persistirHorarioDeTurno,
+  rangoTurnoPersonalizado,
+} from '../../domain/utils/turno-horario';
 
 function nullableText(value?: string) {
   if (value === undefined) return undefined;
@@ -69,6 +74,8 @@ export class ActualizarSolicitudUseCase {
       dto.correo !== undefined ||
       dto.fechaTentativa !== undefined ||
       dto.turnoInteres !== undefined ||
+      dto.horarioInicio !== undefined ||
+      dto.horarioFin !== undefined ||
       dto.cantidadNinosEstimada !== undefined;
 
     const ultimoContactoEn = dto.ultimoContactoEn
@@ -84,6 +91,25 @@ export class ActualizarSolicitudUseCase {
       await this.capacidad.validar(dto.cantidadNinosEstimada);
     }
 
+    const turno =
+      dto.turnoInteres !== undefined ? dto.turnoInteres : antes.turnoInteres;
+    const horarioInicioIn =
+      dto.horarioInicio !== undefined
+        ? dto.horarioInicio
+        : (antes as { horarioInicio?: string | null }).horarioInicio;
+    const horarioFinIn =
+      dto.horarioFin !== undefined
+        ? dto.horarioFin
+        : (antes as { horarioFin?: string | null }).horarioFin;
+    if (turno && esTurnoPersonalizado(turno) && !rangoTurnoPersonalizado(horarioInicioIn)) {
+      throw new BadRequestException(
+        'El turno personalizado requiere hora de inicio; el rango es de 3 horas.',
+      );
+    }
+    const horario = turno
+      ? persistirHorarioDeTurno(turno, horarioInicioIn, horarioFinIn)
+      : { horarioInicio: null, horarioFin: null };
+
     const data: Prisma.BosqueMagicoSolicitudUpdateInput = {
       ...(dto.nombreContacto !== undefined
         ? { nombreContacto: dto.nombreContacto.trim() }
@@ -95,6 +121,14 @@ export class ActualizarSolicitudUseCase {
         : {}),
       ...(dto.turnoInteres !== undefined
         ? { turnoInteres: dto.turnoInteres }
+        : {}),
+      ...(dto.turnoInteres !== undefined ||
+      dto.horarioInicio !== undefined ||
+      dto.horarioFin !== undefined
+        ? {
+            horarioInicio: horario.horarioInicio,
+            horarioFin: horario.horarioFin,
+          }
         : {}),
       ...(dto.cantidadNinosEstimada !== undefined
         ? { cantidadNinosEstimada: dto.cantidadNinosEstimada }

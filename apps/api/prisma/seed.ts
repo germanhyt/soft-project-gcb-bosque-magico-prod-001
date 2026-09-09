@@ -288,7 +288,7 @@ const configuraciones = [
     clave: 'pedidos_proveedor.notificar_correo',
     valor: false,
     descripcion:
-      'Enviar correo automático al proveedor al marcar el pedido como Solicitado (requiere SMTP activo y correo del proveedor).',
+      'Enviar correo automático al proveedor al marcar el pedido como Solicitado, y al firmar el contrato pasar los pedidos pendientes a Solicitado (requiere SMTP activo y correo del proveedor).',
     esPublico: false,
   },
   {
@@ -301,9 +301,24 @@ const configuraciones = [
   {
     clave: 'pedidos_proveedor.cuerpo',
     valor:
-      'Hola {{proveedor}},\n\nSolicitud de servicio desde Bosque Mágico.\n\nCliente: {{cliente}}\nEvento: {{fecha}} · {{turno}}\nCumpleañero: {{edad}} años\nNiños: {{cantidadNinos}}\nTemática: {{tematica}}\nServicio: {{servicio}}\nCantidad: {{cantidad}}\nCosto referencial: S/ {{costo}}\n{{notas}}\n\nConfirma o rechaza desde este enlace:\n{{link}}',
+      'Hola {{proveedor}},\n\nSolicitud de servicio desde Bosque Mágico.\n{{estadoContrato}}\n\nCliente: {{cliente}}\nEvento: {{fecha}} · {{turno}}\nCumpleañero: {{edad}} años\nNiños: {{cantidadNinos}}\nTemática: {{tematica}}\nServicio: {{servicio}}\nCantidad: {{cantidad}}\nCosto referencial: S/ {{costo}}\n{{notas}}\n\nConfirma o rechaza desde este enlace:\n{{link}}',
     descripcion:
-      'Cuerpo del correo en texto plano. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+      'Cuerpo del correo en texto plano. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}, {{estadoContrato}}',
+    esPublico: false,
+  },
+  {
+    clave: 'pedidos_proveedor.cancelacion_asunto',
+    valor: 'Evento cancelado — {{servicio}} ({{fecha}})',
+    descripcion:
+      'Asunto del correo de cancelación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{motivo}}',
+    esPublico: false,
+  },
+  {
+    clave: 'pedidos_proveedor.cancelacion_cuerpo',
+    valor:
+      'Hola {{proveedor}},\n\nEl evento de Bosque Mágico para {{cliente}} el {{fecha}} ({{turno}}) fue cancelado.\n\nServicio: {{servicio}}\n{{motivo}}\n\nNo es necesario que asistas. Gracias.\nEquipo Bosque Mágico',
+    descripcion:
+      'Cuerpo del correo de cancelación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{motivo}}',
     esPublico: false,
   },
   {

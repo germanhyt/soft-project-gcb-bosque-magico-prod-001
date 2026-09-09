@@ -6,11 +6,14 @@ import { EventosRepository } from '../../infrastructure/repositories/eventos.rep
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 import { fromDecimal } from '../utils/decimal';
 import { SmtpService } from './smtp.service';
+import { etiquetaTurno as etiquetaTurnoHorario, esTurnoPersonalizado } from '../utils/turno-horario';
 
 export type NotificacionProveedorConfig = {
   habilitado: boolean;
   asunto: string;
   cuerpo: string;
+  cancelacionAsunto: string;
+  cancelacionCuerpo: string;
 };
 
 export type ResultadoNotificacionProveedor = {
@@ -24,6 +27,11 @@ export type ResultadoNotificacionProveedor = {
 type OverridesCorreo = {
   asunto?: string;
   cuerpo?: string;
+};
+
+type VarsExtra = {
+  estadoContrato?: string;
+  motivo?: string;
 };
 
 function texto(valor: unknown): string {
@@ -79,6 +87,7 @@ export class NotificacionProveedorService {
           'Hola {{proveedor}},',
           '',
           'Solicitud de servicio desde Bosque Mágico.',
+          '{{estadoContrato}}',
           '',
           'Cliente: {{cliente}}',
           'Evento: {{fecha}} · {{turno}}',
@@ -93,16 +102,51 @@ export class NotificacionProveedorService {
           'Confirma o rechaza desde este enlace:',
           '{{link}}',
         ].join('\n'),
+      cancelacionAsunto:
+        texto(map.get('pedidos_proveedor.cancelacion_asunto')) ||
+        'Evento cancelado — {{servicio}} ({{fecha}})',
+      cancelacionCuerpo:
+        texto(map.get('pedidos_proveedor.cancelacion_cuerpo')) ||
+        [
+          'Hola {{proveedor}},',
+          '',
+          'El evento de Bosque Mágico para {{cliente}} el {{fecha}} ({{turno}}) fue cancelado.',
+          '',
+          'Servicio: {{servicio}}',
+          '{{motivo}}',
+          '',
+          'No es necesario que asistas. Gracias.',
+          'Equipo Bosque Mágico',
+        ].join('\n'),
     };
   }
 
   /** Notificación automática al pasar el pedido a Solicitado (requiere config habilitada). */
   async notificarAlSolicitar(
     pedidoId: string,
+    extras: VarsExtra = {},
   ): Promise<ResultadoNotificacionProveedor> {
     const cfg = await this.cargarConfig();
     if (!cfg.habilitado) return { enviado: false, motivo: 'deshabilitado' };
-    return this.enviarCorreoInterno(pedidoId, cfg, {});
+    return this.enviarCorreoInterno(pedidoId, cfg, {}, extras);
+  }
+
+  /** Aviso de cancelación: no depende del flag de solicitud; sí de SMTP y correo. */
+  async notificarCancelacion(
+    pedidoId: string,
+    motivo?: string,
+  ): Promise<ResultadoNotificacionProveedor> {
+    const cfg = await this.cargarConfig();
+    return this.enviarCorreoInterno(
+      pedidoId,
+      {
+        ...cfg,
+        asunto: cfg.cancelacionAsunto,
+        cuerpo: cfg.cancelacionCuerpo,
+      },
+      {},
+      { motivo: motivo?.trim() ? `Motivo: ${motivo.trim()}` : '' },
+    );
   }
 
   /** Envío manual desde el panel (SMTP si está activo; si no, devuelve plantilla para mailto). */
@@ -129,8 +173,9 @@ export class NotificacionProveedorService {
     pedidoId: string,
     cfg: NotificacionProveedorConfig,
     overrides: OverridesCorreo,
+    extras: VarsExtra = {},
   ): Promise<ResultadoNotificacionProveedor> {
-    const preparado = await this.prepararCorreo(pedidoId, cfg, overrides);
+    const preparado = await this.prepararCorreo(pedidoId, cfg, overrides, extras);
     if ('motivo' in preparado) {
       return preparado;
     }
@@ -174,6 +219,7 @@ export class NotificacionProveedorService {
     pedidoId: string,
     cfg: NotificacionProveedorConfig,
     overrides: OverridesCorreo,
+    extras: VarsExtra = {},
   ): Promise<
     | { destino: string; asunto: string; cuerpo: string }
     | { enviado: false; motivo: string }
@@ -189,7 +235,11 @@ export class NotificacionProveedorService {
     const evento = await this.eventos.obtenerPorId(pedido.eventoId);
     if (!evento) return { enviado: false, motivo: 'sin_evento' };
 
-    const turnoLabel = await this.etiquetaTurno(evento.turno);
+    const turnoLabel = await this.etiquetaTurno(
+      evento.turno,
+      (evento as { horarioInicio?: string | null }).horarioInicio,
+      (evento as { horarioFin?: string | null }).horarioFin,
+    );
     const costo = fromDecimal(pedido.costo).toFixed(2);
     const notas = pedido.notas?.trim() ? `Notas: ${pedido.notas.trim()}` : '';
     const siteUrl =
@@ -214,6 +264,8 @@ export class NotificacionProveedorService {
       costo,
       notas,
       link,
+      estadoContrato: extras.estadoContrato?.trim() ?? '',
+      motivo: extras.motivo?.trim() ?? '',
     };
 
     const asunto =
@@ -224,7 +276,14 @@ export class NotificacionProveedorService {
     return { destino: correo, asunto, cuerpo };
   }
 
-  private async etiquetaTurno(turno: TurnoInteres): Promise<string> {
+  private async etiquetaTurno(
+    turno: TurnoInteres,
+    inicio?: string | null,
+    fin?: string | null,
+  ): Promise<string> {
+    if (esTurnoPersonalizado(turno)) {
+      return etiquetaTurnoHorario(turno, inicio, fin);
+    }
     const item = await this.configuracion.obtenerPorClave(`turnos.${turno}`);
     if (item?.valor && typeof item.valor === 'object') {
       const v = item.valor as Record<string, unknown>;

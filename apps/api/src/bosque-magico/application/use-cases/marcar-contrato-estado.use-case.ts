@@ -3,12 +3,20 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { EtapaContrato, Prisma, TipoAdjuntoContrato } from '@prisma/client';
+import {
+  EtapaContrato,
+  EtapaPedido,
+  Prisma,
+  TipoAdjuntoContrato,
+  TipoPedido,
+} from '@prisma/client';
 import { mapContratoResponse } from '../../domain/mappers/contrato.mapper';
+import { NotificacionProveedorService } from '../../domain/services/notificacion-proveedor.service';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { ContratoAdjuntosRepository } from '../../infrastructure/repositories/contrato-adjuntos.repository';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
+import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 
 @Injectable()
 export class MarcarContratoEnviadoUseCase {
@@ -54,6 +62,8 @@ export class MarcarContratoFirmadoUseCase {
     private readonly adjuntos: ContratoAdjuntosRepository,
     private readonly auditoria: AuditoriaRepository,
     private readonly events: EventsService,
+    private readonly pedidos: PedidosRepository,
+    private readonly notificacionProveedor: NotificacionProveedorService,
   ) {}
 
   async ejecutar(id: string) {
@@ -63,7 +73,10 @@ export class MarcarContratoFirmadoUseCase {
       throw new BadRequestException('El contrato está anulado');
     }
     if (antes.etapa === EtapaContrato.firmado) {
-      return mapContratoResponse(antes);
+      return {
+        ...mapContratoResponse(antes),
+        solicitarAutomatico: { pedidos: 0, notificaciones: [] },
+      };
     }
 
     const [firmaCliente, firmaEmpresa] = await Promise.all([
@@ -98,6 +111,37 @@ export class MarcarContratoFirmadoUseCase {
       `Contrato ${antes.numero} firmado`,
     );
 
-    return mapContratoResponse(despues);
+    const cfg = await this.notificacionProveedor.cargarConfig();
+    const solicitarAutomatico = {
+      pedidos: 0,
+      notificaciones: [] as Awaited<
+        ReturnType<NotificacionProveedorService['notificarAlSolicitar']>
+      >[],
+    };
+
+    if (cfg.habilitado) {
+      const pendientes = await this.pedidos.listarProveedorPorEventoYEtapa(
+        antes.eventoId,
+        [EtapaPedido.pendiente],
+      );
+      for (const pedido of pendientes) {
+        if (pedido.tipo !== TipoPedido.proveedor) continue;
+        await this.pedidos.actualizar(pedido.id, {
+          etapa: EtapaPedido.solicitado,
+        });
+        solicitarAutomatico.pedidos += 1;
+        solicitarAutomatico.notificaciones.push(
+          await this.notificacionProveedor.notificarAlSolicitar(pedido.id, {
+            estadoContrato:
+              'El contrato ya está firmado; el evento se realizará.',
+          }),
+        );
+      }
+    }
+
+    return {
+      ...mapContratoResponse(despues),
+      solicitarAutomatico,
+    };
   }
 }

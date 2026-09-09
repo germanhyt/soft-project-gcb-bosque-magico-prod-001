@@ -1,4 +1,6 @@
-import { parseHorarioDesdeNotas } from './horario-servicio.js';
+import { formatFechaCalendarioLarga } from './fecha-formato.js';
+import { parseHorarioDesdeNotas, textoHorarioEnNotas } from './horario-servicio.js';
+import { etiquetaTurno } from './turno-horario.js';
 
 export type CotizacionPrintEtapa = 'borrador' | 'enviada' | 'aceptada' | 'cerrada';
 
@@ -18,6 +20,8 @@ export type CotizacionPrintData = {
   etapa: CotizacionPrintEtapa;
   fechaEvento: string;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   cantidadNinos: number;
   paquete?: string | null;
   tematica?: string | null;
@@ -48,12 +52,6 @@ const ETAPA_LABEL: Record<CotizacionPrintEtapa, string> = {
   cerrada: 'Cerrada',
 };
 
-const TURNO_LABEL: Record<string, string> = {
-  turno_1: 'Turno 1',
-  turno_2: 'Turno 2',
-  turno_3: 'Turno 3',
-};
-
 function escapeHtml(value: string) {
   return value
     .replace(/&/g, '&amp;')
@@ -64,13 +62,7 @@ function escapeHtml(value: string) {
 }
 
 function formatFecha(iso: string) {
-  const d = new Date(iso.includes('T') ? iso : `${iso.slice(0, 10)}T12:00:00`);
-  if (Number.isNaN(d.getTime())) return iso;
-  return d.toLocaleDateString('es-PE', {
-    day: '2-digit',
-    month: 'long',
-    year: 'numeric',
-  });
+  return formatFechaCalendarioLarga(iso);
 }
 
 function money(n: number) {
@@ -89,14 +81,8 @@ function descripcionItem(i: CotizacionPrintItem): string {
   if (i.subtipo === 'piqueo' && i.unidadesPack) {
     partes.push(`${i.cantidad} pack${i.cantidad > 1 ? 's' : ''} · ${i.unidadesPack} uds c/u`);
   }
-  const horario = parseHorarioDesdeNotas(i.notas);
-  if (horario?.inicio && horario.fin) {
-    partes.push(`${horario.inicio}–${horario.fin}`);
-  } else if (horario?.inicio) {
-    partes.push(`desde ${horario.inicio}`);
-  } else if (horario?.fin) {
-    partes.push(`hasta ${horario.fin}`);
-  }
+  const horario = textoHorarioEnNotas(parseHorarioDesdeNotas(i.notas));
+  if (horario) partes.push(horario);
   return partes.join(' · ');
 }
 
@@ -204,7 +190,9 @@ export function buildCotizacionPrintHtml(
   const cumple = escapeHtml(cot.cumpleanero.nombre);
   const codigo = escapeHtml(cot.codigo);
   const etapa = escapeHtml(ETAPA_LABEL[cot.etapa] ?? cot.etapa);
-  const turno = escapeHtml(TURNO_LABEL[cot.turno] ?? cot.turno);
+  const turno = escapeHtml(
+    etiquetaTurno(cot.turno, cot.horarioInicio, cot.horarioFin),
+  );
   const tematica = cot.tematica ? escapeHtml(cot.tematica) : '';
   const notas = cot.notas ? escapeHtml(cot.notas).replace(/\n/g, '<br/>') : '';
   const footer = escapeHtml(options.footerNote ?? DEFAULT_FOOTER);

@@ -1,4 +1,9 @@
-export { formatFechaDdMmYyyy } from './fecha-formato.js';
+export {
+  claveFechaCalendarioIso,
+  formatFechaCalendarioCorta,
+  formatFechaCalendarioLarga,
+  formatFechaDdMmYyyy,
+} from './fecha-formato.js';
 export {
   anexarHorarioANotas,
   formatearHorarioServicio,
@@ -7,6 +12,17 @@ export {
   textoHorarioEnNotas,
   type HorarioServicio,
 } from './horario-servicio.js';
+export {
+  DURACION_TURNO_HORAS,
+  esTurnoPersonalizado,
+  etiquetaTurno,
+  hayConflictoTurno,
+  rangoTurnoPersonalizado,
+  resolverHorarioTurno,
+  solapanHorarios,
+  sumarHoras,
+  TURNO_PERSONALIZADO,
+} from './turno-horario.js';
 export {
   esExtraBloque,
   esUnidadPorHora,

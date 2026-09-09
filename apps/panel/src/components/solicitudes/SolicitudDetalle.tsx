@@ -10,8 +10,8 @@ import {
   CANAL_LABEL,
   ETAPA_LABEL,
   MOTIVO_CIERRE_LABEL,
-  TURNO_LABEL,
 } from '../../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { CARD_CLASS, INPUT_CLASS, LABEL_CLASS } from '../../constants/design';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { EtapaBadge } from '../ui/EtapaBadge';
@@ -359,7 +359,9 @@ export function SolicitudDetalle({
               <div>
                 <dt className="text-label-caps text-outline">Turno</dt>
                 <dd className="mt-0.5 font-medium text-on-surface">
-                  {s.turnoInteres ? (TURNO_LABEL[s.turnoInteres] ?? s.turnoInteres) : '—'}
+                  {s.turnoInteres
+                    ? etiquetaTurno(s.turnoInteres, s.horarioInicio, s.horarioFin)
+                    : '—'}
                 </dd>
               </div>
               <div>

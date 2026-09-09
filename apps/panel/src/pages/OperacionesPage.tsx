@@ -9,7 +9,7 @@ import {
   ETAPAS_PEDIDO_OPCIONES,
 } from '../constants/pedidos';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
-import { TURNO_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { CARD_CLASS, INPUT_CLASS, TABLE_HEAD_CLASS, TABLE_ROW_CLASS } from '../constants/design';
 import { rangoMesActualHastaFinAnio } from '../lib/agenda-calendar';
 import { DEFAULT_PAGE_SIZE, type PageSize } from '../lib/pagination';
@@ -215,7 +215,11 @@ export function OperacionesPage() {
                     <td className="px-4 py-3 whitespace-nowrap">
                       {formatFecha(p.evento.fechaEvento)}
                       <span className="block text-xs text-outline">
-                        {TURNO_LABEL[p.evento.turno] ?? p.evento.turno}
+                        {etiquetaTurno(
+                          p.evento.turno,
+                          p.evento.horarioInicio,
+                          p.evento.horarioFin,
+                        )}
                       </span>
                     </td>
                     <td className="px-4 py-3">{p.evento.cliente.nombreCompleto}</td>

@@ -5,6 +5,8 @@ type EventoConRelaciones = {
   id: string;
   fechaEvento: Date;
   turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
   zona: string;
   cantidadNinos: number;
   tematica: string | null;
@@ -36,6 +38,7 @@ type EventoConRelaciones = {
       precioUnitario: unknown;
       subtotal: unknown;
       origenItem?: string;
+      notas?: string | null;
     }>;
   };
 };
@@ -48,6 +51,8 @@ export function buildContratoSnapshot(evento: EventoConRelaciones) {
       id: evento.id,
       fechaEvento: evento.fechaEvento.toISOString().slice(0, 10),
       turno: evento.turno,
+      horarioInicio: evento.horarioInicio ?? null,
+      horarioFin: evento.horarioFin ?? null,
       zona: evento.zona,
       cantidadNinos: evento.cantidadNinos,
       tematica: evento.tematica,
@@ -81,6 +86,7 @@ export function buildContratoSnapshot(evento: EventoConRelaciones) {
         precioUnitario: fromDecimal(i.precioUnitario as never),
         subtotal: fromDecimal(i.subtotal as never),
         origenItem: i.origenItem,
+        notas: i.notas ?? null,
       })),
       extrasPermitidos: parseExtrasPermitidosJson(cot.extrasPermitidos),
       extrasPermitidosComentario: cot.extrasPermitidosComentario ?? null,

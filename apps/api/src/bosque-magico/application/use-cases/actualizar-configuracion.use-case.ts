@@ -41,6 +41,8 @@ const CLAVES_POSTVENTA_BOOLEAN = new Set(['postventa.habilitado']);
 const CLAVES_PEDIDOS_PROVEEDOR_TEXTO = new Set([
   'pedidos_proveedor.asunto',
   'pedidos_proveedor.cuerpo',
+  'pedidos_proveedor.cancelacion_asunto',
+  'pedidos_proveedor.cancelacion_cuerpo',
 ]);
 
 const CLAVES_PEDIDOS_PROVEEDOR_BOOLEAN = new Set([

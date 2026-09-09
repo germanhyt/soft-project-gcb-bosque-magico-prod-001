@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import Swal from 'sweetalert2';
 import { AuditoriaTimeline } from '../auditoria/AuditoriaTimeline';
 import { CerrarSolicitudModal } from '../solicitudes/CerrarSolicitudModal';
+import { CancelarEventoModal } from '../eventos/CancelarEventoModal';
 import { AceptarCotizacionAction } from './AceptarCotizacionAction';
 import { CotizacionBadge } from './CotizacionBadge';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
@@ -11,7 +12,7 @@ import { DetalleModal } from '../ui/DetalleModal';
 import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
-import { TURNO_LABEL } from '../../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { fetchProductosCatalogo } from '../../lib/configuracion';
 import {
   fetchCotizacion,
@@ -31,6 +32,7 @@ import { imprimirCotizacionPdf } from '../../lib/cotizacion-print';
 import {
   puedeAceptarCotizacion,
   puedeCerrarSolicitudDesdeCotizacion,
+  puedeCancelarEvento,
   puedeEditarCotizacionBorrador,
   puedeEnviarCotizacion,
   puedeGenerarContrato,
@@ -39,6 +41,8 @@ import {
 import { formatFecha } from '../../lib/format';
 import { apiErrorMessage } from '../../lib/api-error';
 import { cerrarSolicitud, type MotivoCierre } from '../../lib/api';
+import { cancelarEvento } from '../../lib/eventos';
+import { mostrarResumenNotificacionesProveedor } from '../../lib/notificacion-pedido-proveedor-feedback';
 
 type Props = {
   cotizacionId: string | null;
@@ -132,6 +136,8 @@ export function CotizacionDetalle({
   const qc = useQueryClient();
   const [cerrarOpen, setCerrarOpen] = useState(false);
   const [cerrarError, setCerrarError] = useState('');
+  const [cancelarOpen, setCancelarOpen] = useState(false);
+  const [cancelarError, setCancelarError] = useState('');
   const volverMut = useMutation({
     mutationFn: () => volverCotizacionABorrador(cotizacionId!),
     onSuccess: async () => {
@@ -202,6 +208,44 @@ export function CotizacionDetalle({
   const productosById = useMemo(() => new Map(productos.map((p) => [p.id, p])), [productos]);
 
   const eventoId = cot?.eventos?.[0]?.id;
+
+  const cancelarMut = useMutation({
+    mutationFn: (motivo: string) => cancelarEvento(eventoId!, motivo),
+    onSuccess: async (res) => {
+      setCancelarOpen(false);
+      setCancelarError('');
+      await Promise.all([
+        qc.invalidateQueries({ queryKey: ['cotizacion', cotizacionId] }),
+        qc.invalidateQueries({ queryKey: ['cotizaciones'] }),
+        qc.invalidateQueries({ queryKey: ['agenda'] }),
+        qc.invalidateQueries({ queryKey: ['eventos-resumen'] }),
+        qc.invalidateQueries({ queryKey: ['contratos'] }),
+        qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] }),
+        eventoId
+          ? qc.invalidateQueries({ queryKey: ['contrato-evento', eventoId] })
+          : Promise.resolve(),
+      ]);
+      await Swal.fire({
+        icon: 'info',
+        title: 'Evento cancelado',
+        text: [
+          res.contratoAnulado ? 'Contrato anulado.' : null,
+          typeof res.pedidosCancelados === 'number'
+            ? `${res.pedidosCancelados} pedido(s) cancelados.`
+            : null,
+        ]
+          .filter(Boolean)
+          .join(' '),
+      });
+      await mostrarResumenNotificacionesProveedor(res.notificacionesProveedor, {
+        tituloExito: 'Proveedores avisados',
+        textoExito: 'Se envió correo de cancelación a los proveedores que ya estaban en el flujo.',
+      });
+    },
+    onError: (err: unknown) => {
+      setCancelarError(apiErrorMessage(err, 'No se pudo cancelar el evento'));
+    },
+  });
 
   const { data: contratoEvento } = useQuery({
     queryKey: ['contrato-evento', eventoId],
@@ -382,6 +426,24 @@ export function CotizacionDetalle({
             </DetalleActionHint>
           </DetalleActionGroup>
         ) : null}
+        {puedeCancelarEvento(evento?.etapa) ? (
+          <DetalleActionGroup label="Cancelar evento">
+            <Button
+              variant="ghost"
+              className="col-span-2"
+              onClick={() => {
+                setCancelarError('');
+                setCancelarOpen(true);
+              }}
+            >
+              Cancelar evento
+            </Button>
+            <DetalleActionHint>
+              Anula el contrato si existe, cancela pedidos abiertos y avisa a proveedores que ya
+              fueron solicitados o confirmaron.
+            </DetalleActionHint>
+          </DetalleActionGroup>
+        ) : null}
       </DetalleActionsFooter>
     ) : undefined;
 
@@ -494,7 +556,9 @@ export function CotizacionDetalle({
               </div>
               <div>
                 <dt className="text-label-caps text-outline">Turno</dt>
-                <dd className="font-medium">{TURNO_LABEL[cot.turno] ?? cot.turno}</dd>
+                <dd className="font-medium">
+                  {etiquetaTurno(cot.turno, cot.horarioInicio, cot.horarioFin)}
+                </dd>
               </div>
               <div>
                 <dt className="text-label-caps text-outline">Niños</dt>
@@ -615,6 +679,13 @@ export function CotizacionDetalle({
         error={cerrarError}
         avisoCotizaciones="Las cotizaciones en borrador o enviada de este lead pasarán a cerradas. El cliente ya no podrá aceptar. Las aceptadas no se modifican."
         onConfirm={(motivo, notas) => cerrarMut.mutate({ motivo, notas })}
+      />
+      <CancelarEventoModal
+        open={cancelarOpen}
+        onClose={() => setCancelarOpen(false)}
+        pending={cancelarMut.isPending}
+        error={cancelarError}
+        onConfirm={(motivo) => cancelarMut.mutate(motivo)}
       />
     </>
   );

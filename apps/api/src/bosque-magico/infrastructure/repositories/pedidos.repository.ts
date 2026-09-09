@@ -28,6 +28,8 @@ export class PedidosRepository {
         id: true,
         fechaEvento: true,
         turno: true,
+        horarioInicio: true,
+        horarioFin: true,
         cantidadNinos: true,
         tematica: true,
         cumpleanero: { select: { edad: true } },
@@ -67,6 +69,8 @@ export class PedidosRepository {
             id: true,
             fechaEvento: true,
             turno: true,
+            horarioInicio: true,
+            horarioFin: true,
             etapa: true,
             cantidadNinos: true,
             tematica: true,
@@ -158,5 +162,37 @@ export class PedidosRepository {
       data,
       include: this.includeRelaciones,
     });
+  }
+
+  listarProveedorPorEventoYEtapa(eventoId: string, etapas: EtapaPedido[]) {
+    return this.prisma.bosqueMagicoPedido.findMany({
+      where: {
+        eventoId,
+        tipo: TipoPedido.proveedor,
+        etapa: { in: etapas },
+      },
+      orderBy: [{ area: 'asc' }, { nombre: 'asc' }],
+      include: this.includeRelaciones,
+    });
+  }
+
+  async cancelarNoEntregadosPorEvento(eventoId: string) {
+    const abiertos = await this.prisma.bosqueMagicoPedido.findMany({
+      where: {
+        eventoId,
+        etapa: { notIn: [EtapaPedido.entregado, EtapaPedido.cancelado] },
+      },
+      include: this.includeRelaciones,
+    });
+    if (abiertos.length === 0) return abiertos;
+
+    await this.prisma.bosqueMagicoPedido.updateMany({
+      where: {
+        eventoId,
+        etapa: { notIn: [EtapaPedido.entregado, EtapaPedido.cancelado] },
+      },
+      data: { etapa: EtapaPedido.cancelado },
+    });
+    return abiertos;
   }
 }

@@ -9,10 +9,6 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import {
-  CotizacionFormModal,
-  type CotizacionFormTarget,
-} from '../components/cotizaciones/CotizacionFormModal';
 import { NuevaSolicitudModal } from '../components/solicitudes/NuevaSolicitudModal';
 import { SolicitudFormModal } from '../components/solicitudes/SolicitudFormModal';
 import { SolicitudDetalle } from '../components/solicitudes/SolicitudDetalle';
@@ -36,7 +32,10 @@ import {
   TABLE_ROW_CLASS,
   TABLE_ROW_SELECTED,
 } from '../constants/design';
-import { CANAL_LABEL, ETAPAS_FILTRO, TURNO_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
+import { CANAL_LABEL, ETAPAS_FILTRO } from '../constants/solicitudes';
+import type { CotizacionFormTarget } from '../components/cotizaciones/CotizacionFormModal';
+import { pathCotizacionForm } from '../lib/cotizacion-form-url';
 import Swal from 'sweetalert2';
 import {
   actualizarSolicitud,
@@ -64,12 +63,14 @@ export function SolicitudesPage() {
   const detalleParam = searchParams.get('detalle');
   const [busqueda, setBusqueda] = useState(qParam);
   const [modalOpen, setModalOpen] = useState(false);
-  const [cotForm, setCotForm] = useState<CotizacionFormTarget | null>(null);
   const [editSolicitudId, setEditSolicitudId] = useState<string | null>(null);
 
-  const abrirCotizacionForm = useCallback((target: CotizacionFormTarget) => {
-    setCotForm(target);
-  }, []);
+  const abrirCotizacionForm = useCallback(
+    (target: CotizacionFormTarget) => {
+      navigate(pathCotizacionForm(target));
+    },
+    [navigate],
+  );
   const abrirEditarSolicitud = useCallback((id: string) => {
     setEditSolicitudId(id);
   }, []);
@@ -227,7 +228,9 @@ export function SolicitudesPage() {
         header: 'Turno',
         cell: (info) => {
           const v = info.getValue();
-          return v ? (TURNO_LABEL[v] ?? v) : '—';
+          return v
+            ? etiquetaTurno(v, info.row.original.horarioInicio, info.row.original.horarioFin)
+            : '—';
         },
       }),
       columnHelper.accessor('cantidadNinosEstimada', {
@@ -392,16 +395,6 @@ export function SolicitudesPage() {
         onAbrirCotizacionForm={abrirCotizacionForm}
         onEditarSolicitud={abrirEditarSolicitud}
         onVerCotizacion={(id) => navigate(`/cotizaciones?detalle=${id}`)}
-      />
-
-      <CotizacionFormModal
-        open={!!cotForm}
-        onClose={() => setCotForm(null)}
-        target={cotForm}
-        onSaved={(id) => {
-          if (cotForm?.mode === 'edit') setCotForm(null);
-          else setCotForm({ mode: 'edit', cotizacionId: id });
-        }}
       />
 
       <SolicitudFormModal

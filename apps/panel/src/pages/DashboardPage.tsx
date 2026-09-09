@@ -5,12 +5,12 @@ import { Icon } from '../components/ui/Icon';
 import { KpiCard } from '../components/ui/KpiCard';
 import { MediaRowSkeleton, Skeleton, TableSkeletonRows } from '../components/ui/Skeleton';
 import { CANAL_LABEL, ETAPA_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { ETAPA_BADGE } from '../constants/design';
 import { fetchResumenSolicitudes, fetchSolicitudes } from '../lib/api';
 import type { EtapaSolicitud } from '../lib/api';
 import { fetchEventosResumen } from '../lib/eventos';
 import { formatMesDia } from '../lib/format';
-import { TURNO_LABEL } from '../constants/solicitudes';
 import { PageHeader } from '../components/ui/PageHeader';
 import { CRUMB_INICIO, crumb } from '../constants/breadcrumbs';
 
@@ -120,7 +120,7 @@ export function DashboardPage() {
                       </h4>
                       <p className="mt-0.5 flex items-center gap-1 text-body-sm text-on-surface-variant">
                         <Icon name="park" size={14} filled={false} />
-                        {ev.zona} · {TURNO_LABEL[ev.turno] ?? ev.turno}
+                        {ev.zona} · {etiquetaTurno(ev.turno, ev.horarioInicio, ev.horarioFin)}
                       </p>
                     </div>
                     <div className="shrink-0 text-right">

@@ -26,6 +26,8 @@ export type ContratoSnapshot = {
     id: string;
     fechaEvento: string;
     turno: string;
+    horarioInicio?: string | null;
+    horarioFin?: string | null;
     zona: string;
     cantidadNinos: number;
     tematica: string | null;
@@ -102,6 +104,13 @@ export type Contrato = {
   adjuntos?: ContratoAdjunto[];
 };
 
+export type FirmarContratoResultado = Contrato & {
+  solicitarAutomatico?: {
+    pedidos: number;
+    notificaciones: Array<{ enviado: boolean; motivo?: string }>;
+  };
+};
+
 export type GenerarContratoPayload = {
   numeroDocumento: string;
   tipoComprobante: TipoComprobante;
@@ -136,7 +145,9 @@ export async function marcarContratoEnviado(id: string) {
 }
 
 export async function marcarContratoFirmado(id: string) {
-  const { data } = await api.post<Contrato>(`/bosque-magico/contratos/${id}/firmar`);
+  const { data } = await api.post<FirmarContratoResultado>(
+    `/bosque-magico/contratos/${id}/firmar`,
+  );
   return data;
 }
 

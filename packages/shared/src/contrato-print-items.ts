@@ -8,6 +8,7 @@ export type ContratoPrintItem = {
   precioUnitario: number;
   subtotal: number;
   origenItem?: string;
+  notas?: string | null;
 };
 
 export type PaqueteTipo = 'basico' | 'estandar' | 'premium' | 'personalizado' | null;

@@ -5,6 +5,7 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  Matches,
   Max,
   MaxLength,
   Min,
@@ -45,6 +46,16 @@ export class CrearSolicitudManualDto {
   @IsOptional()
   @IsEnum(TurnoInteres)
   turnoInteres?: TurnoInteres;
+
+  @ApiPropertyOptional({ example: '15:00' })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'El horario de inicio debe ser HH:mm' })
+  horarioInicio?: string;
+
+  @ApiPropertyOptional({ example: '18:00' })
+  @IsOptional()
+  @Matches(/^([01]\d|2[0-3]):[0-5]\d$/, { message: 'El horario de fin debe ser HH:mm' })
+  horarioFin?: string;
 
   @ApiPropertyOptional({ example: 25 })
   @IsOptional()

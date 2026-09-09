@@ -19,7 +19,7 @@ import {
   TABLE_ROW_CLASS,
   TABLE_ROW_SELECTED,
 } from '../constants/design';
-import { TURNO_LABEL } from '../constants/solicitudes';
+import { etiquetaTurno } from '@bosque/shared';
 import { fetchContratos, type EtapaContrato } from '../lib/contratos';
 import { useListPagination } from '../hooks/useListPagination';
 import { formatFecha, formatFechaHora } from '../lib/format';
@@ -206,7 +206,11 @@ export function ContratosPage() {
                       {turno && (
                         <span className="text-on-surface-variant">
                           {' '}
-                          · {TURNO_LABEL[turno] ?? turno}
+                          · {etiquetaTurno(
+                            turno,
+                            snap?.evento.horarioInicio,
+                            snap?.evento.horarioFin,
+                          )}
                         </span>
                       )}
                     </td>

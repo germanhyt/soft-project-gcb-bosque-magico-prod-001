@@ -33,4 +33,22 @@ export class ConfiguracionRepository {
       },
     });
   }
+
+  async crearSiNoExiste(data: {
+    clave: string;
+    valor: unknown;
+    descripcion: string;
+    esPublico?: boolean;
+  }) {
+    const existing = await this.obtenerPorClave(data.clave);
+    if (existing) return existing;
+    return this.prisma.bosqueMagicoConfiguracion.create({
+      data: {
+        clave: data.clave,
+        valor: data.valor as never,
+        descripcion: data.descripcion,
+        esPublico: data.esPublico ?? false,
+      },
+    });
+  }
 }

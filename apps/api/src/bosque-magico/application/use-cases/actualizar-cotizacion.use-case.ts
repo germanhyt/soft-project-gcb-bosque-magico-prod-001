@@ -29,6 +29,11 @@ import { ItemCotizacionDto } from '../dto/item-cotizacion.dto';
 import { AnticipacionEventoService } from '../../domain/services/anticipacion-evento.service';
 import { CapacidadEventoService } from '../../domain/services/capacidad-evento.service';
 import { payloadExtrasPermitidos } from '../../domain/utils/extras-permitidos-payload';
+import {
+  esTurnoPersonalizado,
+  persistirHorarioDeTurno,
+  rangoTurnoPersonalizado,
+} from '../../domain/utils/turno-horario';
 
 @Injectable()
 export class ActualizarCotizacionUseCase {
@@ -166,6 +171,17 @@ export class ActualizarCotizacionUseCase {
     }
     const feriados = await this.calculo.obtenerFeriados();
     const turno = dto.turno ?? antes.turno;
+    const horarioInicioIn =
+      dto.horarioInicio ??
+      (antes as { horarioInicio?: string | null }).horarioInicio;
+    const horarioFinIn =
+      dto.horarioFin ?? (antes as { horarioFin?: string | null }).horarioFin;
+    if (esTurnoPersonalizado(turno) && !rangoTurnoPersonalizado(horarioInicioIn)) {
+      throw new BadRequestException(
+        'El turno personalizado requiere hora de inicio; el rango es de 3 horas.',
+      );
+    }
+    const horario = persistirHorarioDeTurno(turno, horarioInicioIn, horarioFinIn);
     const cantidadNinos = dto.cantidadNinos ?? antes.cantidadNinos;
     await this.capacidad.validar(cantidadNinos);
     const paquete = dto.paquete ?? antes.paquete;
@@ -262,6 +278,8 @@ export class ActualizarCotizacionUseCase {
       {
         fechaEvento,
         turno,
+        horarioInicio: horario.horarioInicio,
+        horarioFin: horario.horarioFin,
         cantidadNinos,
         tematica: dto.tematica ?? antes.tematica,
         paquete,

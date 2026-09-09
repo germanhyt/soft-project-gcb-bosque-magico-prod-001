@@ -184,15 +184,39 @@ const POSTVENTA_ORDEN = [
 ] as const;
 
 const PEDIDOS_PROVEEDOR_LABELS: Record<string, string> = {
-  'pedidos_proveedor.notificar_correo': 'Notificar por correo al marcar pedido como Solicitado',
-  'pedidos_proveedor.asunto': 'Asunto del correo',
-  'pedidos_proveedor.cuerpo': 'Cuerpo del correo',
+  'pedidos_proveedor.notificar_correo':
+    'Correo automático al solicitar (y al firmar el contrato: pendientes → Solicitado)',
+  'pedidos_proveedor.asunto': 'Asunto del correo de solicitud',
+  'pedidos_proveedor.cuerpo': 'Cuerpo del correo de solicitud',
+  'pedidos_proveedor.cancelacion_asunto': 'Asunto del correo de cancelación',
+  'pedidos_proveedor.cancelacion_cuerpo': 'Cuerpo del correo de cancelación',
 };
 
-const PEDIDOS_PROVEEDOR_ORDEN = [
+const PEDIDOS_SOLICITUD_ORDEN = [
   'pedidos_proveedor.notificar_correo',
   'pedidos_proveedor.asunto',
   'pedidos_proveedor.cuerpo',
+] as const;
+
+const PEDIDOS_CANCELACION_ORDEN = [
+  'pedidos_proveedor.cancelacion_asunto',
+  'pedidos_proveedor.cancelacion_cuerpo',
+] as const;
+
+const PEDIDOS_PROVEEDOR_ORDEN = [
+  ...PEDIDOS_SOLICITUD_ORDEN,
+  ...PEDIDOS_CANCELACION_ORDEN,
+] as const;
+
+const CONFIG_NAV = [
+  { id: 'config-precios', label: 'Precios y reglas' },
+  { id: 'config-agenda', label: 'Turnos y feriados' },
+  { id: 'config-landing', label: 'Cotizador landing' },
+  { id: 'config-smtp', label: 'Correo SMTP' },
+  { id: 'config-proveedores', label: 'Pedidos a proveedores' },
+  { id: 'config-cancelacion', label: 'Cancelación de evento' },
+  { id: 'config-postventa', label: 'Postventa' },
+  { id: 'config-recordatorios', label: 'Recordatorios' },
 ] as const;
 
 const RECORDATORIOS_LABELS: Record<string, string> = {
@@ -562,6 +586,21 @@ export function ConfiguracionPage() {
     <div className="relative w-full pb-28">
       <PageHeader breadcrumbs={[CRUMB_INICIO, crumb('Configuración')]} />
 
+      <nav
+        aria-label="Secciones de configuración"
+        className="mt-4 flex flex-wrap gap-2"
+      >
+        {CONFIG_NAV.map((item) => (
+          <a
+            key={item.id}
+            href={`#${item.id}`}
+            className="rounded-full border border-outline-variant bg-surface-container-low px-3 py-1 text-xs font-medium text-on-surface-variant hover:border-primary hover:text-primary"
+          >
+            {item.label}
+          </a>
+        ))}
+      </nav>
+
       <div className="mt-6 w-full">
           {loadingConfig ? (
             <div className={`w-full p-6 ${CARD_CLASS}`}>
@@ -575,8 +614,8 @@ export function ConfiguracionPage() {
             }}
             className="w-full space-y-8"
           >
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
-              <h3 className="text-title-md text-primary">Tarifas y límites</h3>
+            <section id="config-precios" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Precios y reglas</h3>
               <p className="mt-1 text-body-sm text-outline">
                 Valores usados por el cotizador y la landing. Los rangos de show extra se calculan
                 a partir de niños incluidos y máximo permitido.
@@ -633,7 +672,7 @@ export function ConfiguracionPage() {
               </div>
             </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
+            <section id="config-landing" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Cotizador landing</h3>
               <p className="mt-1 text-body-sm text-outline">
                 Modo de selección por sección (paquete siempre es uno solo). Single = una opción; multiple =
@@ -671,10 +710,15 @@ export function ConfiguracionPage() {
               )}
             </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
-              <h3 className="text-title-md text-primary">Turnos del día</h3>
+            <section id="config-agenda" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Turnos y feriados</h3>
               <p className="mt-1 text-body-sm text-outline">
-                Nombre del turno y rango horario (inicio–fin). Se guarda también como texto para la landing.
+                Tres turnos de 3 h para la agenda y la landing. El vendedor puede elegir un turno
+                personalizado (también de 3 h) en la solicitud o cotización.
+              </p>
+              <h4 className="mt-6 font-semibold text-secondary">Turnos del día</h4>
+              <p className="mt-1 text-body-sm text-outline">
+                Nombre y rango horario (inicio–fin). Se guarda también como texto para la landing.
               </p>
               <div className="mt-6 grid gap-6 lg:grid-cols-3">
                 {(config?.turnos ?? []).map((item) => {
@@ -737,15 +781,13 @@ export function ConfiguracionPage() {
                   );
                 })}
               </div>
-            </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
-              <h3 className="text-title-md text-primary">Feriados</h3>
+              <h4 className="mt-8 font-semibold text-secondary">Feriados</h4>
               <p className="mt-1 text-body-sm text-outline">
                 Fechas que aplican tarifa fin de semana aunque caigan entre semana (ej. feriados
                 nacionales en Perú). Sábados y domingos se calculan automáticamente.
               </p>
-              <div className="mt-6">
+              <div className="mt-4">
                 <FeriadosConfigEditor
                   fechas={feriadosActuales}
                   onChange={(fechas) => setFeriadosDraft(fechas)}
@@ -753,7 +795,7 @@ export function ConfiguracionPage() {
               </div>
             </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
+            <section id="config-smtp" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Correo SMTP</h3>
               <p className="mt-1 text-body-sm text-outline">
                 {smtpHabilitado
@@ -810,7 +852,126 @@ export function ConfiguracionPage() {
               />
             </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
+            <section id="config-proveedores" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Pedidos a proveedores</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                {pedidosProveedorHabilitado
+                  ? 'Al marcar un pedido como Solicitado se envía correo si hay SMTP y email del proveedor. Con esta opción activa, al firmar el contrato los pedidos pendientes también pasan a Solicitado y se notifica. Aceptar la cotización solo deja pedidos en Pendiente.'
+                  : 'Desactivado: el operador contacta al proveedor a mano (WhatsApp/correo). El aviso de cancelación se configura en la sección siguiente y no depende de este interruptor.'}
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {pedidosProveedorOrdenados
+                  .filter((item) =>
+                    (PEDIDOS_SOLICITUD_ORDEN as readonly string[]).includes(item.clave),
+                  )
+                  .map((item) => {
+                  const value = pedidosProveedorActuales[item.clave] ?? '';
+                  const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
+                  const isBoolean = item.clave === 'pedidos_proveedor.notificar_correo';
+                  const isTextarea = item.clave === 'pedidos_proveedor.cuerpo';
+                  const setValor = (next: string) =>
+                    setPedidosProveedorValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isBoolean ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'false'}
+                          onChange={(e) => setValor(e.target.value)}
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section id="config-cancelacion" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
+              <h3 className="text-title-md text-primary">Cancelación de evento</h3>
+              <p className="mt-1 text-body-sm text-outline">
+                Plantilla para avisar a proveedores cuando se cancela un evento. Se envía a quienes
+                ya estaban en Solicitado o Confirmado (requiere SMTP y correo del proveedor). No
+                depende del interruptor de solicitud automática. Placeholders:{' '}
+                <code className="text-xs">{'{{proveedor}} {{cliente}} {{fecha}} {{turno}} {{servicio}} {{motivo}}'}</code>
+              </p>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                {pedidosProveedorOrdenados
+                  .filter((item) =>
+                    (PEDIDOS_CANCELACION_ORDEN as readonly string[]).includes(item.clave),
+                  )
+                  .map((item) => {
+                  const value = pedidosProveedorActuales[item.clave] ?? '';
+                  const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
+                  const isTextarea = item.clave === 'pedidos_proveedor.cancelacion_cuerpo';
+                  const setValor = (next: string) =>
+                    setPedidosProveedorValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+            </section>
+
+            <section id="config-postventa" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Postventa</h3>
               <p className="mt-1 text-body-sm text-outline">
                 {postventaHabilitado
@@ -870,67 +1031,7 @@ export function ConfiguracionPage() {
               </div>
             </section>
 
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
-              <h3 className="text-title-md text-primary">Pedidos a proveedores</h3>
-              <p className="mt-1 text-body-sm text-outline">
-                {pedidosProveedorHabilitado
-                  ? 'Al marcar un pedido de proveedor como Solicitado se enviará correo si el proveedor tiene email y SMTP está activo. Aceptar la cotización solo genera los pedidos en Pendiente.'
-                  : 'Desactivado: el operador contacta al proveedor manualmente (WhatsApp/correo desde el detalle del evento).'}
-              </p>
-              <div className="mt-6 grid gap-6 sm:grid-cols-2">
-                {pedidosProveedorOrdenados.map((item) => {
-                  const value = pedidosProveedorActuales[item.clave] ?? '';
-                  const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
-                  const isBoolean = item.clave === 'pedidos_proveedor.notificar_correo';
-                  const isTextarea = item.clave === 'pedidos_proveedor.cuerpo';
-                  const setValor = (next: string) =>
-                    setPedidosProveedorValores((prev) => ({
-                      ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,
-                      [item.clave]: next,
-                    }));
-
-                  return (
-                    <label
-                      key={item.clave}
-                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
-                    >
-                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
-                      {item.descripcion && (
-                        <span className="mt-0.5 block text-body-sm text-outline">
-                          {item.descripcion}
-                        </span>
-                      )}
-                      {isBoolean ? (
-                        <select
-                          className={`mt-1 w-full ${INPUT_CLASS}`}
-                          value={value || 'false'}
-                          onChange={(e) => setValor(e.target.value)}
-                        >
-                          <option value="false">No</option>
-                          <option value="true">Sí</option>
-                        </select>
-                      ) : isTextarea ? (
-                        <textarea
-                          rows={6}
-                          className={`mt-1 w-full ${INPUT_CLASS}`}
-                          value={value}
-                          onChange={(e) => setValor(e.target.value)}
-                        />
-                      ) : (
-                        <input
-                          type="text"
-                          className={`mt-1 w-full ${INPUT_CLASS}`}
-                          value={value}
-                          onChange={(e) => setValor(e.target.value)}
-                        />
-                      )}
-                    </label>
-                  );
-                })}
-              </div>
-            </section>
-
-            <section className={`w-full p-6 ${CARD_CLASS}`}>
+            <section id="config-recordatorios" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Recordatorios de evento</h3>
               <p className="mt-1 text-body-sm text-outline">
                 {recordatoriosHabilitado
