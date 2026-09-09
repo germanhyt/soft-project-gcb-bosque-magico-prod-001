@@ -11,6 +11,7 @@ import { EventosRepository } from '../../infrastructure/repositories/eventos.rep
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 import { ProductosRepository } from '../../infrastructure/repositories/productos.repository';
 import { ProveedoresRepository } from '../../infrastructure/repositories/proveedores.repository';
+import { NotificacionProveedorService } from '../../domain/services/notificacion-proveedor.service';
 
 @Injectable()
 export class CrearPedidoUseCase {
@@ -19,6 +20,7 @@ export class CrearPedidoUseCase {
     private readonly eventos: EventosRepository,
     private readonly productos: ProductosRepository,
     private readonly proveedores: ProveedoresRepository,
+    private readonly notificacionProveedor: NotificacionProveedorService,
   ) {}
 
   async ejecutar(eventoId: string, dto: CrearPedidoDto) {
@@ -68,6 +70,10 @@ export class CrearPedidoUseCase {
       costo: dto.costo,
       notas: dto.notas,
     });
+
+    if (row.tipo === TipoPedido.proveedor) {
+      await this.notificacionProveedor.notificarNegociacion(row.id);
+    }
 
     return mapPedidoResponse(row);
   }

@@ -86,6 +86,58 @@ describe('NotificacionProveedorService', () => {
     });
   });
 
+  it('envía negociación si el flag está ausente (default ON)', async () => {
+    configuracion.listarTodas.mockResolvedValue([
+      { clave: 'pedidos_proveedor.notificar_correo', valor: false },
+    ]);
+    configuracion.obtenerPorClave.mockResolvedValue({
+      clave: 'turnos.turno_1',
+      valor: { etiqueta: 'Mañana', horario: '9:00 a.m. - 12:00 p.m.' },
+    });
+    smtp.estaActivo.mockResolvedValue(true);
+    pedidos.obtenerPorId.mockResolvedValue({
+      id: 'ped-1',
+      eventoId: 'evt-1',
+      tipo: 'proveedor',
+      nombre: 'Show Magia',
+      cantidad: 1,
+      costo: { toString: () => '300' },
+      notas: null,
+      tokenPublico: 'abc123',
+      proveedor: { nombre: 'Mimo Pro', correo: 'mimo@test.com' },
+    });
+    eventos.obtenerPorId.mockResolvedValue({
+      id: 'evt-1',
+      fechaEvento: new Date('2026-07-15T12:00:00.000Z'),
+      turno: 'turno_1',
+      cantidadNinos: 12,
+      tematica: null,
+      cumpleanero: { edad: 7 },
+      cliente: { nombreCompleto: 'Ana Pérez' },
+    });
+
+    const result = await service.notificarNegociacion('ped-1');
+
+    expect(result.enviado).toBe(true);
+    expect(smtp.enviarCorreo).toHaveBeenCalledWith(
+      expect.objectContaining({
+        destino: 'mimo@test.com',
+        asunto: expect.stringContaining('Consulta de disponibilidad'),
+      }),
+    );
+  });
+
+  it('no envía negociación si el flag está en false', async () => {
+    configuracion.listarTodas.mockResolvedValue([
+      { clave: 'pedidos_proveedor.notificar_negociacion', valor: false },
+    ]);
+
+    const result = await service.notificarNegociacion('ped-1');
+
+    expect(result).toEqual({ enviado: false, motivo: 'deshabilitado' });
+    expect(smtp.enviarCorreo).not.toHaveBeenCalled();
+  });
+
   it('envía cancelación aunque la notificación de solicitud esté deshabilitada', async () => {
     configuracion.listarTodas.mockResolvedValue([
       { clave: 'pedidos_proveedor.notificar_correo', valor: false },

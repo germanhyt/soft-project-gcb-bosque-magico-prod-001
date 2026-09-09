@@ -285,10 +285,32 @@ const configuraciones = [
     esPublico: false,
   },
   {
+    clave: 'pedidos_proveedor.notificar_negociacion',
+    valor: true,
+    descripcion:
+      'Enviar correo de negociación al crear pedidos en Pendiente (al aceptar la cotización). El pedido no pasa a Solicitado. Requiere SMTP y correo del proveedor.',
+    esPublico: false,
+  },
+  {
+    clave: 'pedidos_proveedor.negociacion_asunto',
+    valor: 'Consulta de disponibilidad — {{servicio}} ({{fecha}})',
+    descripcion:
+      'Asunto del correo de negociación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+    esPublico: false,
+  },
+  {
+    clave: 'pedidos_proveedor.negociacion_cuerpo',
+    valor:
+      'Hola {{proveedor}},\n\nEl cliente aceptó una cotización en Bosque Mágico. Antes de firmar el contrato queremos confirmar tu disponibilidad y el costo estimado.\n\nCliente: {{cliente}}\nEvento: {{fecha}} · {{turno}}\nCumpleañero: {{edad}} años\nNiños: {{cantidadNinos}}\nTemática: {{tematica}}\nServicio: {{servicio}}\nCantidad: {{cantidad}}\nCosto referencial: S/ {{costo}}\n{{notas}}\n\nConfirma o rechaza desde este enlace (puedes comentar tu costo):\n{{link}}\n\nGracias.\nEquipo Bosque Mágico',
+    descripcion:
+      'Cuerpo del correo de negociación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+    esPublico: false,
+  },
+  {
     clave: 'pedidos_proveedor.notificar_correo',
     valor: false,
     descripcion:
-      'Enviar correo automático al proveedor al marcar el pedido como Solicitado, y al firmar el contrato pasar los pedidos pendientes a Solicitado (requiere SMTP activo y correo del proveedor).',
+      'Enviar correo automático al marcar el pedido como Solicitado, y al firmar el contrato pasar los pendientes a Solicitado (requiere SMTP y correo del proveedor). Distinto del correo de negociación en Pendiente.',
     esPublico: false,
   },
   {

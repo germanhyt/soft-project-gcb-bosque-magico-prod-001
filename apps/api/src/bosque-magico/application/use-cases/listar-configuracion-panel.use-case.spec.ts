@@ -79,6 +79,29 @@ describe('ListarConfiguracionPanelUseCase', () => {
     );
   });
 
+  it('asegura las claves de correo de negociación a proveedores', async () => {
+    configuracion.listarTodas.mockResolvedValue([] as never);
+
+    await useCase.ejecutar();
+
+    expect(configuracion.crearSiNoExiste).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clave: 'pedidos_proveedor.notificar_negociacion',
+        valor: true,
+      }),
+    );
+    expect(configuracion.crearSiNoExiste).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clave: 'pedidos_proveedor.negociacion_asunto',
+      }),
+    );
+    expect(configuracion.crearSiNoExiste).toHaveBeenCalledWith(
+      expect.objectContaining({
+        clave: 'pedidos_proveedor.negociacion_cuerpo',
+      }),
+    );
+  });
+
   it('no incluye smtp.port en numericas (va en sección smtp)', async () => {
     configuracion.listarTodas.mockResolvedValue([
       {

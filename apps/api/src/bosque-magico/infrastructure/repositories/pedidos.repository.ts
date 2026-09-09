@@ -14,7 +14,14 @@ export class PedidosRepository {
 
   private includeRelaciones = {
     producto: {
-      select: { id: true, codigo: true, nombre: true, categoria: true },
+      select: {
+        id: true,
+        codigo: true,
+        nombre: true,
+        categoria: true,
+        costoInterno: true,
+        precioLunesViernes: true,
+      },
     },
     proveedor: {
       select: { id: true, nombre: true, celular: true, correo: true },
@@ -23,6 +30,9 @@ export class PedidosRepository {
 
   private includePublico = {
     proveedor: { select: { nombre: true } },
+    producto: {
+      select: { costoInterno: true, precioLunesViernes: true },
+    },
     evento: {
       select: {
         id: true,
@@ -61,7 +71,7 @@ export class PedidosRepository {
             }
           : {}),
       },
-      orderBy: [{ evento: { fechaEvento: 'asc' } }, { area: 'asc' }],
+      orderBy: [{ creadoEn: 'desc' }, { area: 'asc' }],
       include: {
         ...this.includeRelaciones,
         evento: {

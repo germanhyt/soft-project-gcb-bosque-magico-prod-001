@@ -34,12 +34,14 @@ type Props = {
   /** Otros pedidos del mismo evento+proveedor (incluye el actual). */
   pedidosMismoProveedor?: PedidoOperaciones[];
   onVerEvento: (eventoId: string) => void;
+  onEditar?: (pedido: PedidoOperaciones) => void;
 };
 
 export function PedidoOperacionesRowActions({
   pedido,
   pedidosMismoProveedor,
   onVerEvento,
+  onEditar,
 }: Props) {
   const [waOpen, setWaOpen] = useState(false);
   const [correoOpen, setCorreoOpen] = useState(false);
@@ -71,6 +73,14 @@ export function PedidoOperacionesRowActions({
           aria-label="Ver evento en agenda"
           onClick={() => onVerEvento(pedido.evento.id)}
         />
+        {puedeOperar && onEditar && (
+          <RowIconButton
+            icon="edit"
+            title="Editar costo y datos"
+            aria-label="Editar pedido"
+            onClick={() => onEditar(pedido)}
+          />
+        )}
 
         {mostrarProveedor && (
           <>

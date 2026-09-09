@@ -5,6 +5,7 @@ import { Public } from '../../auth/decorators/public.decorator';
 import { CrearSolicitudPublicaDto } from '../application/dto/crear-solicitud-publica.dto';
 import { CrearSolicitudWhatsappDto } from '../application/dto/crear-solicitud-whatsapp.dto';
 import { PrevisualizarCotizacionPublicaDto } from '../application/dto/previsualizar-cotizacion-publica.dto';
+import { PropuestaCostoPedidoPublicoDto } from '../application/dto/propuesta-costo-pedido-publico.dto';
 import { RechazarPedidoPublicoDto } from '../application/dto/rechazar-pedido-publico.dto';
 import { AceptarCotizacionUseCase } from '../application/use-cases/aceptar-cotizacion.use-case';
 import { CrearSolicitudPublicaUseCase } from '../application/use-cases/crear-solicitud-publica.use-case';
@@ -151,6 +152,16 @@ export class PublicBosqueMagicoController {
   })
   pedidoPublico(@Param('token') token: string) {
     return this.obtenerPedidoPublico.ejecutar(token);
+  }
+
+  @Post('pedidos/:token/propuesta-costo')
+  @Throttle({ default: { limit: 10, ttl: 60000 } })
+  @ApiOperation({ summary: 'Proveedor envía costo estimado del pedido' })
+  proponerCostoPedidoPublico(
+    @Param('token') token: string,
+    @Body() dto: PropuestaCostoPedidoPublicoDto,
+  ) {
+    return this.responderPedidoPublico.proponerCosto(token, dto);
   }
 
   @Post('pedidos/:token/confirmar')

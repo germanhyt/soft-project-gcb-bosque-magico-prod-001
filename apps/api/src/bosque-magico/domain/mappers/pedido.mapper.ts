@@ -1,4 +1,5 @@
 import { EtapaPedido } from '@prisma/client';
+import { costoReferencialPedido } from '../utils/costo-referencial-pedido';
 import { fromDecimal } from '../utils/decimal';
 
 const ETAPAS_RESPONDER: EtapaPedido[] = [
@@ -16,9 +17,22 @@ export function mapPedidoResponse<T extends Record<string, unknown>>(
   pedido: T,
 ) {
   const token = String(pedido.tokenPublico ?? '');
+  const producto = pedido.producto as
+    | { costoInterno?: unknown; precioLunesViernes?: unknown }
+    | null
+    | undefined;
   return {
     ...pedido,
-    costo: fromDecimal(pedido.costo as never),
+    costo: costoReferencialPedido({
+      costoGuardado: pedido.costo,
+      cantidad: Number(pedido.cantidad) || 1,
+      costoInterno: producto?.costoInterno,
+      precioCatalogo: producto?.precioLunesViernes,
+    }),
+    costoEstimadoProveedor:
+      pedido.costoEstimadoProveedor == null
+        ? null
+        : fromDecimal(pedido.costoEstimadoProveedor as never),
     linkPublico: token ? `/pedido-proveedor/${token}` : '',
   };
 }
@@ -28,9 +42,12 @@ type PedidoPublicoRow = {
   nombre: string;
   cantidad: number;
   costo: unknown;
+  costoEstimadoProveedor?: unknown;
+  comentarioProveedor?: string | null;
   etapa: EtapaPedido;
   notas: string | null;
   tokenPublico: string;
+  producto?: { costoInterno?: unknown; precioLunesViernes?: unknown } | null;
   proveedor?: { nombre: string } | null;
   evento: {
     fechaEvento: Date;
@@ -48,7 +65,17 @@ export function mapPedidoPublicoResponse(pedido: PedidoPublicoRow) {
   return {
     servicio: pedido.nombre,
     cantidad: pedido.cantidad,
-    costo: fromDecimal(pedido.costo as never),
+    costo: costoReferencialPedido({
+      costoGuardado: pedido.costo,
+      cantidad: pedido.cantidad,
+      costoInterno: pedido.producto?.costoInterno,
+      precioCatalogo: pedido.producto?.precioLunesViernes,
+    }),
+    costoEstimadoProveedor:
+      pedido.costoEstimadoProveedor == null
+        ? null
+        : fromDecimal(pedido.costoEstimadoProveedor as never),
+    comentarioProveedor: pedido.comentarioProveedor ?? null,
     etapa: pedido.etapa,
     notas: pedido.notas,
     proveedor: pedido.proveedor?.nombre ?? 'Proveedor',
@@ -60,6 +87,7 @@ export function mapPedidoPublicoResponse(pedido: PedidoPublicoRow) {
       cantidadNinos: pedido.evento.cantidadNinos,
       tematica: pedido.evento.tematica,
     },
+    puedeProponerCosto: puedeResponder,
     puedeConfirmar: puedeResponder,
     puedeRechazar: puedeResponder,
     linkPublico: `/pedido-proveedor/${token}`,

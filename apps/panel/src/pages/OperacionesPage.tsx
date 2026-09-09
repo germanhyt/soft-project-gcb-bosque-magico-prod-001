@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import {
   AREA_PEDIDO_LABEL,
   AREAS_PEDIDO_FILTRO,
+  ETAPA_PEDIDO_BADGE,
   ETAPA_PEDIDO_LABEL,
   ETAPAS_PEDIDO_FILTRO,
   ETAPAS_PEDIDO_OPCIONES,
@@ -25,6 +26,7 @@ import { DataTablePagination } from '../components/ui/DataTablePagination';
 import { FilterSearchInput } from '../components/ui/FilterSearchInput';
 import { FilterSelect } from '../components/ui/FilterSelect';
 import { TableFiltersPanel } from '../components/ui/TableFiltersPanel';
+import { PedidoEditarModal } from '../components/pedidos/PedidoEditarModal';
 import {
   PedidoOperacionesRowActions,
   puedeOperarPedidosEvento,
@@ -55,6 +57,7 @@ export function OperacionesPage() {
   const [filtroArea, setFiltroArea] = useState<'' | AreaPedido>('');
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState<PageSize>(DEFAULT_PAGE_SIZE);
+  const [pedidoEditar, setPedidoEditar] = useState<PedidoOperaciones | null>(null);
 
   const { data: pedidos = [], isLoading, isError, refetch } = useQuery({
     queryKey: ['pedidos-operaciones', desde, hasta],
@@ -73,13 +76,33 @@ export function OperacionesPage() {
     },
   });
 
+  const editarMut = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof actualizarPedido>[1];
+    }) => actualizarPedido(id, payload),
+    onSuccess: async () => {
+      qc.invalidateQueries({ queryKey: ['pedidos-operaciones'] });
+    },
+  });
+
   const pedidosFiltrados = useMemo(
     () =>
-      pedidos.filter((p) => {
-        if (filtroEtapa && p.etapa !== filtroEtapa) return false;
-        if (filtroArea && p.area !== filtroArea) return false;
-        return coincideBusqueda(busqueda, p);
-      }),
+      pedidos
+        .filter((p) => {
+          if (filtroEtapa && p.etapa !== filtroEtapa) return false;
+          if (filtroArea && p.area !== filtroArea) return false;
+          return coincideBusqueda(busqueda, p);
+        })
+        .slice()
+        .sort((a, b) => {
+          const ta = a.creadoEn ? Date.parse(a.creadoEn) : 0;
+          const tb = b.creadoEn ? Date.parse(b.creadoEn) : 0;
+          return tb - ta;
+        }),
     [pedidos, busqueda, filtroEtapa, filtroArea],
   );
 
@@ -233,36 +256,44 @@ export function OperacionesPage() {
                       {AREA_PEDIDO_LABEL[p.area]}
                     </td>
                     <td className="px-4 py-3">
-                      <select
-                        className="min-w-[120px] rounded-lg border border-surface-variant bg-surface-container-low px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50"
-                        value={p.etapa}
-                        disabled={!puedeOperar || actualizarEtapaMut.isPending}
-                        title={
-                          puedeOperar
-                            ? 'Cambiar estado del pedido'
-                            : 'El evento no permite editar pedidos'
-                        }
-                        onChange={(e) =>
-                          actualizarEtapaMut.mutate({
-                            id: p.id,
-                            etapa: e.target.value as EtapaPedido,
-                            eventoId: p.evento.id,
-                          })
-                        }
-                      >
-                        {ETAPAS_PEDIDO_OPCIONES.map((o) => (
-                          <option key={o.value} value={o.value}>
-                            {o.label}
-                          </option>
-                        ))}
-                      </select>
+                        <select
+                          className={`min-w-[120px] rounded-lg border border-surface-variant px-2 py-1 text-xs disabled:cursor-not-allowed disabled:opacity-50 ${ETAPA_PEDIDO_BADGE[p.etapa]}`}
+                          value={p.etapa}
+                          disabled={!puedeOperar || actualizarEtapaMut.isPending}
+                          title={
+                            puedeOperar
+                              ? 'Cambiar estado del pedido'
+                              : 'El evento no permite editar pedidos'
+                          }
+                          onChange={(e) =>
+                            actualizarEtapaMut.mutate({
+                              id: p.id,
+                              etapa: e.target.value as EtapaPedido,
+                              eventoId: p.evento.id,
+                            })
+                          }
+                        >
+                          {ETAPAS_PEDIDO_OPCIONES.map((o) => (
+                            <option key={o.value} value={o.value}>
+                              {o.label}
+                            </option>
+                          ))}
+                        </select>
                     </td>
-                    <td className="px-4 py-3 text-right">S/ {p.costo.toFixed(2)}</td>
+                    <td className="px-4 py-3 text-right">
+                      {p.costo > 0 ? `S/ ${p.costo.toFixed(2)}` : 'Por definir'}
+                      {p.costoEstimadoProveedor != null && (
+                        <span className="block text-xs text-outline">
+                          Est. proveedor S/ {p.costoEstimadoProveedor.toFixed(2)}
+                        </span>
+                      )}
+                    </td>
                     <td className="px-4 py-3">
                       <PedidoOperacionesRowActions
                         pedido={p}
                         pedidosMismoProveedor={hermanosPorPedido.get(p.id)}
                         onVerEvento={(eventoId) => navigate(`/agenda?detalle=${eventoId}`)}
+                        onEditar={setPedidoEditar}
                       />
                     </td>
                   </tr>
@@ -272,7 +303,7 @@ export function OperacionesPage() {
               <tr>
                 <td colSpan={8} className="px-4 py-8 text-center text-outline">
                   {pedidos.length === 0
-                    ? 'No hay pedidos pendientes en el rango seleccionado.'
+                    ? 'No hay pedidos abiertos en el rango seleccionado.'
                     : 'Ningún pedido coincide con los filtros.'}
                 </td>
               </tr>
@@ -280,6 +311,16 @@ export function OperacionesPage() {
           </tbody>
         </table>
       </DataTableCard>
+
+      <PedidoEditarModal
+        open={!!pedidoEditar}
+        pedido={pedidoEditar}
+        nested={false}
+        onClose={() => setPedidoEditar(null)}
+        onSubmit={async (id, payload) => {
+          await editarMut.mutateAsync({ id, payload });
+        }}
+      />
     </div>
   );
 }

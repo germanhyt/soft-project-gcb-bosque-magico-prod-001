@@ -1094,11 +1094,15 @@ model BosqueMagicoPedido {
 
   fechaRequerida DateTime?   @map("fecha_requerida") @db.Date
 
-  costo          Decimal     @db.Decimal(10, 2)
+  costo                   Decimal     @db.Decimal(10, 2)
 
-  etapa          EtapaPedido @default(pendiente)
+  costoEstimadoProveedor  Decimal?    @map("costo_estimado_proveedor") @db.Decimal(10, 2)
 
-  notas          String?     @db.Text
+  comentarioProveedor     String?     @map("comentario_proveedor") @db.Text
+
+  etapa                   EtapaPedido @default(pendiente)
+
+  notas                   String?     @db.Text
 
   tokenPublico   String      @unique @map("token_publico")
 

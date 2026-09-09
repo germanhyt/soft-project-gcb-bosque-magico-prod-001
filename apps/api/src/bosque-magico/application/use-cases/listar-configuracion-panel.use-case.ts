@@ -2,6 +2,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
 import { CLAVES_NUMERICAS_EDITABLES } from '../../domain/constants/configuracion-claves';
 import { CLAVE_FLUJO_COTIZACION_VOLVER_BORRADOR_ACEPTADA } from '../../domain/constants/flujo-config';
+import {
+  CLAVE_PEDIDOS_NEGOCIACION_ASUNTO,
+  CLAVE_PEDIDOS_NEGOCIACION_CUERPO,
+  CLAVE_PEDIDOS_NOTIFICAR_NEGOCIACION,
+  DEFAULT_NEGOCIACION_ASUNTO,
+  DEFAULT_NEGOCIACION_CUERPO,
+} from '../../domain/constants/pedidos-proveedor-config';
 
 export type SmtpEstadoMeta = {
   habilitado: boolean;
@@ -42,6 +49,24 @@ export class ListarConfiguracionPanelUseCase {
           'Hola {{proveedor}},\n\nEl evento de Bosque Mágico para {{cliente}} el {{fecha}} ({{turno}}) fue cancelado.\n\nServicio: {{servicio}}\n{{motivo}}\n\nNo es necesario que asistas. Gracias.\nEquipo Bosque Mágico',
         descripcion:
           'Cuerpo del correo de cancelación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{servicio}}, {{motivo}}',
+      }),
+      this.configuracion.crearSiNoExiste({
+        clave: CLAVE_PEDIDOS_NOTIFICAR_NEGOCIACION,
+        valor: true,
+        descripcion:
+          'Enviar correo de negociación al crear pedidos en Pendiente (al aceptar la cotización). El pedido no pasa a Solicitado.',
+      }),
+      this.configuracion.crearSiNoExiste({
+        clave: CLAVE_PEDIDOS_NEGOCIACION_ASUNTO,
+        valor: DEFAULT_NEGOCIACION_ASUNTO,
+        descripcion:
+          'Asunto del correo de negociación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
+      }),
+      this.configuracion.crearSiNoExiste({
+        clave: CLAVE_PEDIDOS_NEGOCIACION_CUERPO,
+        valor: DEFAULT_NEGOCIACION_CUERPO,
+        descripcion:
+          'Cuerpo del correo de negociación. Placeholders: {{proveedor}}, {{cliente}}, {{fecha}}, {{turno}}, {{edad}}, {{cantidadNinos}}, {{tematica}}, {{servicio}}, {{cantidad}}, {{costo}}, {{notas}}, {{link}}',
       }),
     ]);
 

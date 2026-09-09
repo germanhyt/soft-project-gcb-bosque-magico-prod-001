@@ -64,42 +64,66 @@ describe('MarcarContratoFirmadoUseCase', () => {
     pedidos.listarProveedorPorEventoYEtapa.mockResolvedValue([]);
   });
 
-  it('marca firmado sin solicitar pedidos si el auto está apagado', async () => {
+  it('pasa pendientes a Solicitado al firmar aunque el correo automático esté apagado', async () => {
+    pedidos.listarProveedorPorEventoYEtapa.mockImplementation(
+      (_eventoId: string, etapas: EtapaPedido[]) => {
+        if (etapas.includes(EtapaPedido.pendiente)) {
+          return Promise.resolve([{ id: 'ped-1', tipo: 'proveedor' }]);
+        }
+        return Promise.resolve([]);
+      },
+    );
+
     const res = await useCase.ejecutar('con-1');
 
     expect(contratos.marcarFirmado).toHaveBeenCalledWith('con-1');
-    expect(pedidos.actualizar).not.toHaveBeenCalled();
+    expect(pedidos.actualizar).toHaveBeenCalledWith('ped-1', {
+      etapa: EtapaPedido.solicitado,
+    });
     expect(notificacionProveedor.notificarAlSolicitar).not.toHaveBeenCalled();
     expect(res.etapa).toBe(EtapaContrato.firmado);
     expect(res.solicitarAutomatico).toEqual({
-      pedidos: 0,
+      pedidos: 1,
       notificaciones: [],
     });
   });
 
-  it('pasa pedidos pendientes a solicitado y notifica si el auto está activo', async () => {
+  it('notifica pendientes (pasados a Solicitado) y ya confirmados si el auto está activo', async () => {
     notificacionProveedor.cargarConfig.mockResolvedValue({ habilitado: true });
-    pedidos.listarProveedorPorEventoYEtapa.mockResolvedValue([
-      { id: 'ped-1', tipo: 'proveedor' },
-    ]);
+    pedidos.listarProveedorPorEventoYEtapa.mockImplementation(
+      (_eventoId: string, etapas: EtapaPedido[]) => {
+        if (etapas.includes(EtapaPedido.pendiente)) {
+          return Promise.resolve([{ id: 'ped-1', tipo: 'proveedor' }]);
+        }
+        if (etapas.includes(EtapaPedido.confirmado)) {
+          return Promise.resolve([{ id: 'ped-2', tipo: 'proveedor' }]);
+        }
+        return Promise.resolve([]);
+      },
+    );
     notificacionProveedor.notificarAlSolicitar.mockResolvedValue({
       enviado: true,
     });
 
     const res = await useCase.ejecutar('con-1');
 
-    expect(pedidos.listarProveedorPorEventoYEtapa).toHaveBeenCalledWith('evt-1', [
-      EtapaPedido.pendiente,
-    ]);
     expect(pedidos.actualizar).toHaveBeenCalledWith('ped-1', {
       etapa: EtapaPedido.solicitado,
     });
+    expect(pedidos.actualizar).not.toHaveBeenCalledWith(
+      'ped-2',
+      expect.anything(),
+    );
     expect(notificacionProveedor.notificarAlSolicitar).toHaveBeenCalledWith(
       'ped-1',
       expect.objectContaining({ estadoContrato: expect.stringMatching(/firmado/) }),
     );
+    expect(notificacionProveedor.notificarAlSolicitar).toHaveBeenCalledWith(
+      'ped-2',
+      expect.objectContaining({ estadoContrato: expect.stringMatching(/confirm/) }),
+    );
     expect(res.solicitarAutomatico.pedidos).toBe(1);
-    expect(res.solicitarAutomatico.notificaciones[0].enviado).toBe(true);
+    expect(res.solicitarAutomatico.notificaciones).toHaveLength(2);
   });
 
   it('exige ambas firmas', async () => {

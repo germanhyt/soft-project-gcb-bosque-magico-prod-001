@@ -185,13 +185,23 @@ const POSTVENTA_ORDEN = [
 ] as const;
 
 const PEDIDOS_PROVEEDOR_LABELS: Record<string, string> = {
+  'pedidos_proveedor.notificar_negociacion':
+    'Correo de negociación al aceptar (pedidos en Pendiente)',
+  'pedidos_proveedor.negociacion_asunto': 'Asunto del correo de negociación',
+  'pedidos_proveedor.negociacion_cuerpo': 'Cuerpo del correo de negociación',
   'pedidos_proveedor.notificar_correo':
-    'Correo automático al solicitar (y al firmar el contrato: pendientes → Solicitado)',
+    'Correo automático al solicitar (y al firmar: pendientes → Solicitado)',
   'pedidos_proveedor.asunto': 'Asunto del correo de solicitud',
   'pedidos_proveedor.cuerpo': 'Cuerpo del correo de solicitud',
   'pedidos_proveedor.cancelacion_asunto': 'Asunto del correo de cancelación',
   'pedidos_proveedor.cancelacion_cuerpo': 'Cuerpo del correo de cancelación',
 };
+
+const PEDIDOS_NEGOCIACION_ORDEN = [
+  'pedidos_proveedor.notificar_negociacion',
+  'pedidos_proveedor.negociacion_asunto',
+  'pedidos_proveedor.negociacion_cuerpo',
+] as const;
 
 const PEDIDOS_SOLICITUD_ORDEN = [
   'pedidos_proveedor.notificar_correo',
@@ -199,12 +209,24 @@ const PEDIDOS_SOLICITUD_ORDEN = [
   'pedidos_proveedor.cuerpo',
 ] as const;
 
+const PEDIDOS_BOOLEAN_CLAVES = new Set([
+  'pedidos_proveedor.notificar_negociacion',
+  'pedidos_proveedor.notificar_correo',
+]);
+
+const PEDIDOS_TEXTAREA_CLAVES = new Set([
+  'pedidos_proveedor.negociacion_cuerpo',
+  'pedidos_proveedor.cuerpo',
+  'pedidos_proveedor.cancelacion_cuerpo',
+]);
+
 const PEDIDOS_CANCELACION_ORDEN = [
   'pedidos_proveedor.cancelacion_asunto',
   'pedidos_proveedor.cancelacion_cuerpo',
 ] as const;
 
 const PEDIDOS_PROVEEDOR_ORDEN = [
+  ...PEDIDOS_NEGOCIACION_ORDEN,
   ...PEDIDOS_SOLICITUD_ORDEN,
   ...PEDIDOS_CANCELACION_ORDEN,
 ] as const;
@@ -273,7 +295,9 @@ function pedidosProveedorValoresDesdeItems(items?: ConfigItem[]) {
   const map: Record<string, string> = {};
   for (const clave of PEDIDOS_PROVEEDOR_ORDEN) {
     const item = items?.find((i) => i.clave === clave);
-    if (clave === 'pedidos_proveedor.notificar_correo') {
+    if (clave === 'pedidos_proveedor.notificar_negociacion') {
+      map[clave] = item?.valor === false ? 'false' : 'true';
+    } else if (clave === 'pedidos_proveedor.notificar_correo') {
       map[clave] = item?.valor === true ? 'true' : 'false';
     } else {
       map[clave] = typeof item?.valor === 'string' ? item.valor : '';
@@ -449,6 +473,8 @@ export function ConfiguracionPage() {
   const postventaHabilitado = postventaActuales['postventa.habilitado'] === 'true';
   const pedidosProveedorHabilitado =
     pedidosProveedorActuales['pedidos_proveedor.notificar_correo'] === 'true';
+  const pedidosNegociacionHabilitado =
+    pedidosProveedorActuales['pedidos_proveedor.notificar_negociacion'] !== 'false';
   const recordatoriosHabilitado =
     recordatoriosActuales['recordatorios.habilitado'] === 'true';
 
@@ -533,7 +559,7 @@ export function ConfiguracionPage() {
         ...Object.entries(pedidosProveedorActuales).map(([clave, v]) => ({
           clave,
           valor:
-            clave === 'pedidos_proveedor.notificar_correo' ? v === 'true' : v,
+            PEDIDOS_BOOLEAN_CLAVES.has(clave) ? v === 'true' : v,
         })),
         ...Object.entries(recordatoriosActuales).map(([clave, v]) => ({
           clave,
@@ -897,11 +923,82 @@ export function ConfiguracionPage() {
             <section id="config-proveedores" className={`w-full scroll-mt-24 p-6 ${CARD_CLASS}`}>
               <h3 className="text-title-md text-primary">Pedidos a proveedores</h3>
               <p className="mt-1 text-body-sm text-outline">
-                {pedidosProveedorHabilitado
-                  ? 'Al marcar un pedido como Solicitado se envía correo si hay SMTP y email del proveedor. Con esta opción activa, al firmar el contrato los pedidos pendientes también pasan a Solicitado y se notifica. Aceptar la cotización solo deja pedidos en Pendiente.'
-                  : 'Desactivado: el operador contacta al proveedor a mano (WhatsApp/correo). El aviso de cancelación se configura en la sección siguiente y no depende de este interruptor.'}
+                Dos momentos: negociación en Pendiente (al aceptar) y solicitud formal en
+                Solicitado (al marcar o al firmar). WhatsApp lo abre el vendedor. Cancelación se
+                configura en la sección siguiente.
               </p>
-              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+              <h4 className="mt-6 text-body-sm font-bold uppercase tracking-wide text-primary">
+                Negociación (Pendiente)
+              </h4>
+              <p className="mt-1 text-body-sm text-outline">
+                {pedidosNegociacionHabilitado
+                  ? 'Al aceptar la cotización se crea el pedido en Pendiente y se envía este correo (SMTP + email del proveedor). El estado no cambia a Solicitado.'
+                  : 'Desactivado: el vendedor contacta a mano (WhatsApp o correo del detalle).'}
+              </p>
+              <div className="mt-4 grid gap-6 sm:grid-cols-2">
+                {pedidosProveedorOrdenados
+                  .filter((item) =>
+                    (PEDIDOS_NEGOCIACION_ORDEN as readonly string[]).includes(item.clave),
+                  )
+                  .map((item) => {
+                  const value = pedidosProveedorActuales[item.clave] ?? '';
+                  const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
+                  const isBoolean = PEDIDOS_BOOLEAN_CLAVES.has(item.clave);
+                  const isTextarea = PEDIDOS_TEXTAREA_CLAVES.has(item.clave);
+                  const setValor = (next: string) =>
+                    setPedidosProveedorValores((prev) => ({
+                      ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,
+                      [item.clave]: next,
+                    }));
+
+                  return (
+                    <label
+                      key={item.clave}
+                      className={`block ${isTextarea ? 'sm:col-span-2' : ''}`}
+                    >
+                      <span className="text-body-sm font-medium text-on-surface">{titulo}</span>
+                      {item.descripcion && (
+                        <span className="mt-0.5 block text-body-sm text-outline">
+                          {item.descripcion}
+                        </span>
+                      )}
+                      {isBoolean ? (
+                        <select
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value || 'true'}
+                          onChange={(e) => setValor(e.target.value)}
+                        >
+                          <option value="false">No</option>
+                          <option value="true">Sí</option>
+                        </select>
+                      ) : isTextarea ? (
+                        <textarea
+                          rows={6}
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      ) : (
+                        <input
+                          type="text"
+                          className={`mt-1 w-full ${INPUT_CLASS}`}
+                          value={value}
+                          onChange={(e) => setValor(e.target.value)}
+                        />
+                      )}
+                    </label>
+                  );
+                })}
+              </div>
+              <h4 className="mt-8 text-body-sm font-bold uppercase tracking-wide text-primary">
+                Solicitud formal (Solicitado)
+              </h4>
+              <p className="mt-1 text-body-sm text-outline">
+                {pedidosProveedorHabilitado
+                  ? 'Al marcar Solicitado se envía este correo. Al firmar, los pendientes pasan a Solicitado y se notifica; los ya confirmados reciben la orden formal sin volver a decidir.'
+                  : 'Al firmar, los pendientes igual pasan a Solicitado. Desactivado: no se envía correo automático al solicitar ni al firmar.'}
+              </p>
+              <div className="mt-4 grid gap-6 sm:grid-cols-2">
                 {pedidosProveedorOrdenados
                   .filter((item) =>
                     (PEDIDOS_SOLICITUD_ORDEN as readonly string[]).includes(item.clave),
@@ -909,8 +1006,8 @@ export function ConfiguracionPage() {
                   .map((item) => {
                   const value = pedidosProveedorActuales[item.clave] ?? '';
                   const titulo = PEDIDOS_PROVEEDOR_LABELS[item.clave] ?? item.clave;
-                  const isBoolean = item.clave === 'pedidos_proveedor.notificar_correo';
-                  const isTextarea = item.clave === 'pedidos_proveedor.cuerpo';
+                  const isBoolean = PEDIDOS_BOOLEAN_CLAVES.has(item.clave);
+                  const isTextarea = PEDIDOS_TEXTAREA_CLAVES.has(item.clave);
                   const setValor = (next: string) =>
                     setPedidosProveedorValores((prev) => ({
                       ...Object.keys(prev).length ? prev : pedidosProveedorIniciales,

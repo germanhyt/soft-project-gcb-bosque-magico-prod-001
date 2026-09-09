@@ -89,6 +89,30 @@ describe('ActualizarConfiguracionUseCase', () => {
     ).rejects.toThrow('Valor numérico inválido');
   });
 
+  it('actualiza el flag de correo de negociación', async () => {
+    configuracion.obtenerPorClave.mockResolvedValue({
+      id: 'cfg-neg',
+      clave: 'pedidos_proveedor.notificar_negociacion',
+      valor: true,
+    } as never);
+    configuracion.actualizarValor.mockResolvedValue({
+      id: 'cfg-neg',
+      clave: 'pedidos_proveedor.notificar_negociacion',
+      valor: false,
+    } as never);
+
+    await useCase.ejecutar({
+      actualizaciones: [
+        { clave: 'pedidos_proveedor.notificar_negociacion', valor: false },
+      ],
+    });
+
+    expect(configuracion.actualizarValor).toHaveBeenCalledWith(
+      'pedidos_proveedor.notificar_negociacion',
+      false,
+    );
+  });
+
   it('rechaza clave inexistente en base de datos', async () => {
     configuracion.obtenerPorClave.mockResolvedValue(null);
 

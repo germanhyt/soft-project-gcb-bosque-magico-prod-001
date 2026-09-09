@@ -1,11 +1,12 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { OrigenProducto, TipoPedido } from '@prisma/client';
 import { areaDesdeCategoria } from '../../domain/utils/area-pedido';
-import { fromDecimal } from '../../domain/utils/decimal';
+import { costoReferencialPedido } from '../../domain/utils/costo-referencial-pedido';
 import { mapPedidoResponse } from '../../domain/mappers/pedido.mapper';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 import { PrismaService } from '../../../prisma/prisma.service';
+import { NotificacionProveedorService } from '../../domain/services/notificacion-proveedor.service';
 
 @Injectable()
 export class GenerarPedidosEventoUseCase {
@@ -13,6 +14,7 @@ export class GenerarPedidosEventoUseCase {
     private readonly prisma: PrismaService,
     private readonly eventos: EventosRepository,
     private readonly pedidos: PedidosRepository,
+    private readonly notificacionProveedor: NotificacionProveedorService,
   ) {}
 
   async ejecutar(eventoId: string) {
@@ -36,10 +38,12 @@ export class GenerarPedidosEventoUseCase {
         producto.origen === OrigenProducto.proveedor || !!producto.proveedorId;
       if (!esProveedor) continue;
 
-      const costoUnit =
-        producto.costoInterno != null
-          ? fromDecimal(producto.costoInterno)
-          : fromDecimal(item.precioUnitario) * 0.6;
+      const costo = costoReferencialPedido({
+        cantidad: item.cantidad,
+        costoInterno: producto.costoInterno,
+        precioItem: item.precioUnitario,
+        precioCatalogo: producto.precioLunesViernes,
+      });
 
       aCrear.push({
         eventoId,
@@ -50,13 +54,19 @@ export class GenerarPedidosEventoUseCase {
         cantidad: item.cantidad,
         area: areaDesdeCategoria(producto.categoria),
         fechaRequerida: evento.fechaEvento,
-        costo: costoUnit * item.cantidad,
+        costo,
       });
     }
 
     if (aCrear.length === 0) return [];
 
     const rows = await this.pedidos.crearMuchos(aCrear);
+
+    for (const row of rows) {
+      if (row.tipo === TipoPedido.proveedor) {
+        await this.notificacionProveedor.notificarNegociacion(row.id);
+      }
+    }
 
     return rows.map(mapPedidoResponse);
   }

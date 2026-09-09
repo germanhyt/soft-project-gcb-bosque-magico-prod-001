@@ -1,17 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { TipoPedido, TurnoInteres } from '@prisma/client';
+import { EtapaPedido, TipoPedido, TurnoInteres } from '@prisma/client';
 import { ConfiguracionRepository } from '../../infrastructure/repositories/configuracion.repository';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 import { fromDecimal } from '../utils/decimal';
 import { SmtpService } from './smtp.service';
 import { etiquetaTurno as etiquetaTurnoHorario, esTurnoPersonalizado } from '../utils/turno-horario';
+import {
+  CLAVE_PEDIDOS_NEGOCIACION_ASUNTO,
+  CLAVE_PEDIDOS_NEGOCIACION_CUERPO,
+  CLAVE_PEDIDOS_NOTIFICAR_CORREO,
+  CLAVE_PEDIDOS_NOTIFICAR_NEGOCIACION,
+  DEFAULT_NEGOCIACION_ASUNTO,
+  DEFAULT_NEGOCIACION_CUERPO,
+  negociacionCorreoHabilitado,
+} from '../constants/pedidos-proveedor-config';
 
 export type NotificacionProveedorConfig = {
   habilitado: boolean;
+  negociacionHabilitado: boolean;
   asunto: string;
   cuerpo: string;
+  negociacionAsunto: string;
+  negociacionCuerpo: string;
   cancelacionAsunto: string;
   cancelacionCuerpo: string;
 };
@@ -77,7 +89,10 @@ export class NotificacionProveedorService {
         .map((i) => [i.clave, i.valor]),
     );
     return {
-      habilitado: map.get('pedidos_proveedor.notificar_correo') === true,
+      habilitado: map.get(CLAVE_PEDIDOS_NOTIFICAR_CORREO) === true,
+      negociacionHabilitado: negociacionCorreoHabilitado(
+        map.get(CLAVE_PEDIDOS_NOTIFICAR_NEGOCIACION),
+      ),
       asunto:
         texto(map.get('pedidos_proveedor.asunto')) ||
         'Pedido Bosque Mágico — {{servicio}} ({{fecha}})',
@@ -102,6 +117,12 @@ export class NotificacionProveedorService {
           'Confirma o rechaza desde este enlace:',
           '{{link}}',
         ].join('\n'),
+      negociacionAsunto:
+        texto(map.get(CLAVE_PEDIDOS_NEGOCIACION_ASUNTO)) ||
+        DEFAULT_NEGOCIACION_ASUNTO,
+      negociacionCuerpo:
+        texto(map.get(CLAVE_PEDIDOS_NEGOCIACION_CUERPO)) ||
+        DEFAULT_NEGOCIACION_CUERPO,
       cancelacionAsunto:
         texto(map.get('pedidos_proveedor.cancelacion_asunto')) ||
         'Evento cancelado — {{servicio}} ({{fecha}})',
@@ -131,6 +152,25 @@ export class NotificacionProveedorService {
     return this.enviarCorreoInterno(pedidoId, cfg, {}, extras);
   }
 
+  /** Correo de negociación en Pendiente (aceptar cotización / alta). Default ON. */
+  async notificarNegociacion(
+    pedidoId: string,
+  ): Promise<ResultadoNotificacionProveedor> {
+    const cfg = await this.cargarConfig();
+    if (!cfg.negociacionHabilitado) {
+      return { enviado: false, motivo: 'deshabilitado' };
+    }
+    return this.enviarCorreoInterno(
+      pedidoId,
+      {
+        ...cfg,
+        asunto: cfg.negociacionAsunto,
+        cuerpo: cfg.negociacionCuerpo,
+      },
+      {},
+    );
+  }
+
   /** Aviso de cancelación: no depende del flag de solicitud; sí de SMTP y correo. */
   async notificarCancelacion(
     pedidoId: string,
@@ -155,7 +195,19 @@ export class NotificacionProveedorService {
     overrides: OverridesCorreo = {},
   ): Promise<ResultadoNotificacionProveedor> {
     const cfg = await this.cargarConfig();
-    return this.enviarCorreoInterno(pedidoId, cfg, overrides);
+    const pedido = await this.pedidos.obtenerPorId(pedidoId);
+    const plantillaPendiente = pedido?.etapa === EtapaPedido.pendiente;
+    return this.enviarCorreoInterno(
+      pedidoId,
+      plantillaPendiente
+        ? {
+            ...cfg,
+            asunto: cfg.negociacionAsunto,
+            cuerpo: cfg.negociacionCuerpo,
+          }
+        : cfg,
+      overrides,
+    );
   }
 
   /** @deprecated Usar notificarAlSolicitar */

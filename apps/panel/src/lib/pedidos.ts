@@ -26,6 +26,8 @@ export type Pedido = {
   area: AreaPedido;
   fechaRequerida: string | null;
   costo: number;
+  costoEstimadoProveedor?: number | null;
+  comentarioProveedor?: string | null;
   etapa: EtapaPedido;
   notas: string | null;
   creadoEn?: string;

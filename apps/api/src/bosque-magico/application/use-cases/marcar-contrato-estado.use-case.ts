@@ -119,21 +119,38 @@ export class MarcarContratoFirmadoUseCase {
       >[],
     };
 
-    if (cfg.habilitado) {
-      const pendientes = await this.pedidos.listarProveedorPorEventoYEtapa(
-        antes.eventoId,
-        [EtapaPedido.pendiente],
-      );
-      for (const pedido of pendientes) {
-        if (pedido.tipo !== TipoPedido.proveedor) continue;
-        await this.pedidos.actualizar(pedido.id, {
-          etapa: EtapaPedido.solicitado,
-        });
-        solicitarAutomatico.pedidos += 1;
+    const [pendientes, confirmados] = await Promise.all([
+      this.pedidos.listarProveedorPorEventoYEtapa(antes.eventoId, [
+        EtapaPedido.pendiente,
+      ]),
+      this.pedidos.listarProveedorPorEventoYEtapa(antes.eventoId, [
+        EtapaPedido.confirmado,
+      ]),
+    ]);
+
+    for (const pedido of pendientes) {
+      if (pedido.tipo !== TipoPedido.proveedor) continue;
+      await this.pedidos.actualizar(pedido.id, {
+        etapa: EtapaPedido.solicitado,
+      });
+      solicitarAutomatico.pedidos += 1;
+      if (cfg.habilitado) {
         solicitarAutomatico.notificaciones.push(
           await this.notificacionProveedor.notificarAlSolicitar(pedido.id, {
             estadoContrato:
-              'El contrato ya está firmado; el evento se realizará.',
+              'El contrato ya está firmado; este es el pedido formal. El evento se realizará.',
+          }),
+        );
+      }
+    }
+
+    if (cfg.habilitado) {
+      for (const pedido of confirmados) {
+        if (pedido.tipo !== TipoPedido.proveedor) continue;
+        solicitarAutomatico.notificaciones.push(
+          await this.notificacionProveedor.notificarAlSolicitar(pedido.id, {
+            estadoContrato:
+              'El contrato ya está firmado; el evento se realizará. Gracias por confirmar.',
           }),
         );
       }

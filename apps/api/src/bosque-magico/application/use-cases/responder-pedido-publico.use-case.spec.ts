@@ -97,6 +97,36 @@ describe('ResponderPedidoPublicoUseCase', () => {
     );
   });
 
+  it('registra costo estimado sin cambiar el estado', async () => {
+    pedidos.obtenerPorToken
+      .mockResolvedValueOnce({
+        ...pedidoBase,
+        etapa: EtapaPedido.pendiente,
+        notas: null,
+      })
+      .mockResolvedValueOnce({
+        ...pedidoBase,
+        etapa: EtapaPedido.pendiente,
+        costoEstimadoProveedor: 280,
+        comentarioProveedor: 'Incluye traslado',
+      });
+    pedidos.actualizar.mockResolvedValue({ id: 'ped-1' });
+
+    const res = await useCase.proponerCosto('tok', {
+      costoEstimado: 280,
+      comentario: 'Incluye traslado',
+    });
+
+    expect(res.mensaje).toContain('Costo estimado');
+    expect(pedidos.actualizar).toHaveBeenCalledWith(
+      'ped-1',
+      expect.objectContaining({
+        comentarioProveedor: 'Incluye traslado',
+      }),
+    );
+    expect(events.eventoActualizado).toHaveBeenCalled();
+  });
+
   it('404 si token inválido', async () => {
     pedidos.obtenerPorToken.mockResolvedValue(null);
     await expect(useCase.confirmar('bad')).rejects.toBeInstanceOf(

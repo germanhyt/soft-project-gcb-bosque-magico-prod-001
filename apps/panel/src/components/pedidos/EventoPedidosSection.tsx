@@ -4,7 +4,6 @@ import Swal from 'sweetalert2';
 import {
   AREA_PEDIDO_LABEL,
   ETAPA_PEDIDO_BADGE,
-  ETAPA_PEDIDO_LABEL,
   ETAPAS_PEDIDO_OPCIONES,
 } from '../../constants/pedidos';
 import { fetchProductosCatalogo } from '../../lib/configuracion';
@@ -27,6 +26,7 @@ import {
 import { Button } from '../ui/Button';
 import { EnviarPedidoProveedorCorreoModal } from './EnviarPedidoProveedorCorreoModal';
 import { PedidoProveedorWhatsAppModal } from './PedidoProveedorWhatsAppModal';
+import { PedidoEditarModal } from './PedidoEditarModal';
 import { PedidoFormModal } from './PedidoFormModal';
 
 type Props = {
@@ -52,6 +52,7 @@ export function EventoPedidosSection({
 }: Props) {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [pedidoEditar, setPedidoEditar] = useState<Pedido | null>(null);
   const [contactoGrupoKey, setContactoGrupoKey] = useState<string | null>(null);
   const [contactoCanal, setContactoCanal] = useState<'whatsapp' | 'correo' | null>(null);
   const puedeOperar =
@@ -111,6 +112,25 @@ export function EventoPedidosSection({
       if (etapa === 'solicitado') {
         await mostrarFeedbackNotificacionProveedor(res.notificacionProveedor);
       }
+    },
+  });
+
+  const editarMut = useMutation({
+    mutationFn: ({
+      id,
+      payload,
+    }: {
+      id: string;
+      payload: Parameters<typeof actualizarPedido>[1];
+    }) => actualizarPedido(id, payload),
+    onSuccess: async () => {
+      await invalidate();
+      await Swal.fire({
+        icon: 'success',
+        title: 'Pedido actualizado',
+        timer: 1200,
+        showConfirmButton: false,
+      });
     },
   });
 
@@ -190,10 +210,26 @@ export function EventoPedidosSection({
           </p>
           <p className="text-xs text-on-surface-variant">
             Cant. {p.cantidad} · S/ {p.costo.toFixed(2)}
+            {p.costoEstimadoProveedor != null
+              ? ` · Estimado proveedor S/ ${p.costoEstimadoProveedor.toFixed(2)}`
+              : ''}
           </p>
+          {p.comentarioProveedor && (
+            <p className="mt-1 text-xs text-outline">{p.comentarioProveedor}</p>
+          )}
         </div>
+        <div className="flex flex-col items-end gap-1">
+        {puedeOperar && (
+          <Button
+            variant="ghost"
+            className="!px-2 !py-1 text-xs"
+            onClick={() => setPedidoEditar(p)}
+          >
+            Editar costo
+          </Button>
+        )}
         <select
-          className="rounded-lg border border-surface-variant bg-surface-container-low px-2 py-1 text-xs"
+          className={`rounded-lg border border-surface-variant px-2 py-1 text-xs ${ETAPA_PEDIDO_BADGE[p.etapa]}`}
           value={p.etapa}
           disabled={!puedeOperar || actualizarMut.isPending}
           onChange={(e) =>
@@ -206,12 +242,8 @@ export function EventoPedidosSection({
             </option>
           ))}
         </select>
+        </div>
       </div>
-      <span
-        className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] font-semibold ${ETAPA_PEDIDO_BADGE[p.etapa]}`}
-      >
-        {ETAPA_PEDIDO_LABEL[p.etapa]}
-      </span>
       {!opciones?.ocultarContacto &&
         puedeOperar &&
         p.tipo === 'proveedor' &&
@@ -370,6 +402,14 @@ export function EventoPedidosSection({
         proveedores={proveedores}
         onSubmit={async (payload) => {
           await crearMut.mutateAsync(payload);
+        }}
+      />
+      <PedidoEditarModal
+        open={!!pedidoEditar}
+        pedido={pedidoEditar}
+        onClose={() => setPedidoEditar(null)}
+        onSubmit={async (id, payload) => {
+          await editarMut.mutateAsync({ id, payload });
         }}
       />
 

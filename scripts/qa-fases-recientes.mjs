@@ -85,6 +85,7 @@ async function main() {
     'postventa.habilitado',
     'postventa.url_formulario',
     'pedidos_proveedor.notificar_correo',
+    'pedidos_proveedor.notificar_negociacion',
     'paquetes.cajitas_incluidas',
   ];
   const faltantes = requeridas.filter((k) => !claves.has(k));

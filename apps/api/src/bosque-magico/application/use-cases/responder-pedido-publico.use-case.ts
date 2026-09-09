@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common';
 import { EtapaPedido, Prisma, TipoPedido } from '@prisma/client';
 import { RechazarPedidoPublicoDto } from '../dto/rechazar-pedido-publico.dto';
+import { PropuestaCostoPedidoPublicoDto } from '../dto/propuesta-costo-pedido-publico.dto';
 import { mapPedidoPublicoResponse } from '../../domain/mappers/pedido.mapper';
+import { toDecimal } from '../../domain/utils/decimal';
 import { EventsService } from '../../../events/events.service';
 import { AuditoriaRepository } from '../../infrastructure/repositories/auditoria.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
@@ -29,6 +31,46 @@ export class ResponderPedidoPublicoUseCase {
 
   async rechazar(token: string, dto: RechazarPedidoPublicoDto) {
     return this.responder(token, 'rechazar', dto.motivo?.trim());
+  }
+
+  async proponerCosto(token: string, dto: PropuestaCostoPedidoPublicoDto) {
+    const antes = await this.pedidos.obtenerPorToken(token);
+    if (!antes || antes.tipo !== TipoPedido.proveedor) {
+      throw new NotFoundException('Pedido no disponible');
+    }
+    if (!ETAPAS_RESPONDER.includes(antes.etapa)) {
+      throw new BadRequestException(
+        'Este pedido ya no admite una propuesta de costo',
+      );
+    }
+
+    const comentario = dto.comentario?.trim() || null;
+    const despues = await this.pedidos.actualizar(antes.id, {
+      costoEstimadoProveedor: toDecimal(dto.costoEstimado),
+      comentarioProveedor: comentario,
+    });
+
+    await this.auditoria.registrar({
+      tipoEntidad: 'pedido',
+      entidadId: antes.id,
+      accion: 'proveedor_propuso_costo',
+      actorTipo: 'proveedor',
+      antes: JSON.parse(JSON.stringify(antes)) as Prisma.InputJsonValue,
+      despues: JSON.parse(JSON.stringify(despues)) as Prisma.InputJsonValue,
+    });
+
+    this.events.eventoActualizado(
+      antes.eventoId,
+      'Proveedor envió costo estimado',
+    );
+
+    const publico = await this.pedidos.obtenerPorToken(token);
+    if (!publico) throw new NotFoundException('Pedido no disponible');
+
+    return {
+      mensaje: 'Costo estimado registrado. El equipo de Bosque Mágico lo revisará.',
+      pedido: mapPedidoPublicoResponse(publico),
+    };
   }
 
   private async responder(

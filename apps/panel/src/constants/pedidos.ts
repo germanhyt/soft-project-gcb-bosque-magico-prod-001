@@ -37,9 +37,9 @@ export const AREAS_PEDIDO_FILTRO: { value: '' | AreaPedido; label: string }[] = 
 ];
 
 export const ETAPA_PEDIDO_BADGE: Record<EtapaPedido, string> = {
-  pendiente: 'bg-surface-container-high text-outline',
-  solicitado: 'bg-secondary-container/40 text-secondary',
-  confirmado: 'bg-primary-fixed/30 text-primary',
-  entregado: 'bg-primary-fixed/60 text-primary',
+  pendiente: 'bg-surface-variant text-on-surface-variant',
+  solicitado: 'bg-tertiary-fixed/70 text-tertiary',
+  confirmado: 'bg-primary-fixed/50 text-primary',
+  entregado: 'bg-secondary-fixed/50 text-secondary',
   cancelado: 'bg-error-container/40 text-error',
 };
