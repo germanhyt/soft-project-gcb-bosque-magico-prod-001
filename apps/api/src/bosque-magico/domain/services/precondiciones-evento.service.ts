@@ -5,6 +5,7 @@ import {
   TipoAdjuntoContrato,
   TipoPedido,
 } from '@prisma/client';
+import { pedidosRechazadosSinCobertura } from '../utils/cobertura-pedido';
 import { ContratosRepository } from '../../infrastructure/repositories/contratos.repository';
 import { PedidosRepository } from '../../infrastructure/repositories/pedidos.repository';
 
@@ -60,6 +61,12 @@ export class PrecondicionesEventoService {
     const pedidosProveedor = pedidos.filter(
       (p) => p.tipo === TipoPedido.proveedor,
     );
+    const sinCobertura = pedidosRechazadosSinCobertura(pedidosProveedor);
+    if (sinCobertura.length > 0) {
+      throw new BadRequestException(
+        `Hay ${sinCobertura.length} pedido(s) de proveedor rechazados sin cobertura. Crea un pedido de reemplazo y confírmalo antes de programar el evento.`,
+      );
+    }
     const pendientes = pedidosProveedor.filter(
       (p) =>
         p.etapa !== EtapaPedido.cancelado &&

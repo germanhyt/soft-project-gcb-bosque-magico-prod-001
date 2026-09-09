@@ -54,11 +54,45 @@ describe('PrecondicionesEventoService', () => {
 
   it('rechaza pedidos de proveedor pendientes', async () => {
     pedidos.listarPorEvento.mockResolvedValue([
-      { tipo: TipoPedido.proveedor, etapa: EtapaPedido.pendiente },
+      { tipo: TipoPedido.proveedor, etapa: EtapaPedido.pendiente, productoId: 'p1', nombre: 'Show' },
     ]);
 
     await expect(service.validarParaConfirmar('e1')).rejects.toThrow(
       /pedido\(s\) de proveedor sin confirmar/,
     );
+  });
+
+  it('rechaza pedidos cancelados sin cobertura de reemplazo', async () => {
+    pedidos.listarPorEvento.mockResolvedValue([
+      {
+        tipo: TipoPedido.proveedor,
+        etapa: EtapaPedido.cancelado,
+        productoId: 'p1',
+        nombre: 'Bocaditos',
+      },
+    ]);
+
+    await expect(service.validarParaConfirmar('e1')).rejects.toThrow(
+      /rechazados sin cobertura/,
+    );
+  });
+
+  it('acepta si el rechazado ya tiene reemplazo confirmado', async () => {
+    pedidos.listarPorEvento.mockResolvedValue([
+      {
+        tipo: TipoPedido.proveedor,
+        etapa: EtapaPedido.cancelado,
+        productoId: 'p1',
+        nombre: 'Bocaditos',
+      },
+      {
+        tipo: TipoPedido.proveedor,
+        etapa: EtapaPedido.confirmado,
+        productoId: 'p1',
+        nombre: 'Bocaditos',
+      },
+    ]);
+
+    await expect(service.validarParaConfirmar('e1')).resolves.toBeUndefined();
   });
 });

@@ -52,6 +52,7 @@ export function EventoPedidosSection({
 }: Props) {
   const qc = useQueryClient();
   const [modalOpen, setModalOpen] = useState(false);
+  const [pedidoCobertura, setPedidoCobertura] = useState<Pedido | null>(null);
   const [pedidoEditar, setPedidoEditar] = useState<Pedido | null>(null);
   const [contactoGrupoKey, setContactoGrupoKey] = useState<string | null>(null);
   const [contactoCanal, setContactoCanal] = useState<'whatsapp' | 'correo' | null>(null);
@@ -97,9 +98,14 @@ export function EventoPedidosSection({
       await invalidate();
       await Swal.fire({
         icon: rows.length ? 'success' : 'info',
-        title: rows.length ? `${rows.length} pedido(s) generados` : 'Sin ítems de proveedor',
-        timer: 1800,
-        showConfirmButton: false,
+        title: rows.length
+          ? `${rows.length} pedido(s) generados`
+          : 'Nada nuevo por generar',
+        text: rows.length
+          ? undefined
+          : 'Los servicios de la cotización ya tienen un pedido activo, o no hay ítems de proveedor pendientes de cubrir.',
+        timer: rows.length ? 1800 : 3200,
+        showConfirmButton: !rows.length,
       });
     },
   });
@@ -169,6 +175,18 @@ export function EventoPedidosSection({
     },
   });
 
+  const rechazadosSinCobertura = useMemo(() => {
+    const activos = pedidos.filter((p) => p.tipo === 'proveedor' && p.etapa !== 'cancelado');
+    return pedidos.filter((p) => {
+      if (p.tipo !== 'proveedor' || p.etapa !== 'cancelado') return false;
+      return !activos.some(
+        (a) =>
+          (p.productoId && a.productoId === p.productoId) ||
+          a.nombre.trim().toLowerCase() === p.nombre.trim().toLowerCase(),
+      );
+    });
+  }, [pedidos]);
+
   const totalCosto = pedidos.reduce((n, p) => n + p.costo, 0);
   const grupoContacto = contactoGrupoKey
     ? gruposProveedor.find((g) => g.key === contactoGrupoKey)
@@ -219,13 +237,25 @@ export function EventoPedidosSection({
           )}
         </div>
         <div className="flex flex-col items-end gap-1">
-        {puedeOperar && (
+        {puedeOperar && p.etapa !== 'cancelado' && (
           <Button
             variant="ghost"
             className="!px-2 !py-1 text-xs"
             onClick={() => setPedidoEditar(p)}
           >
             Editar costo
+          </Button>
+        )}
+        {puedeOperar && p.tipo === 'proveedor' && p.etapa === 'cancelado' && (
+          <Button
+            variant="ghost"
+            className="!px-2 !py-1 text-xs"
+            onClick={() => {
+              setPedidoCobertura(p);
+              setModalOpen(true);
+            }}
+          >
+            Cubrir con otro pedido
           </Button>
         )}
         <select
@@ -305,12 +335,24 @@ export function EventoPedidosSection({
             >
               Generar desde cotización
             </Button>
-            <Button className="!px-3 !py-1.5 text-xs" onClick={() => setModalOpen(true)}>
+            <Button className="!px-3 !py-1.5 text-xs" onClick={() => {
+              setPedidoCobertura(null);
+              setModalOpen(true);
+            }}>
               + Pedido
             </Button>
           </div>
         )}
       </div>
+
+      {rechazadosSinCobertura.length > 0 && puedeOperar && (
+        <p className="mb-3 rounded-lg border border-error/30 bg-error-container/20 px-3 py-2 text-body-sm text-on-surface">
+          {rechazadosSinCobertura.length} servicio(s) rechazado(s) sin cobertura.
+          Usa <span className="font-medium">Cubrir con otro pedido</span> (elige otro proveedor)
+          o <span className="font-medium">Generar desde cotización</span> para reintentar con el
+          proveedor del catálogo. Hasta cubrirlos y confirmarlos no se puede programar el evento.
+        </p>
+      )}
 
       {etapaEvento === 'por_confirmar' && (
         <p className="text-body-sm text-on-surface-variant pb-2">
@@ -329,6 +371,8 @@ export function EventoPedidosSection({
         <div className="space-y-4">
           {gruposProveedor.map((grupo) => {
             const pendientes = grupo.pedidos.filter((p) => p.etapa === 'pendiente').length;
+            const activosGrupo = grupo.pedidos.filter((p) => p.etapa !== 'cancelado');
+            const puedeContactar = puedeOperar && activosGrupo.length > 0 && (grupo.celular || grupo.correo);
             return (
               <div
                 key={grupo.key}
@@ -342,7 +386,7 @@ export function EventoPedidosSection({
                       {pendientes > 0 ? ` · ${pendientes} pendiente(s)` : ''}
                     </p>
                   </div>
-                  {puedeOperar && (grupo.celular || grupo.correo) && (
+                  {puedeContactar && (
                     <div className="flex flex-wrap gap-2">
                       {grupo.celular && (
                         <Button
@@ -396,10 +440,37 @@ export function EventoPedidosSection({
 
       <PedidoFormModal
         open={modalOpen}
-        onClose={() => setModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setPedidoCobertura(null);
+        }}
         fechaEvento={fechaEvento}
         productos={productos}
         proveedores={proveedores}
+        titulo={pedidoCobertura ? 'Pedido de cobertura' : 'Nuevo pedido'}
+        requireProveedor={!!pedidoCobertura}
+        initial={
+          pedidoCobertura
+            ? {
+                tipo: 'proveedor',
+                nombre: pedidoCobertura.nombre,
+                cantidad: pedidoCobertura.cantidad,
+                area: pedidoCobertura.area,
+                costo: pedidoCobertura.costo,
+                productoId: pedidoCobertura.productoId ?? undefined,
+                proveedorId: undefined,
+                fechaRequerida: pedidoCobertura.fechaRequerida ?? fechaEvento,
+                notas: [
+                  `Reemplazo de pedido rechazado (${pedidoCobertura.proveedor?.nombre ?? 'proveedor'}).`,
+                  pedidoCobertura.comentarioProveedor
+                    ? `Comentario anterior: ${pedidoCobertura.comentarioProveedor}`
+                    : null,
+                ]
+                  .filter(Boolean)
+                  .join(' '),
+              }
+            : null
+        }
         onSubmit={async (payload) => {
           await crearMut.mutateAsync(payload);
         }}
@@ -417,7 +488,7 @@ export function EventoPedidosSection({
         <PedidoProveedorWhatsAppModal
           open
           onClose={cerrarContacto}
-          pedidos={grupoContacto.pedidos}
+          pedidos={grupoContacto.pedidos.filter((p) => p.etapa !== 'cancelado')}
           evento={eventoContactoResumen}
         />
       )}
@@ -425,7 +496,7 @@ export function EventoPedidosSection({
         <EnviarPedidoProveedorCorreoModal
           open
           onClose={cerrarContacto}
-          pedidos={grupoContacto.pedidos}
+          pedidos={grupoContacto.pedidos.filter((p) => p.etapa !== 'cancelado')}
           evento={eventoContactoResumen}
         />
       )}

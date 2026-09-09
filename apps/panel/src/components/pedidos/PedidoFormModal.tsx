@@ -32,6 +32,9 @@ type Props = {
   fechaEvento: string;
   productos?: Producto[];
   proveedores?: Proveedor[];
+  initial?: Partial<PedidoFormPayload> | null;
+  titulo?: string;
+  requireProveedor?: boolean;
 };
 
 const EMPTY = {
@@ -53,6 +56,9 @@ export function PedidoFormModal({
   fechaEvento,
   productos = [],
   proveedores = [],
+  initial = null,
+  titulo = 'Nuevo pedido',
+  requireProveedor = false,
 }: Props) {
   const [form, setForm] = useState(EMPTY);
   const [pending, setPending] = useState(false);
@@ -61,7 +67,25 @@ export function PedidoFormModal({
 
   useEffect(() => {
     if (!open) return;
-    setForm({ ...EMPTY, fechaRequerida: fechaParaInputCalendario(fechaEvento) });
+    setForm({
+      ...EMPTY,
+      fechaRequerida: fechaParaInputCalendario(fechaEvento),
+      ...(initial
+        ? {
+            tipo: initial.tipo ?? EMPTY.tipo,
+            nombre: initial.nombre ?? '',
+            cantidad: initial.cantidad != null ? String(initial.cantidad) : '1',
+            area: initial.area ?? EMPTY.area,
+            costo: initial.costo != null ? String(initial.costo) : '',
+            productoId: initial.productoId ?? '',
+            proveedorId: initial.proveedorId ?? '',
+            fechaRequerida:
+              fechaParaInputCalendario(initial.fechaRequerida ?? fechaEvento) ||
+              fechaParaInputCalendario(fechaEvento),
+            notas: initial.notas ?? '',
+          }
+        : {}),
+    });
     setError('');
     setPending(false);
     setCostoManual(false);
@@ -102,6 +126,10 @@ export function PedidoFormModal({
       setError('Cantidad inválida');
       return;
     }
+    if (form.tipo === 'proveedor' && requireProveedor && !form.proveedorId) {
+      setError('Elige el proveedor que cubrirá este servicio');
+      return;
+    }
     setPending(true);
     setError('');
     try {
@@ -127,7 +155,7 @@ export function PedidoFormModal({
   };
 
   return (
-    <Modal open={open} onClose={onClose} title="Nuevo pedido" size="lg" nested>
+    <Modal open={open} onClose={onClose} title={titulo} size="lg" nested>
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid gap-5 sm:grid-cols-2">
           <label className="block space-y-2">

@@ -5,7 +5,7 @@ describe('GenerarPedidosEventoUseCase', () => {
   const prisma = { bosqueMagicoProducto: { findUnique: jest.fn() } };
   const eventos = { obtenerPorIdParaContrato: jest.fn() };
   const pedidos = {
-    contarPorEvento: jest.fn(),
+    listarPorEvento: jest.fn(),
     crearMuchos: jest.fn(),
   };
   const notificacionProveedor = { notificarNegociacion: jest.fn() };
@@ -26,7 +26,7 @@ describe('GenerarPedidosEventoUseCase', () => {
   });
 
   it('notifica negociación al crear pedidos de proveedor', async () => {
-    pedidos.contarPorEvento.mockResolvedValue(0);
+    pedidos.listarPorEvento.mockResolvedValue([]);
     eventos.obtenerPorIdParaContrato.mockResolvedValue({
       id: 'evt-1',
       fechaEvento: new Date('2026-09-20T12:00:00.000Z'),
@@ -61,7 +61,7 @@ describe('GenerarPedidosEventoUseCase', () => {
   });
 
   it('usa 60% del precio de catálogo si interno e ítem son 0', async () => {
-    pedidos.contarPorEvento.mockResolvedValue(0);
+    pedidos.listarPorEvento.mockResolvedValue([]);
     eventos.obtenerPorIdParaContrato.mockResolvedValue({
       id: 'evt-1',
       fechaEvento: new Date('2026-09-20T12:00:00.000Z'),
@@ -102,13 +102,76 @@ describe('GenerarPedidosEventoUseCase', () => {
     ]);
   });
 
-  it('no genera ni notifica si el evento ya tiene pedidos', async () => {
-    pedidos.contarPorEvento.mockResolvedValue(2);
+  it('no duplica si el servicio ya tiene pedido activo', async () => {
+    pedidos.listarPorEvento.mockResolvedValue([
+      {
+        tipo: TipoPedido.proveedor,
+        etapa: 'pendiente',
+        productoId: 'prod-1',
+        nombre: 'Show Magia',
+      },
+    ]);
+    eventos.obtenerPorIdParaContrato.mockResolvedValue({
+      id: 'evt-1',
+      fechaEvento: new Date('2026-09-20T12:00:00.000Z'),
+      cotizacion: {
+        items: [{ productoId: 'prod-1', nombre: 'Show Magia', cantidad: 1, precioUnitario: 500 }],
+      },
+    });
+    prisma.bosqueMagicoProducto.findUnique.mockResolvedValue({
+      id: 'prod-1',
+      origen: OrigenProducto.proveedor,
+      proveedorId: 'prov-1',
+      categoria: 'show',
+      costoInterno: { toString: () => '300' },
+    });
 
     const rows = await useCase.ejecutar('evt-1');
 
     expect(rows).toEqual([]);
     expect(pedidos.crearMuchos).not.toHaveBeenCalled();
     expect(notificacionProveedor.notificarNegociacion).not.toHaveBeenCalled();
+  });
+
+  it('genera cobertura si el pedido existente está cancelado', async () => {
+    pedidos.listarPorEvento.mockResolvedValue([
+      {
+        tipo: TipoPedido.proveedor,
+        etapa: 'cancelado',
+        productoId: 'prod-1',
+        nombre: 'Bocaditos',
+      },
+    ]);
+    eventos.obtenerPorIdParaContrato.mockResolvedValue({
+      id: 'evt-1',
+      fechaEvento: new Date('2026-09-20T12:00:00.000Z'),
+      cotizacion: {
+        items: [{ productoId: 'prod-1', nombre: 'Bocaditos', cantidad: 1, precioUnitario: 46 }],
+      },
+    });
+    prisma.bosqueMagicoProducto.findUnique.mockResolvedValue({
+      id: 'prod-1',
+      origen: OrigenProducto.proveedor,
+      proveedorId: 'prov-2',
+      categoria: 'catering',
+      costoInterno: { toString: () => '27.6' },
+      precioLunesViernes: 46,
+    });
+    pedidos.crearMuchos.mockResolvedValue([
+      {
+        id: 'ped-2',
+        tipo: TipoPedido.proveedor,
+        nombre: 'Bocaditos',
+        cantidad: 1,
+        costo: 27.6,
+        tokenPublico: 'tok-2',
+      },
+    ]);
+
+    const rows = await useCase.ejecutar('evt-1');
+
+    expect(rows).toHaveLength(1);
+    expect(pedidos.crearMuchos).toHaveBeenCalled();
+    expect(notificacionProveedor.notificarNegociacion).toHaveBeenCalledWith('ped-2');
   });
 });

@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { OrigenProducto, TipoPedido } from '@prisma/client';
 import { areaDesdeCategoria } from '../../domain/utils/area-pedido';
+import { hayCoberturaActiva } from '../../domain/utils/cobertura-pedido';
 import { costoReferencialPedido } from '../../domain/utils/costo-referencial-pedido';
 import { mapPedidoResponse } from '../../domain/mappers/pedido.mapper';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
@@ -18,8 +19,7 @@ export class GenerarPedidosEventoUseCase {
   ) {}
 
   async ejecutar(eventoId: string) {
-    const existentes = await this.pedidos.contarPorEvento(eventoId);
-    if (existentes > 0) return [];
+    const existentes = await this.pedidos.listarPorEvento(eventoId);
 
     const evento = await this.eventos.obtenerPorIdParaContrato(eventoId);
     if (!evento) throw new NotFoundException('Evento no encontrado');
@@ -37,6 +37,15 @@ export class GenerarPedidosEventoUseCase {
       const esProveedor =
         producto.origen === OrigenProducto.proveedor || !!producto.proveedorId;
       if (!esProveedor) continue;
+
+      if (
+        hayCoberturaActiva(
+          { productoId: producto.id, nombre: item.nombre },
+          existentes,
+        )
+      ) {
+        continue;
+      }
 
       const costo = costoReferencialPedido({
         cantidad: item.cantidad,
