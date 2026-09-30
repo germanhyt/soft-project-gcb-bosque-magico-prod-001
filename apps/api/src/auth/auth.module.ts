@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import type { SignOptions } from 'jsonwebtoken';
 import { PassportModule } from '@nestjs/passport';
 import { AuthController } from './auth.controller';
 import { UsuariosPanelController } from './presentation/usuarios-panel.controller';
@@ -21,10 +22,10 @@ import { UsuariosRepository } from './infrastructure/usuarios.repository';
       imports: [ConfigModule],
       inject: [ConfigService],
       useFactory: (config: ConfigService) => {
-        const expiresIn = config.get<string>('JWT_EXPIRES_IN') ?? '8h';
+        const expiresIn = config.get<string>('JWT_EXPIRES_IN') ?? '30d';
         return {
           secret: config.get<string>('JWT_SECRET') ?? 'dev-secret-change-me',
-          signOptions: { expiresIn: expiresIn as `${number}h` },
+          signOptions: { expiresIn: expiresIn as SignOptions['expiresIn'] },
         };
       },
     }),

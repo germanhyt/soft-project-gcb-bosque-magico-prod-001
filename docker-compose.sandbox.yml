@@ -31,6 +31,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:postgres@postgres:5432/bosque_magico?schema=public
       JWT_SECRET: sandbox-secret-change-me
+      JWT_EXPIRES_IN: "30d"
       API_CORS_ORIGINS: https://sandbox-landing-bosque.gcbprojects.site,https://sandbox-panel-bosque.gcbprojects.site
       PUBLIC_SITE_URL: https://sandbox-landing-bosque.gcbprojects.site
       ADMIN_EMAIL: admin@bosquemagico.test

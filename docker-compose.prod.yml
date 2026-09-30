@@ -30,6 +30,7 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://postgres:${PROD_POSTGRES_PASSWORD:-postgres}@postgres:5432/bosque_magico?schema=public
       JWT_SECRET: ${PROD_JWT_SECRET:-prod-secret-change-me}
+      JWT_EXPIRES_IN: ${PROD_JWT_EXPIRES_IN:-30d}
       API_CORS_ORIGINS: https://bosquemagico.gcbprojects.site,https://admin.bosquemagico.gcbprojects.site
       PUBLIC_SITE_URL: https://bosquemagico.gcbprojects.site
       ADMIN_EMAIL: ${PROD_ADMIN_EMAIL:-admin@bosquemagico.test}
