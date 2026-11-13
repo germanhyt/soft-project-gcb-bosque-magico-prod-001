@@ -65,6 +65,9 @@ export function CotizacionPaqueteEditor({
   const [showForm, setShowForm] = useState<{ mode: 'create' } | { mode: 'edit'; producto: Producto } | null>(
     null,
   );
+  const [cateringForm, setCateringForm] = useState<
+    { mode: 'create' } | { mode: 'edit'; producto: Producto } | null
+  >(null);
   const [precioExtraEdit, setPrecioExtraEdit] = useState<{
     label: string;
     tarifa: number;
@@ -209,6 +212,57 @@ export function CotizacionPaqueteEditor({
     });
     if (!confirm.isConfirmed) return;
     eliminarShowMut.mutate(producto);
+  };
+
+  const guardarCateringMut = useMutation({
+    mutationFn: async (payload: ProductoFormPayload) => {
+      if (cateringForm?.mode === 'edit') {
+        return actualizarProducto(cateringForm.producto.id, payload);
+      }
+      return crearProducto({ ...payload, categoria: 'catering', subtipo: 'general' });
+    },
+    onSuccess: async (saved) => {
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      if (cateringForm?.mode === 'create' && !seleccion.adicionalIds.includes(saved.id)) {
+        patch({
+          adicionalIds: [...seleccion.adicionalIds, saved.id],
+          adicionalCantidades: {
+            ...seleccion.adicionalCantidades,
+            [saved.id]: cantidadItemProducto(saved, seleccion.adicionalCantidades),
+          },
+        });
+      }
+    },
+  });
+
+  const eliminarCateringMut = useMutation({
+    mutationFn: (producto: Producto) =>
+      actualizarProducto(producto.id, { etapa: 'inactivo' }),
+    onSuccess: async (_data, producto) => {
+      await qc.invalidateQueries({ queryKey: ['productos'] });
+      if (seleccion.adicionalIds.includes(producto.id)) {
+        const adicionalCantidades = { ...seleccion.adicionalCantidades };
+        delete adicionalCantidades[producto.id];
+        patch({
+          adicionalIds: seleccion.adicionalIds.filter((id) => id !== producto.id),
+          adicionalCantidades,
+        });
+      }
+    },
+  });
+
+  const confirmarEliminarCatering = async (producto: Producto) => {
+    const confirm = await Swal.fire({
+      icon: 'warning',
+      title: '¿Eliminar catering adicional del catálogo?',
+      text: `"${producto.nombre}" se desactivará y dejará de aparecer en el catálogo y la landing. Puedes reactivarlo después.`,
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar',
+      confirmButtonColor: '#b91c1c',
+    });
+    if (!confirm.isConfirmed) return;
+    eliminarCateringMut.mutate(producto);
   };
 
   const piqueosFiltrados = useMemo(() => {
@@ -689,6 +743,13 @@ export function CotizacionPaqueteEditor({
         onCantidad={(id, qty) =>
           patch({ adicionalCantidades: { ...seleccion.adicionalCantidades, [id]: qty } })
         }
+        onEditar={(p) => setCateringForm({ mode: 'edit', producto: p })}
+        onEliminar={confirmarEliminarCatering}
+        headerExtra={
+          <Button type="button" variant="ghost" onClick={() => setCateringForm({ mode: 'create' })}>
+            Nuevo catering adicional
+          </Button>
+        }
       />
 
       {fechaEvento && (
@@ -820,6 +881,34 @@ export function CotizacionPaqueteEditor({
             });
           } catch (err) {
             throw new Error(apiErrorMessage(err, 'No se pudo guardar el show'));
+          }
+        }}
+        puedeGestionarImagen={false}
+      />
+      <ProductoFormModal
+        open={cateringForm != null}
+        nested
+        categoriaFija
+        defaults={{ categoria: 'catering', subtipo: 'general' }}
+        producto={cateringForm?.mode === 'edit' ? cateringForm.producto : null}
+        onClose={() => setCateringForm(null)}
+        onSubmit={async (payload) => {
+          const edicion = cateringForm?.mode === 'edit';
+          try {
+            const saved = await guardarCateringMut.mutateAsync(payload);
+            queueMicrotask(() => {
+              void Swal.fire({
+                icon: 'success',
+                title: edicion ? 'Catering adicional actualizado' : 'Catering adicional creado',
+                text: edicion
+                  ? `"${saved.nombre}" se actualizó correctamente.`
+                  : `"${saved.nombre}" se agregó al catálogo.`,
+                timer: 1800,
+                showConfirmButton: false,
+              });
+            });
+          } catch (err) {
+            throw new Error(apiErrorMessage(err, 'No se pudo guardar el catering adicional'));
           }
         }}
         puedeGestionarImagen={false}

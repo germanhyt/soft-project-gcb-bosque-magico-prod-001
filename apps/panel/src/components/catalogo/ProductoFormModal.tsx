@@ -33,7 +33,7 @@ type Props = {
   producto?: Producto | null;
   /** Valores iniciales al crear (p. ej. filtro Piqueos del catálogo). */
   defaults?: { categoria?: string; subtipo?: string; extraPermitido?: boolean };
-  /** Bloquea el selector de categoría (alta rápida de show desde cotización). */
+  /** Bloquea el selector de categoría (alta rápida de show o catering desde cotización). */
   categoriaFija?: boolean;
   nested?: boolean;
   puedeGestionarImagen?: boolean;
@@ -201,10 +201,14 @@ export function ProductoFormModal({
         esEdicion
           ? categoriaFija && form.categoria === 'show'
             ? 'Editar show'
-            : 'Editar producto'
+            : categoriaFija && form.categoria === 'catering'
+              ? 'Editar catering adicional'
+              : 'Editar producto'
           : categoriaFija && (defaults?.categoria ?? form.categoria) === 'show'
             ? 'Nuevo show'
-            : 'Nuevo producto'
+            : categoriaFija && (defaults?.categoria ?? form.categoria) === 'catering'
+              ? 'Nuevo catering adicional'
+              : 'Nuevo producto'
       }
       size="lg"
       nested={nested}
@@ -265,7 +269,7 @@ export function ProductoFormModal({
             <option value="espacio">Espacio</option>
           </select>
         </label>
-        {form.categoria === 'catering' && (
+        {form.categoria === 'catering' && !categoriaFija && (
           <label className="block">
             <span className={LABEL_CLASS}>Subtipo catering</span>
             <select
