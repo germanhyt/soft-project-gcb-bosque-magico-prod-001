@@ -100,9 +100,6 @@ export function seleccionToPayload(
   const cajitasCantidad = Math.max(cajitasClasica + cajitasSaludable, state.cajitasCantidad);
   const minimoCatering = (id: string) => {
     const p = productos?.find((x) => x.id === id);
-    if (p?.categoria === 'catering' && p.subtipo === 'general') {
-      return Math.max(p.cantidadMinima, 18);
-    }
     return Math.max(p?.cantidadMinima ?? 1, 1);
   };
 
