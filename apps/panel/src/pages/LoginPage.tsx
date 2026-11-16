@@ -4,12 +4,15 @@ import { Button } from '../components/ui/Button';
 import { Icon } from '../components/ui/Icon';
 import { INPUT_CLASS, LABEL_CLASS } from '../constants/design';
 import { useAuth } from '../contexts/AuthContext';
+import { destinoTrasIngreso, RUTA_INICIO } from '../lib/ruta-ingreso';
 
 export function LoginPage() {
   const { authRequired, user, login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const from = (location.state as { from?: string } | null)?.from ?? '/solicitudes';
+  const destino = destinoTrasIngreso(
+    (location.state as { from?: string } | null)?.from,
+  );
 
   const [email, setEmail] = useState('admin@bosquemagico.test');
   const [password, setPassword] = useState('');
@@ -18,11 +21,11 @@ export function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
 
   if (!authRequired) {
-    return <Navigate to="/solicitudes" replace />;
+    return <Navigate to={RUTA_INICIO} replace />;
   }
 
   if (user) {
-    return <Navigate to={from} replace />;
+    return <Navigate to={destino} replace />;
   }
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -31,7 +34,7 @@ export function LoginPage() {
     setPending(true);
     try {
       await login(email.trim(), password);
-      navigate(from, { replace: true });
+      navigate(destino, { replace: true });
     } catch {
       setError('Correo o contraseña incorrectos.');
     } finally {

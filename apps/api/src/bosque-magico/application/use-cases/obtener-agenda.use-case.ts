@@ -7,11 +7,19 @@ import {
   finDiaCalendarioUtc,
   inicioDiaCalendarioUtc,
 } from '../../domain/utils/fecha-calendario';
+import {
+  cotizacionVisibleEnCalendario,
+  fusionarAgendaPorFecha,
+} from '../../domain/utils/ocupacion-calendario';
+import { CotizacionesRepository } from '../../infrastructure/repositories/cotizaciones.repository';
 import { EventosRepository } from '../../infrastructure/repositories/eventos.repository';
 
 @Injectable()
 export class ObtenerAgendaUseCase {
-  constructor(private readonly eventos: EventosRepository) {}
+  constructor(
+    private readonly eventos: EventosRepository,
+    private readonly cotizaciones: CotizacionesRepository,
+  ) {}
 
   async ejecutar(desde?: string, hasta?: string) {
     const inicio = desde
@@ -30,23 +38,34 @@ export class ObtenerAgendaUseCase {
           ),
         );
 
-    const [eventos, resumen, proximos] = await Promise.all([
+    const [eventos, resumen, proximos, cotizaciones] = await Promise.all([
       this.eventos.listar({ desde: inicio, hasta: fin }),
       this.eventos.contarPorEtapa(),
       this.eventos.proximos(8),
+      this.cotizaciones.listarParaCalendario(inicio, fin),
     ]);
 
-    const porFecha = new Map<string, ReturnType<typeof mapEventoResponse>[]>();
-    for (const ev of eventos) {
-      const mapped = mapEventoResponse(ev);
-      const key = claveFechaCalendario(ev.fechaEvento);
-      if (!porFecha.has(key)) porFecha.set(key, []);
-      porFecha.get(key)!.push(mapped);
-    }
-
-    const agenda = [...porFecha.entries()]
-      .sort(([a], [b]) => a.localeCompare(b))
-      .map(([fecha, items]) => ({ fecha, eventos: items }));
+    const agenda = fusionarAgendaPorFecha(
+      eventos.map((ev) => ({
+        fecha: claveFechaCalendario(ev.fechaEvento),
+        item: mapEventoResponse(ev),
+      })),
+      cotizaciones
+        .filter((cot) => cotizacionVisibleEnCalendario(cot.etapa))
+        .map((cot) => ({
+          fecha: claveFechaCalendario(cot.fechaEvento),
+          item: {
+            id: cot.id,
+            codigo: cot.codigo,
+            etapa: cot.etapa,
+            fechaEvento: claveFechaCalendario(cot.fechaEvento),
+            turno: cot.turno,
+            horarioInicio: cot.horarioInicio,
+            horarioFin: cot.horarioFin,
+            cliente: { nombreCompleto: cot.cliente.nombreCompleto },
+          },
+        })),
+    );
 
     return {
       agenda,

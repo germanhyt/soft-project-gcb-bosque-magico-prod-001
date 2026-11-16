@@ -2,7 +2,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useCallback, useEffect, useMemo } from 'react';
 
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 
 import { AgendaDiaModal } from '../components/agenda/AgendaDiaModal';
 
@@ -35,7 +35,21 @@ import { mesToParam, parseMesParam, rangoMes } from '../lib/agenda-calendar';
 
 import { claveFechaCalendario, isoFechaLocal } from '../lib/fecha-calendario';
 
-import { fetchAgenda, fetchEvento, type EtapaEvento, type Evento } from '../lib/eventos';
+import { etiquetaTurno } from '@bosque/shared';
+
+import { ETAPA_COT_BADGE } from '../constants/design';
+
+import { ETAPA_COT_LABEL } from '../constants/cotizaciones';
+
+import { diaTieneCruceHorario } from '../lib/cruce-calendario';
+
+import {
+  fetchAgenda,
+  fetchEvento,
+  type CotizacionEnCalendario,
+  type EtapaEvento,
+  type Evento,
+} from '../lib/eventos';
 
 import { formatFecha } from '../lib/format';
 
@@ -225,7 +239,27 @@ export function AgendaPage() {
 
 
 
+  const cotizacionesPorFecha = useMemo(() => {
+
+    const map = new Map<string, CotizacionEnCalendario[]>();
+
+    for (const dia of data?.agenda ?? []) {
+
+      const items = dia.cotizaciones ?? [];
+
+      if (items.length) map.set(dia.fecha, items);
+
+    }
+
+    return map;
+
+  }, [data]);
+
+
+
   const eventosDiaSeleccionado = diaMes ? (eventosPorFecha.get(diaMes) ?? []) : [];
+
+  const cotizacionesDiaSeleccionado = diaMes ? (cotizacionesPorFecha.get(diaMes) ?? []) : [];
 
 
 
@@ -233,25 +267,21 @@ export function AgendaPage() {
 
     if (!data?.agenda) return [];
 
-    let rows = data.agenda;
+    return data.agenda
 
-    if (etapaFiltro) {
+      .map((dia) => ({
 
-      rows = rows
+        ...dia,
 
-        .map((dia) => ({
+        eventos: etapaFiltro
+          ? dia.eventos.filter((e) => e.etapa === etapaFiltro)
+          : dia.eventos,
 
-          ...dia,
+        cotizaciones: dia.cotizaciones ?? [],
 
-          eventos: dia.eventos.filter((e) => e.etapa === etapaFiltro),
+      }))
 
-        }))
-
-        .filter((dia) => dia.eventos.length > 0);
-
-    }
-
-    return rows;
+      .filter((dia) => dia.eventos.length > 0 || dia.cotizaciones.length > 0);
 
   }, [data, etapaFiltro]);
 
@@ -546,6 +576,8 @@ export function AgendaPage() {
 
               eventosPorFecha={eventosPorFecha}
 
+              cotizacionesPorFecha={cotizacionesPorFecha}
+
               diaSeleccionado={diaMes || undefined}
 
               onMesChange={(m) => patchParams({ mes: m, dia: undefined })}
@@ -562,7 +594,7 @@ export function AgendaPage() {
 
             <p className="text-on-surface-variant">
 
-              No hay eventos en el rango seleccionado. Acepta una cotización para crear uno.
+              No hay eventos ni cotizaciones en curso en el rango seleccionado.
 
             </p>
 
@@ -584,6 +616,34 @@ export function AgendaPage() {
 
                   </h2>
 
+                  {diaTieneCruceHorario([
+
+                    ...dia.eventos.map((ev) => ({
+
+                      turno: ev.turno,
+
+                      inicio: ev.horarioInicio,
+
+                      fin: ev.horarioFin,
+
+                    })),
+
+                    ...(dia.cotizaciones ?? []).map((cot) => ({
+
+                      turno: cot.turno,
+
+                      inicio: cot.horarioInicio,
+
+                      fin: cot.horarioFin,
+
+                    })),
+
+                  ]) && (
+
+                    <p className="mt-2 text-body-sm font-semibold text-error">Cruce de horario</p>
+
+                  )}
+
                   <ul className="mt-2 space-y-3">
 
                     {dia.eventos.map((ev) => (
@@ -601,6 +661,42 @@ export function AgendaPage() {
                           showMonto
 
                         />
+
+                      </li>
+
+                    ))}
+
+                    {(dia.cotizaciones ?? []).map((cot) => (
+
+                      <li key={cot.id}>
+
+                        <Link
+
+                          to={`/cotizaciones/${cot.id}`}
+
+                          className="block rounded-xl border border-dashed border-outline-variant bg-surface-container-lowest p-4"
+
+                        >
+
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+
+                            <span className="font-semibold text-on-surface">{cot.cliente.nombreCompleto}</span>
+
+                            <span className={`rounded-full px-2 py-0.5 text-[11px] font-semibold ${ETAPA_COT_BADGE[cot.etapa]}`}>
+
+                              {ETAPA_COT_LABEL[cot.etapa]}
+
+                            </span>
+
+                          </div>
+
+                          <p className="mt-1 text-body-sm text-on-surface-variant">
+
+                            {cot.codigo} · {etiquetaTurno(cot.turno, cot.horarioInicio, cot.horarioFin)}
+
+                          </p>
+
+                        </Link>
 
                       </li>
 
@@ -629,6 +725,8 @@ export function AgendaPage() {
         fecha={diaMes}
 
         eventos={eventosDiaSeleccionado}
+
+        cotizaciones={cotizacionesDiaSeleccionado}
 
         selectedId={detalleParam ?? undefined}
 

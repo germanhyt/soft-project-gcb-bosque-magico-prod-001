@@ -23,8 +23,25 @@ export type Evento = {
   cotizacion?: { id: string; codigo: string; paquete?: string | null };
 };
 
+export type CotizacionEnCalendario = {
+  id: string;
+  codigo: string;
+  etapa: 'borrador' | 'enviada';
+  fechaEvento: string;
+  turno: string;
+  horarioInicio?: string | null;
+  horarioFin?: string | null;
+  cliente: { nombreCompleto: string };
+};
+
+export type AgendaDia = {
+  fecha: string;
+  eventos: Evento[];
+  cotizaciones?: CotizacionEnCalendario[];
+};
+
 export type AgendaResponse = {
-  agenda: { fecha: string; eventos: Evento[] }[];
+  agenda: AgendaDia[];
   resumen: Record<EtapaEvento, number>;
   proximos: Evento[];
   total: number;

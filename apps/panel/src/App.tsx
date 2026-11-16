@@ -1,4 +1,5 @@
 import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom';
+import { RUTA_INICIO } from './lib/ruta-ingreso';
 import { RequireAdmin } from './components/auth/RequireAdmin';
 import { RequireAuth } from './components/auth/RequireAuth';
 import { PanelLayout } from './components/layout/PanelLayout';
@@ -27,7 +28,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route element={<RequireAuth />}>
         <Route element={<PanelLayout />}>
-          <Route index element={<Navigate to="/dashboard" replace />} />
+          <Route index element={<Navigate to={RUTA_INICIO} replace />} />
           <Route path="dashboard" element={<DashboardPage />} />
           <Route path="solicitudes" element={<SolicitudesPage />} />
           <Route path="clientes" element={<ClientesPage />} />

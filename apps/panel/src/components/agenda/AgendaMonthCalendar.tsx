@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import type { Evento } from '../../lib/eventos';
+import { etiquetaTurno } from '@bosque/shared';
+import type { CotizacionEnCalendario, Evento } from '../../lib/eventos';
 import {
   WEEKDAY_LABELS,
   celdasMes,
@@ -7,14 +8,17 @@ import {
   nombreMesAnio,
   parseMesParam,
 } from '../../lib/agenda-calendar';
+import { diaTieneCruceHorario } from '../../lib/cruce-calendario';
 import { fechaCalendarioHoy } from '../../lib/fecha-calendario';
-import { ETAPA_EVENTO_BADGE } from '../../constants/design';
+import { ETAPA_COT_BADGE, ETAPA_EVENTO_BADGE } from '../../constants/design';
+import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
 import { ETAPA_EVENTO_LABEL } from '../../constants/eventos';
 import { Icon } from '../ui/Icon';
 
 type Props = {
   mes: string;
   eventosPorFecha: Map<string, Evento[]>;
+  cotizacionesPorFecha: Map<string, CotizacionEnCalendario[]>;
   diaSeleccionado?: string;
   onMesChange: (mes: string) => void;
   onDiaClick: (fecha: string) => void;
@@ -23,6 +27,7 @@ type Props = {
 export function AgendaMonthCalendar({
   mes,
   eventosPorFecha,
+  cotizacionesPorFecha,
   diaSeleccionado,
   onMesChange,
   onDiaClick,
@@ -72,7 +77,11 @@ export function AgendaMonthCalendar({
         </button>
       </div>
 
-      <div className="grid grid-cols-7 gap-px rounded-xl border border-surface-variant bg-surface-variant overflow-hidden">
+      <p className="mb-3 text-body-sm text-outline">
+        Borrador y enviada aparecen junto a los eventos para ver si el día o el horario ya están tomados.
+      </p>
+
+      <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-surface-variant bg-surface-variant">
         {WEEKDAY_LABELS.map((d) => (
           <div
             key={d}
@@ -83,8 +92,35 @@ export function AgendaMonthCalendar({
         ))}
         {celdas.map((celda) => {
           const eventos = eventosPorFecha.get(celda.fecha) ?? [];
+          const cotizaciones = cotizacionesPorFecha.get(celda.fecha) ?? [];
           const diaNum = Number(celda.fecha.slice(8, 10));
           const seleccionado = diaSeleccionado === celda.fecha;
+          const tieneCruce = diaTieneCruceHorario([
+            ...eventos.map((ev) => ({
+              turno: ev.turno,
+              inicio: ev.horarioInicio,
+              fin: ev.horarioFin,
+            })),
+            ...cotizaciones.map((cot) => ({
+              turno: cot.turno,
+              inicio: cot.horarioInicio,
+              fin: cot.horarioFin,
+            })),
+          ]);
+          const chips = [
+            ...eventos.map((ev) => ({
+              id: ev.id,
+              clase: ETAPA_EVENTO_BADGE[ev.etapa],
+              texto: ev.cliente.nombreCompleto.split(' ')[0],
+              title: `${ev.cliente.nombreCompleto} · ${etiquetaTurno(ev.turno, ev.horarioInicio, ev.horarioFin)} · ${ETAPA_EVENTO_LABEL[ev.etapa]}`,
+            })),
+            ...cotizaciones.map((cot) => ({
+              id: cot.id,
+              clase: `${ETAPA_COT_BADGE[cot.etapa]} border border-dashed border-current`,
+              texto: cot.cliente.nombreCompleto.split(' ')[0],
+              title: `${cot.codigo} · ${cot.cliente.nombreCompleto} · ${etiquetaTurno(cot.turno, cot.horarioInicio, cot.horarioFin)} · ${ETAPA_COT_LABEL[cot.etapa]}`,
+            })),
+          ];
           return (
             <button
               key={celda.fecha}
@@ -94,7 +130,7 @@ export function AgendaMonthCalendar({
                 !celda.enMes ? 'opacity-45' : ''
               } ${seleccionado ? 'ring-2 ring-inset ring-primary' : ''} ${
                 celda.esHoy && celda.enMes ? 'bg-primary-fixed/15' : ''
-              }`}
+              } ${tieneCruce ? 'ring-2 ring-inset ring-error' : ''}`}
             >
               <span
                 className={`mb-1 flex h-7 w-7 items-center justify-center self-end rounded-full text-body-sm font-semibold ${
@@ -106,18 +142,21 @@ export function AgendaMonthCalendar({
                 {diaNum}
               </span>
               <div className="flex flex-1 flex-col gap-0.5 overflow-hidden">
-                {eventos.slice(0, 3).map((ev) => (
+                {tieneCruce && (
+                  <span className="text-[10px] font-semibold text-error">Cruce de horario</span>
+                )}
+                {chips.slice(0, 3).map((chip) => (
                   <span
-                    key={ev.id}
-                    className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${ETAPA_EVENTO_BADGE[ev.etapa]}`}
-                    title={`${ev.cliente.nombreCompleto} · ${ETAPA_EVENTO_LABEL[ev.etapa]}`}
+                    key={chip.id}
+                    className={`truncate rounded px-1 py-0.5 text-[10px] font-medium leading-tight ${chip.clase}`}
+                    title={chip.title}
                   >
-                    {ev.cliente.nombreCompleto.split(' ')[0]}
+                    {chip.texto}
                   </span>
                 ))}
-                {eventos.length > 3 && (
+                {chips.length > 3 && (
                   <span className="text-[10px] font-semibold text-outline">
-                    +{eventos.length - 3} más
+                    +{chips.length - 3} más
                   </span>
                 )}
               </div>

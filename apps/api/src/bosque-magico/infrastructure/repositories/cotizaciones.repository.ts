@@ -12,6 +12,7 @@ import {
 import { randomBytes } from 'crypto';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { PREFIJO_CODIGO_COTIZACION } from '../../domain/constants/codigos-secuencia';
+import { ETAPAS_COTIZACION_EN_CALENDARIO } from '../../domain/utils/ocupacion-calendario';
 import { toDecimal } from '../../domain/utils/decimal';
 import { SecuenciasRepository } from './secuencias.repository';
 
@@ -131,6 +132,27 @@ export class CotizacionesRepository {
         },
         cumpleanero: { select: { nombre: true, edad: true } },
         items: true,
+      },
+    });
+  }
+
+  /** Borrador y enviada en el rango, para verlas en la agenda antes de aceptar. */
+  listarParaCalendario(desde: Date, hasta: Date) {
+    return this.prisma.bosqueMagicoCotizacion.findMany({
+      where: {
+        etapa: { in: [...ETAPAS_COTIZACION_EN_CALENDARIO] },
+        fechaEvento: { gte: desde, lte: hasta },
+      },
+      orderBy: [{ fechaEvento: 'asc' }, { turno: 'asc' }],
+      select: {
+        id: true,
+        codigo: true,
+        etapa: true,
+        fechaEvento: true,
+        turno: true,
+        horarioInicio: true,
+        horarioFin: true,
+        cliente: { select: { nombreCompleto: true } },
       },
     });
   }
