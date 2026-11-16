@@ -31,7 +31,7 @@ export const ETAPA_BADGE: Record<EtapaSolicitud, string> = {
 };
 
 export const ETAPA_COT_BADGE: Record<EtapaCotizacion, string> = {
-  borrador: 'bg-surface-variant text-on-surface-variant',
+  borrador: 'border border-dashed border-tertiary bg-tertiary-fixed/40 text-tertiary',
   enviada: 'bg-tertiary-fixed/70 text-tertiary',
   aceptada: 'bg-primary-fixed/60 text-primary',
   cerrada: 'bg-surface-container-high text-outline',
@@ -41,7 +41,7 @@ export const ETAPA_EVENTO_BADGE: Record<EtapaEvento, string> = {
   por_confirmar: 'bg-tertiary-fixed/70 text-tertiary',
   confirmado: 'bg-primary-fixed/50 text-primary',
   realizado: 'bg-secondary-fixed/50 text-secondary',
-  cancelado: 'bg-surface-variant text-outline',
+  cancelado: 'bg-error-container text-error',
 };
 
 export const ETAPA_CONTRATO_BADGE: Record<EtapaContrato, string> = {
@@ -55,7 +55,7 @@ export const ETAPA_EVENTO_CARD: Record<EtapaEvento, string> = {
   por_confirmar: 'border-l-4 border-l-tertiary',
   confirmado: 'border-l-4 border-l-primary',
   realizado: 'border-l-4 border-l-secondary',
-  cancelado: 'border-l-4 border-l-outline-variant opacity-75',
+  cancelado: 'border-l-4 border-l-error',
 };
 
 export const BADGE_BASE =

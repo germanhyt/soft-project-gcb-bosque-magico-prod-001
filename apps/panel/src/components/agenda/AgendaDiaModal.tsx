@@ -4,7 +4,7 @@ import { Modal } from '../ui/Modal';
 import { EventoListCard } from './EventoListCard';
 import { ETAPA_COT_BADGE } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
-import { diaTieneCruceHorario } from '../../lib/cruce-calendario';
+import { diaTieneCruceHorario, ocupantesParaCruce } from '../../lib/cruce-calendario';
 import type { CotizacionEnCalendario, Evento } from '../../lib/eventos';
 import { formatFecha } from '../../lib/format';
 
@@ -28,18 +28,22 @@ export function AgendaDiaModal({
   onSelectEvento,
 }: Props) {
   const count = eventos.length + cotizaciones.length;
-  const tieneCruce = diaTieneCruceHorario([
-    ...eventos.map((ev) => ({
-      turno: ev.turno,
-      inicio: ev.horarioInicio,
-      fin: ev.horarioFin,
-    })),
-    ...cotizaciones.map((cot) => ({
-      turno: cot.turno,
-      inicio: cot.horarioInicio,
-      fin: cot.horarioFin,
-    })),
-  ]);
+  const tieneCruce = diaTieneCruceHorario(
+    ocupantesParaCruce([
+      ...eventos.map((ev) => ({
+        etapa: ev.etapa,
+        turno: ev.turno,
+        inicio: ev.horarioInicio,
+        fin: ev.horarioFin,
+      })),
+      ...cotizaciones.map((cot) => ({
+        etapa: cot.etapa,
+        turno: cot.turno,
+        inicio: cot.horarioInicio,
+        fin: cot.horarioFin,
+      })),
+    ]),
+  );
 
   return (
     <Modal

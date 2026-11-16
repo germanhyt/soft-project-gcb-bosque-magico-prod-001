@@ -8,7 +8,11 @@ import {
   nombreMesAnio,
   parseMesParam,
 } from '../../lib/agenda-calendar';
-import { diaTieneCruceHorario } from '../../lib/cruce-calendario';
+import {
+  diaTieneCruceHorario,
+  ocupantesParaCruce,
+  textoChipCalendario,
+} from '../../lib/cruce-calendario';
 import { fechaCalendarioHoy } from '../../lib/fecha-calendario';
 import { ETAPA_COT_BADGE, ETAPA_EVENTO_BADGE } from '../../constants/design';
 import { ETAPA_COT_LABEL } from '../../constants/cotizaciones';
@@ -77,8 +81,17 @@ export function AgendaMonthCalendar({
         </button>
       </div>
 
-      <p className="mb-3 text-body-sm text-outline">
-        Borrador y enviada aparecen junto a los eventos para ver si el día o el horario ya están tomados.
+      <p className="mb-3 flex flex-wrap items-center gap-2 text-body-sm text-outline">
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${ETAPA_COT_BADGE.borrador}`}>
+          Borrador
+        </span>
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${ETAPA_COT_BADGE.enviada}`}>
+          Enviada
+        </span>
+        <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${ETAPA_EVENTO_BADGE.cancelado}`}>
+          Cancelado
+        </span>
+        <span>El borrador ocupa el horario. El cancelado queda en rojo y no lo bloquea.</span>
       </p>
 
       <div className="grid grid-cols-7 gap-px overflow-hidden rounded-xl border border-surface-variant bg-surface-variant">
@@ -95,29 +108,33 @@ export function AgendaMonthCalendar({
           const cotizaciones = cotizacionesPorFecha.get(celda.fecha) ?? [];
           const diaNum = Number(celda.fecha.slice(8, 10));
           const seleccionado = diaSeleccionado === celda.fecha;
-          const tieneCruce = diaTieneCruceHorario([
-            ...eventos.map((ev) => ({
-              turno: ev.turno,
-              inicio: ev.horarioInicio,
-              fin: ev.horarioFin,
-            })),
-            ...cotizaciones.map((cot) => ({
-              turno: cot.turno,
-              inicio: cot.horarioInicio,
-              fin: cot.horarioFin,
-            })),
-          ]);
+          const tieneCruce = diaTieneCruceHorario(
+            ocupantesParaCruce([
+              ...eventos.map((ev) => ({
+                etapa: ev.etapa,
+                turno: ev.turno,
+                inicio: ev.horarioInicio,
+                fin: ev.horarioFin,
+              })),
+              ...cotizaciones.map((cot) => ({
+                etapa: cot.etapa,
+                turno: cot.turno,
+                inicio: cot.horarioInicio,
+                fin: cot.horarioFin,
+              })),
+            ]),
+          );
           const chips = [
             ...eventos.map((ev) => ({
               id: ev.id,
               clase: ETAPA_EVENTO_BADGE[ev.etapa],
-              texto: ev.cliente.nombreCompleto.split(' ')[0],
+              texto: textoChipCalendario(ev.cliente.nombreCompleto, ETAPA_EVENTO_LABEL[ev.etapa]),
               title: `${ev.cliente.nombreCompleto} · ${etiquetaTurno(ev.turno, ev.horarioInicio, ev.horarioFin)} · ${ETAPA_EVENTO_LABEL[ev.etapa]}`,
             })),
             ...cotizaciones.map((cot) => ({
               id: cot.id,
-              clase: `${ETAPA_COT_BADGE[cot.etapa]} border border-dashed border-current`,
-              texto: cot.cliente.nombreCompleto.split(' ')[0],
+              clase: ETAPA_COT_BADGE[cot.etapa],
+              texto: textoChipCalendario(cot.cliente.nombreCompleto, ETAPA_COT_LABEL[cot.etapa]),
               title: `${cot.codigo} · ${cot.cliente.nombreCompleto} · ${etiquetaTurno(cot.turno, cot.horarioInicio, cot.horarioFin)} · ${ETAPA_COT_LABEL[cot.etapa]}`,
             })),
           ];

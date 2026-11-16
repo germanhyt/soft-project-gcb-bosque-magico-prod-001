@@ -41,7 +41,7 @@ import { ETAPA_COT_BADGE } from '../constants/design';
 
 import { ETAPA_COT_LABEL } from '../constants/cotizaciones';
 
-import { diaTieneCruceHorario } from '../lib/cruce-calendario';
+import { diaTieneCruceHorario, ocupantesParaCruce } from '../lib/cruce-calendario';
 
 import {
   fetchAgenda,
@@ -616,9 +616,11 @@ export function AgendaPage() {
 
                   </h2>
 
-                  {diaTieneCruceHorario([
+                  {diaTieneCruceHorario(ocupantesParaCruce([
 
                     ...dia.eventos.map((ev) => ({
+
+                      etapa: ev.etapa,
 
                       turno: ev.turno,
 
@@ -630,6 +632,8 @@ export function AgendaPage() {
 
                     ...(dia.cotizaciones ?? []).map((cot) => ({
 
+                      etapa: cot.etapa,
+
                       turno: cot.turno,
 
                       inicio: cot.horarioInicio,
@@ -638,7 +642,7 @@ export function AgendaPage() {
 
                     })),
 
-                  ]) && (
+                  ])) && (
 
                     <p className="mt-2 text-body-sm font-semibold text-error">Cruce de horario</p>
 
