@@ -9,6 +9,7 @@ import { AceptarCotizacionAction } from './AceptarCotizacionAction';
 import { CotizacionBadge } from './CotizacionBadge';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
 import { EntregarPrecontratoAction } from './EntregarPrecontratoAction';
+import { EnviarPrecontratoActions } from './EnviarPrecontratoActions';
 import { DetalleModal } from '../ui/DetalleModal';
 import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
@@ -46,6 +47,7 @@ import {
   motivoBloqueoVolverABorradorCotizacion,
 } from '../../lib/flujo-estados';
 import { formatFecha } from '../../lib/format';
+import { textoAdelantosGuardados } from '../../lib/mensajes-precontrato';
 import { apiErrorMessage } from '../../lib/api-error';
 import { cerrarSolicitud, type MotivoCierre } from '../../lib/api';
 import { cancelarEvento } from '../../lib/eventos';
@@ -353,9 +355,10 @@ export function CotizacionDetalle({
           </Button>
           {puedeEntregarPrecontrato(cot.etapa) && <EntregarPrecontratoAction cot={cot} />}
           {cot.precontrato && puedeEntregarPrecontrato(cot.etapa) && (
-            <DetalleActionHint>
-              Adelanto de reserva guardado: S/ {cot.precontrato.adelanto1Monto.toFixed(2)}. Al aceptar, el contrato lo toma.
-            </DetalleActionHint>
+            <>
+              <EnviarPrecontratoActions cot={{ ...cot, precontrato: cot.precontrato }} />
+              <DetalleActionHint>{textoAdelantosGuardados(cot.precontrato)}</DetalleActionHint>
+            </>
           )}
           {cot.etapa === 'borrador' && (
             <DetalleActionHint>

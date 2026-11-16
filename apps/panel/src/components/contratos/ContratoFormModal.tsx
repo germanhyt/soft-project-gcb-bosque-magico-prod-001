@@ -150,8 +150,10 @@ export function ContratoFormModal({
       horarioFin: cotHorarioFin || horaFinCfg || '',
       adelanto1Monto: String(Math.min(adelantoBase, total)),
       adelanto1Fecha: cot.precontrato?.adelanto1Fecha || todayIso(),
-      adelanto2Monto: '',
-      adelanto2Fecha: '',
+      adelanto2Monto: cot.precontrato?.adelanto2Monto
+        ? String(cot.precontrato.adelanto2Monto)
+        : '',
+      adelanto2Fecha: cot.precontrato?.adelanto2Fecha || '',
     });
     setInitialized(true);
   }, [open, cot, config, evento, contratoExistente, loadingContrato, initialized]);

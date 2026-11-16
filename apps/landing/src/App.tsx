@@ -4,6 +4,7 @@ import { PedidoProveedorPublicaPage } from './pages/PedidoProveedorPublicaPage';
 import { ContratoPdfPublicaPage } from './pages/ContratoPdfPublicaPage';
 import { CotizacionPdfPublicaPage } from './pages/CotizacionPdfPublicaPage';
 import { CotizacionPublicaPage } from './pages/CotizacionPublicaPage';
+import { PrecontratoPublicaPage } from './pages/PrecontratoPublicaPage';
 import { HomePage } from './pages/HomePage';
 
 function App() {
@@ -13,6 +14,7 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/cotizacion/:token" element={<CotizacionPublicaPage />} />
         <Route path="/cotizacion/:token/pdf" element={<CotizacionPdfPublicaPage />} />
+        <Route path="/cotizacion/:token/precontrato" element={<PrecontratoPublicaPage />} />
         <Route path="/contrato/:token" element={<ContratoPublicaPage />} />
         <Route path="/contrato/:token/pdf" element={<ContratoPdfPublicaPage />} />
         <Route path="/pedido-proveedor/:token" element={<PedidoProveedorPublicaPage />} />

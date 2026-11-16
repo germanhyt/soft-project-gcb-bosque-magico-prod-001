@@ -14,7 +14,9 @@ import type { JwtPayload } from '../../auth/types/jwt-payload';
 import { ActualizarCotizacionDto } from '../application/dto/actualizar-cotizacion.dto';
 import { CrearCotizacionDto } from '../application/dto/crear-cotizacion.dto';
 import { EnviarCotizacionDto } from '../application/dto/enviar-cotizacion.dto';
+import { EnviarPrecontratoCorreoDto } from '../application/dto/enviar-precontrato-correo.dto';
 import { RegistrarPrecontratoDto } from '../application/dto/registrar-precontrato.dto';
+import { EnviarPrecontratoCorreoUseCase } from '../application/use-cases/enviar-precontrato-correo.use-case';
 import { RegistrarPrecontratoUseCase } from '../application/use-cases/registrar-precontrato.use-case';
 import { AceptarCotizacionUseCase } from '../application/use-cases/aceptar-cotizacion.use-case';
 import { ActualizarCotizacionUseCase } from '../application/use-cases/actualizar-cotizacion.use-case';
@@ -36,6 +38,7 @@ export class CotizacionesController {
     private readonly volverABorrador: VolverABorradorCotizacionUseCase,
     private readonly aceptar: AceptarCotizacionUseCase,
     private readonly precontrato: RegistrarPrecontratoUseCase,
+    private readonly precontratoCorreo: EnviarPrecontratoCorreoUseCase,
   ) {}
 
   @Get('cotizaciones')
@@ -72,6 +75,17 @@ export class CotizacionesController {
     @Body() dto: RegistrarPrecontratoDto,
   ) {
     return this.precontrato.ejecutar(id, dto);
+  }
+
+  @Post('cotizaciones/:id/precontrato/correo')
+  @ApiOperation({
+    summary: 'Enviar el precontrato por correo sin cambiar la etapa de la cotización',
+  })
+  enviarPrecontratoCorreo(
+    @Param('id') id: string,
+    @Body() dto: EnviarPrecontratoCorreoDto,
+  ) {
+    return this.precontratoCorreo.ejecutar(id, dto);
   }
 
   @Post('cotizaciones')

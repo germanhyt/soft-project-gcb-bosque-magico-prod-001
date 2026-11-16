@@ -145,6 +145,9 @@ export type Cotizacion = {
   precontrato?: {
     adelanto1Monto: number;
     adelanto1Fecha: string;
+    adelanto2Monto?: number;
+    adelanto2Fecha?: string;
+    montoGarantia?: number;
     terminosVersion: string;
     generadoEn: string;
   } | null;
@@ -241,10 +244,27 @@ export async function actualizarCotizacion(id: string, payload: ActualizarCotiza
 
 export async function registrarPrecontrato(
   id: string,
-  payload: { adelanto1Monto: number; adelanto1Fecha: string },
+  payload: {
+    adelanto1Monto: number;
+    adelanto1Fecha: string;
+    adelanto2Monto?: number;
+    adelanto2Fecha?: string;
+    montoGarantia?: number;
+  },
 ) {
   const { data } = await api.post<Cotizacion>(
     `/bosque-magico/cotizaciones/${id}/precontrato`,
+    payload,
+  );
+  return data;
+}
+
+export async function enviarPrecontratoCorreo(
+  id: string,
+  payload: { correoDestino?: string; correoAsunto: string; correoCuerpo: string },
+) {
+  const { data } = await api.post<Cotizacion & { enviadoPorSmtp: boolean; correoCuerpo: string }>(
+    `/bosque-magico/cotizaciones/${id}/precontrato/correo`,
     payload,
   );
   return data;
@@ -304,6 +324,18 @@ export function linkPublicoCompleto(tokenOrLink: string) {
     ? tokenOrLink
     : `/cotizacion/${tokenOrLink}`;
   return `${base}${path}`;
+}
+
+export function linkPrecontratoPublico(tokenOrLink: string) {
+  const base = import.meta.env.VITE_PUBLIC_SITE_URL ?? 'http://localhost:5173';
+  if (tokenOrLink.startsWith('http')) {
+    return tokenOrLink.includes('/precontrato') ? tokenOrLink : `${tokenOrLink.replace(/\/$/, '')}/precontrato`;
+  }
+  const token = tokenOrLink
+    .replace(/^\/cotizacion\//, '')
+    .replace(/\/pdf$/, '')
+    .replace(/\/precontrato$/, '');
+  return `${base}/cotizacion/${token}/precontrato`;
 }
 
 export function linkPdfPublicoCompleto(tokenOrLink: string) {

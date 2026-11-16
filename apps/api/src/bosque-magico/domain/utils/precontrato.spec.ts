@@ -1,4 +1,5 @@
 import {
+  adelantosExcedenTotal,
   armarPrecontrato,
   parsePrecontrato,
   puedeEntregarPrecontrato,
@@ -30,9 +31,29 @@ describe('precontrato', () => {
     ).toEqual({
       adelanto1Monto: 300,
       adelanto1Fecha: '2026-11-20',
+      adelanto2Monto: 0,
+      adelanto2Fecha: '',
+      montoGarantia: 500,
       terminosVersion: '2026-06',
       generadoEn: '2026-11-16T00:00:00.000Z',
     });
+  });
+
+  it('guarda el segundo adelanto cuando la suma cabe en el total', () => {
+    const guardado = armarPrecontrato({
+      montoTotal: 800,
+      adelanto1Monto: 500,
+      adelanto1Fecha: '2026-11-20',
+      adelanto2Monto: 200,
+      adelanto2Fecha: '2026-12-01',
+      montoGarantia: 300,
+      generadoEn: '2026-11-16T00:00:00.000Z',
+    });
+    expect(guardado.adelanto2Monto).toBe(200);
+    expect(guardado.adelanto2Fecha).toBe('2026-12-01');
+    expect(guardado.montoGarantia).toBe(300);
+    expect(adelantosExcedenTotal(800, 500, 200)).toBe(false);
+    expect(adelantosExcedenTotal(800, 500, 400)).toBe(true);
   });
 
   it('lee un precontrato guardado y descarta uno incompleto', () => {
@@ -44,6 +65,20 @@ describe('precontrato', () => {
         generadoEn: '2026-11-16T00:00:00.000Z',
       })?.adelanto1Monto,
     ).toBe(500);
+    expect(
+      parsePrecontrato({
+        adelanto1Monto: 500,
+        adelanto1Fecha: '2026-11-20',
+      })?.adelanto2Monto,
+    ).toBe(0);
+    expect(
+      parsePrecontrato({
+        adelanto1Monto: 500,
+        adelanto1Fecha: '2026-11-20',
+        adelanto2Monto: 200,
+        adelanto2Fecha: '2026-12-01',
+      })?.adelanto2Monto,
+    ).toBe(200);
     expect(parsePrecontrato({ adelanto1Monto: 500 })).toBeNull();
     expect(parsePrecontrato(null)).toBeNull();
   });

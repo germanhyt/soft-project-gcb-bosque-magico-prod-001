@@ -48,7 +48,43 @@ describe('RegistrarPrecontratoUseCase', () => {
       }),
     );
     expect(res.precontrato?.adelanto1Monto).toBe(500);
+    expect(res.precontrato?.adelanto2Monto).toBe(0);
     expect(res.etapa).toBe(EtapaCotizacion.enviada);
+  });
+
+  it('guarda el segundo adelanto sin cambiar la etapa', async () => {
+    cotizaciones.obtenerPorId.mockResolvedValue(cotAbierta);
+
+    const res = await useCase.ejecutar('cot-1', {
+      adelanto1Monto: 500,
+      adelanto1Fecha: '2026-11-20',
+      adelanto2Monto: 200,
+      adelanto2Fecha: '2026-12-01',
+    });
+
+    expect(cotizaciones.guardarPrecontrato).toHaveBeenCalledWith(
+      'cot-1',
+      expect.objectContaining({
+        adelanto1Monto: 500,
+        adelanto2Monto: 200,
+        adelanto2Fecha: '2026-12-01',
+      }),
+    );
+    expect(res.etapa).toBe(EtapaCotizacion.enviada);
+  });
+
+  it('rechaza si los adelantos superan el total', async () => {
+    cotizaciones.obtenerPorId.mockResolvedValue(cotAbierta);
+
+    await expect(
+      useCase.ejecutar('cot-1', {
+        adelanto1Monto: 500,
+        adelanto1Fecha: '2026-11-20',
+        adelanto2Monto: 400,
+        adelanto2Fecha: '2026-12-01',
+      }),
+    ).rejects.toBeInstanceOf(BadRequestException);
+    expect(cotizaciones.guardarPrecontrato).not.toHaveBeenCalled();
   });
 
   it('rechaza una cotización aceptada', async () => {
