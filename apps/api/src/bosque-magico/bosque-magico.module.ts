@@ -6,6 +6,7 @@ import { ActualizarCotizacionUseCase } from './application/use-cases/actualizar-
 import { ActualizarEventoUseCase } from './application/use-cases/actualizar-evento.use-case';
 import { ActualizarProductoUseCase } from './application/use-cases/actualizar-producto.use-case';
 import { ActualizarSolicitudUseCase } from './application/use-cases/actualizar-solicitud.use-case';
+import { RegistrarPrecontratoUseCase } from './application/use-cases/registrar-precontrato.use-case';
 import { AceptarCotizacionUseCase } from './application/use-cases/aceptar-cotizacion.use-case';
 import { CancelarEventoUseCase } from './application/use-cases/cancelar-evento.use-case';
 import { CerrarSolicitudUseCase } from './application/use-cases/cerrar-solicitud.use-case';
@@ -191,6 +192,7 @@ import {
     EnviarContratoCorreoUseCase,
     VolverABorradorContratoUseCase,
     AceptarCotizacionUseCase,
+    RegistrarPrecontratoUseCase,
     ListarProductosUseCase,
     ListarProductosPanelUseCase,
     CrearProductoUseCase,

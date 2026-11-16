@@ -14,6 +14,8 @@ import type { JwtPayload } from '../../auth/types/jwt-payload';
 import { ActualizarCotizacionDto } from '../application/dto/actualizar-cotizacion.dto';
 import { CrearCotizacionDto } from '../application/dto/crear-cotizacion.dto';
 import { EnviarCotizacionDto } from '../application/dto/enviar-cotizacion.dto';
+import { RegistrarPrecontratoDto } from '../application/dto/registrar-precontrato.dto';
+import { RegistrarPrecontratoUseCase } from '../application/use-cases/registrar-precontrato.use-case';
 import { AceptarCotizacionUseCase } from '../application/use-cases/aceptar-cotizacion.use-case';
 import { ActualizarCotizacionUseCase } from '../application/use-cases/actualizar-cotizacion.use-case';
 import { CrearCotizacionUseCase } from '../application/use-cases/crear-cotizacion.use-case';
@@ -33,6 +35,7 @@ export class CotizacionesController {
     private readonly enviar: EnviarCotizacionUseCase,
     private readonly volverABorrador: VolverABorradorCotizacionUseCase,
     private readonly aceptar: AceptarCotizacionUseCase,
+    private readonly precontrato: RegistrarPrecontratoUseCase,
   ) {}
 
   @Get('cotizaciones')
@@ -58,6 +61,17 @@ export class CotizacionesController {
   @ApiOperation({ summary: 'Detalle de cotización' })
   detalle(@Param('id') id: string) {
     return this.obtener.ejecutar(id);
+  }
+
+  @Post('cotizaciones/:id/precontrato')
+  @ApiOperation({
+    summary: 'Guardar el adelanto del precontrato sin aceptar la cotización',
+  })
+  registrarPrecontrato(
+    @Param('id') id: string,
+    @Body() dto: RegistrarPrecontratoDto,
+  ) {
+    return this.precontrato.ejecutar(id, dto);
   }
 
   @Post('cotizaciones')

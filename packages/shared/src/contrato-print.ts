@@ -121,6 +121,8 @@ export type ContratoPrintOptions = {
   firmaEmpresaUrl?: string;
   /** Marca visual cuando el contrato está en borrador (no válido para firmar). */
   esBorrador?: boolean;
+  /** Reserva previa a la aceptación: mismas cláusulas, sin confirmar el evento. */
+  esPrecontrato?: boolean;
 };
 
 function horarioItem(notas?: string | null): string {
@@ -436,7 +438,28 @@ export function buildContratoPrintHtml(
   const cateringHtml = buildCateringYCajitasHtml(items);
   const extrasHtml = buildExtrasContratadosHtml(items);
 
-  const viewLink = options.viewLink ? escapeHtml(options.viewLink) : '';
+  const titulo = options.esPrecontrato
+    ? 'Precontrato de reserva'
+    : 'Contrato';
+  const encabezado = options.esPrecontrato
+    ? 'PRECONTRATO DE RESERVA'
+    : 'CONTRATO FIESTAS INFANTILES';
+  const aviso = options.esPrecontrato
+    ? '<p class="banner-borrador">Reserva sujeta al pago del adelanto. No confirma el evento.</p>'
+    : options.esBorrador
+      ? '<p class="banner-borrador">Borrador — no válido para firmar</p>'
+      : '';
+  const pie = options.esPrecontrato
+    ? `Precontrato generado el ${formatFechaLarga(ctx.fechaEmision)} · Cotización ${escapeHtml(ctx.codigoCotizacion)} · Bosque Mágico`
+    : `Contrato generado el ${formatFechaLarga(ctx.fechaEmision)} · Cotización ${escapeHtml(ctx.codigoCotizacion)} · Bosque Mágico`;
+  const etiquetaTotal = options.esPrecontrato
+    ? 'Monto total cotizado'
+    : 'Monto total contratado';
+  const viewLink = options.esPrecontrato
+    ? ''
+    : options.viewLink
+      ? escapeHtml(options.viewLink)
+      : '';
 
   const autoPrintScript = options.autoPrint
     ? `<script>
@@ -469,7 +492,7 @@ export function buildContratoPrintHtml(
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <title>Contrato — ${escapeHtml(ctx.codigoCotizacion)}</title>
+  <title>${escapeHtml(titulo)} — ${escapeHtml(ctx.codigoCotizacion)}</title>
   <style>
     * { box-sizing: border-box; }
     body { font-family: system-ui, -apple-system, Segoe UI, sans-serif; color: #1a2e1f; margin: 0; padding: 24px 32px; font-size: 12px; line-height: 1.45; }
@@ -544,9 +567,9 @@ export function buildContratoPrintHtml(
   <div class="sheet">
     <div class="header">
       <img src="${escapeHtml(options.logoUrl)}" alt="Bosque Mágico" />
-      <h1>CONTRATO FIESTAS INFANTILES</h1>
+      <h1>${encabezado}</h1>
     </div>
-    ${options.esBorrador ? '<p class="banner-borrador">Borrador — no válido para firmar</p>' : ''}
+    ${aviso}
 
     <h2>Datos del cliente</h2>
     <div class="grid">
@@ -627,7 +650,7 @@ export function buildContratoPrintHtml(
           : ''
       }
       <div class="row"><span>Monto pendiente</span><span>${money(Math.max(ctx.montoTotal - form.adelanto1Monto - (form.adelanto2Monto || 0), 0))}</span></div>
-      <div class="row total"><span>Monto total contratado</span><span>${money(ctx.montoTotal)}</span></div>
+      <div class="row total"><span>${etiquetaTotal}</span><span>${money(ctx.montoTotal)}</span></div>
       <div class="row"><span>Garantía referencial</span><span>${money(form.montoGarantia)}</span></div>
     </div>
 
@@ -641,7 +664,7 @@ export function buildContratoPrintHtml(
     </div>
 
     <p class="meta">
-      Contrato generado el ${formatFechaLarga(ctx.fechaEmision)} · Cotización ${escapeHtml(ctx.codigoCotizacion)} · Bosque Mágico
+      ${pie}
       ${viewLink ? `<br/><span class="view-link">Ver en línea: ${viewLink}</span>` : ''}
     </p>
   </div>

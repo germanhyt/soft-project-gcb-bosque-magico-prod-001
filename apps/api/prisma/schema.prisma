@@ -704,6 +704,8 @@ model BosqueMagicoCotizacion {
 
   extrasPermitidosComentario String?   @map("extras_permitidos_comentario") @db.Text
 
+  precontrato     Json?                   @map("precontrato")
+
   creadoEn        DateTime                @default(now()) @map("creado_en")
 
   actualizadoEn   DateTime                @updatedAt @map("actualizado_en")

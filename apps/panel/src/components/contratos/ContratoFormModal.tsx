@@ -136,6 +136,8 @@ export function ContratoFormModal({
     );
     const adelantoRef = configNumero(config.todas, 'contrato.adelanto_referencial', 500);
     const total = evento?.montoTotal ?? cot.montoTotal;
+    const adelantoGuardado = cot.precontrato?.adelanto1Monto;
+    const adelantoBase = adelantoGuardado ?? adelantoRef;
     const cliente = cot.cliente as CotizacionClienteExtendido;
     const rango = horarioDesdeRango(turnoCfg.horaInicio, turnoCfg.horaFin);
     const [horaInicioCfg, horaFinCfg] = rango.split(' - ');
@@ -146,8 +148,8 @@ export function ContratoFormModal({
       documentoTributario: cliente.numeroDocumento ?? '',
       horarioInicio: cotHorarioInicio || horaInicioCfg || rango,
       horarioFin: cotHorarioFin || horaFinCfg || '',
-      adelanto1Monto: String(Math.min(adelantoRef, total)),
-      adelanto1Fecha: todayIso(),
+      adelanto1Monto: String(Math.min(adelantoBase, total)),
+      adelanto1Fecha: cot.precontrato?.adelanto1Fecha || todayIso(),
       adelanto2Monto: '',
       adelanto2Fecha: '',
     });

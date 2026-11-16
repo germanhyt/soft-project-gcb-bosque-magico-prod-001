@@ -125,6 +125,11 @@ export function puedeGenerarContrato(etapa: EtapaCotizacion): boolean {
   return etapa === 'aceptada';
 }
 
+/** Reserva impresa mientras la cotización sigue abierta. */
+export function puedeEntregarPrecontrato(etapa: EtapaCotizacion): boolean {
+  return etapa === 'borrador' || etapa === 'enviada';
+}
+
 export function puedeEnviarContrato(etapa: EtapaContrato): boolean {
   return etapa === 'borrador' || etapa === 'enviado' || etapa === 'firmado';
 }

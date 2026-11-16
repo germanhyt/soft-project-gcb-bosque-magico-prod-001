@@ -1,6 +1,7 @@
 import type { EtapaCotizacion } from '@prisma/client';
 import { fromDecimal } from '../utils/decimal';
 import { parseExtrasPermitidosJson } from '../utils/extras-permitidos';
+import { parsePrecontrato, type PrecontratoGuardado } from '../utils/precontrato';
 
 export type CotizacionConItems = {
   id: string;
@@ -36,6 +37,7 @@ export type CotizacionResponse = CotizacionConItems & {
   montoTotal: number;
   extrasPermitidos: string[] | null;
   extrasPermitidosComentario: string | null;
+  precontrato: PrecontratoGuardado | null;
   linkPublico: string;
   linkPdfPublico: string;
   items?: Array<{
@@ -100,6 +102,7 @@ export function mapCotizacionResponse(
       typeof cot.extrasPermitidosComentario === 'string'
         ? cot.extrasPermitidosComentario
         : null,
+    precontrato: parsePrecontrato(cot.precontrato),
     linkPublico: `/cotizacion/${cot.tokenPublico}`,
     linkPdfPublico: `/cotizacion/${cot.tokenPublico}/pdf`,
     items,

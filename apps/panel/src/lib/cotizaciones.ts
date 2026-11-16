@@ -142,6 +142,12 @@ export type Cotizacion = {
   notas?: string | null;
   extrasPermitidos?: string[] | null;
   extrasPermitidosComentario?: string | null;
+  precontrato?: {
+    adelanto1Monto: number;
+    adelanto1Fecha: string;
+    terminosVersion: string;
+    generadoEn: string;
+  } | null;
   creadoEn?: string;
   cliente: { nombreCompleto: string; celular: string; correo?: string | null };
   cumpleanero: { nombre: string; edad?: number | null };
@@ -230,6 +236,17 @@ export async function crearCotizacion(payload: CrearCotizacionPayload) {
 
 export async function actualizarCotizacion(id: string, payload: ActualizarCotizacionPayload) {
   const { data } = await api.patch<Cotizacion>(`/bosque-magico/cotizaciones/${id}`, payload);
+  return data;
+}
+
+export async function registrarPrecontrato(
+  id: string,
+  payload: { adelanto1Monto: number; adelanto1Fecha: string },
+) {
+  const { data } = await api.post<Cotizacion>(
+    `/bosque-magico/cotizaciones/${id}/precontrato`,
+    payload,
+  );
   return data;
 }
 

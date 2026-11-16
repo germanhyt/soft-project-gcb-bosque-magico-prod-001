@@ -339,6 +339,26 @@ export class CotizacionesRepository {
     });
   }
 
+  guardarPrecontrato(id: string, precontrato: Prisma.InputJsonValue) {
+    return this.prisma.bosqueMagicoCotizacion.update({
+      where: { id },
+      data: { precontrato },
+      include: {
+        cliente: true,
+        cumpleanero: true,
+        solicitud: {
+          select: { id: true, nombreContacto: true, etapa: true, canal: true },
+        },
+        eventos: {
+          select: { id: true, etapa: true },
+          take: 1,
+          orderBy: { creadoEn: 'desc' },
+        },
+        items: { orderBy: { nombre: 'asc' } },
+      },
+    });
+  }
+
   crearEventoDesdeCotizacion(cotizacionId: string) {
     return this.prisma.$transaction(async (tx) => {
       const cot = await tx.bosqueMagicoCotizacion.findUniqueOrThrow({

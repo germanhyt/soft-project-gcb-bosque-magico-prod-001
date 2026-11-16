@@ -8,6 +8,7 @@ import { CancelarEventoModal } from '../eventos/CancelarEventoModal';
 import { AceptarCotizacionAction } from './AceptarCotizacionAction';
 import { CotizacionBadge } from './CotizacionBadge';
 import { EnviarCotizacionActions } from './EnviarCotizacionActions';
+import { EntregarPrecontratoAction } from './EntregarPrecontratoAction';
 import { DetalleModal } from '../ui/DetalleModal';
 import { Button } from '../ui/Button';
 import { CARD_CLASS } from '../../constants/design';
@@ -39,6 +40,7 @@ import {
   puedeCancelarEvento,
   puedeEditarCotizacionBorrador,
   puedeEnviarCotizacion,
+  puedeEntregarPrecontrato,
   puedeGenerarContrato,
   puedeVolverABorradorCotizacion,
   motivoBloqueoVolverABorradorCotizacion,
@@ -349,6 +351,12 @@ export function CotizacionDetalle({
           >
             Descargar PDF
           </Button>
+          {puedeEntregarPrecontrato(cot.etapa) && <EntregarPrecontratoAction cot={cot} />}
+          {cot.precontrato && puedeEntregarPrecontrato(cot.etapa) && (
+            <DetalleActionHint>
+              Adelanto de reserva guardado: S/ {cot.precontrato.adelanto1Monto.toFixed(2)}. Al aceptar, el contrato lo toma.
+            </DetalleActionHint>
+          )}
           {cot.etapa === 'borrador' && (
             <DetalleActionHint>
               Este enlace es de borrador: el cliente no puede aceptar. Envía la cotización para habilitar la aceptación.

@@ -113,6 +113,7 @@ export type ImprimirContratoOpts = {
   modo?: ImprimirContratoModo;
   adjuntos?: ContratoAdjunto[];
   esBorrador?: boolean;
+  esPrecontrato?: boolean;
 };
 
 /** Abre vista imprimible; el usuario guarda como PDF desde el diálogo del navegador. */
@@ -123,7 +124,7 @@ export async function imprimirContratoPdf(
   if (!payload.cotizacion.cliente?.nombreCompleto || !payload.cotizacion.cumpleanero?.nombre) {
     return false;
   }
-  if (!payload.form.numeroDocumento.trim()) return false;
+  if (!payload.form.numeroDocumento.trim() && !opts.esPrecontrato) return false;
 
   const modo = opts.modo ?? 'ventana';
   const firmas = await opcionesImpresionContratoEmbedded(opts.adjuntos);
@@ -131,6 +132,7 @@ export async function imprimirContratoPdf(
     logoUrl: `${window.location.origin}/logo-bm.png`,
     autoPrint: true,
     esBorrador: opts.esBorrador,
+    esPrecontrato: opts.esPrecontrato,
     ...firmas,
   });
 
